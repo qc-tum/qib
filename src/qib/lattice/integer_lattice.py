@@ -59,3 +59,15 @@ class IntegerLattice(AbstractLattice):
                     for (i, j) in zip(idx_cut.reshape(-1), ids_cut.reshape(-1)):
                         adj[i, j] = 1
         return adj
+
+    def index_to_coord(self, i: int) -> tuple:
+        """
+        Map linear index to lattice coordinate.
+        """
+        return np.unravel_index(i, self.shape)
+
+    def coord_to_index(self, c) -> int:
+        """
+        Map lattice coordinate to linear index.
+        """
+        return np.ravel_multi_index(c, self.shape)

@@ -77,6 +77,31 @@ class TestLattice(unittest.TestCase):
                             adj_ref[i, j] = 1
                 self.assertTrue(np.array_equal(adj, adj_ref))
 
+    def test_integer_lattice_coords(self):
+        """
+        Test coordinate indexing.
+        """
+        # one-dimensional lattice
+        for L in range(3, 10):
+            latt = qib.lattice.IntegerLattice((L,))
+            for i in range(latt.nsites):
+                self.assertEqual(i, latt.coord_to_index(latt.index_to_coord(i)))
+
+        # two-dimensional lattice
+        for Lx in range(3, 5):
+            for Ly in range(3, 5):
+                latt = qib.lattice.IntegerLattice((Lx, Ly))
+                for i in range(latt.nsites):
+                    self.assertEqual(i, latt.coord_to_index(latt.index_to_coord(i)))
+
+        # three-dimensional lattice
+        for Lx in range(3, 5):
+            for Ly in range(3, 5):
+                for Lz in range(3, 5):
+                    latt = qib.lattice.IntegerLattice((Lx, Ly, Lz))
+                    for i in range(latt.nsites):
+                        self.assertEqual(i, latt.coord_to_index(latt.index_to_coord(i)))
+
 
 if __name__ == '__main__':
     unittest.main()
