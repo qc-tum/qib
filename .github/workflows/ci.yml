@@ -24,5 +24,5 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install --editable .
       - name: Run tests with pytest
-        uses: onichandame/python-test-action@master
+        run: python3 -m unittest discover -s ./tests/
 
