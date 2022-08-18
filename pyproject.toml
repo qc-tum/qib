@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qib"
+version = "0.0.1"
+readme = "README.rst"
+requires-python = ">=3.7"
+dependencies = [
+	"numpy"
+]
