@@ -6,7 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "qib"
 version = "0.0.1"
 readme = "ReadMe.rst"
+license = { file = "LICENSE" }
 requires-python = ">=3.7"
 dependencies = [
-	"numpy"
+    "numpy",
+    "scipy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/qc-tum/qib"
