@@ -5,8 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "qib"
 version = "0.0.1"
+description = "Python package for quantum circuits and algorithms"
 readme = "README.rst"
-license = { file = "LICENSE" }
+authors = [{ name = "TUM Quantum Computing Group" }]
+license = { text = "Apache-2.0" }
 requires-python = ">=3.7"
 dependencies = [
     "numpy",
