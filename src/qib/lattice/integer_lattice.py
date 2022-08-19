@@ -60,6 +60,35 @@ class IntegerLattice(AbstractLattice):
                         adj[i, j] = 1
         return adj
 
+    def adjacency_matrix_axis_shift(self, d: int, s: int):
+        """
+        Construct the adjacency matrix along axis `d` and shift `s`.
+        """
+        if not s in [-1, 1]:
+            raise ValueError(f"invalid shift s = {s}, must be 1 or -1")
+        adj = np.zeros((self.nsites, self.nsites), dtype=int)
+        idx = np.arange(self.nsites).reshape(self.shape)
+        ids = np.roll(idx, s, axis=d)
+        if self.pbc[d]:
+            for (i, j) in zip(idx.reshape(-1), ids.reshape(-1)):
+                adj[i, j] = 1
+        else:
+            # single out axis `d`
+            seld = (math.prod(self.shape[:d]), self.shape[d], math.prod(self.shape[d+1:]))
+            idx_cut = idx.reshape(seld)
+            ids_cut = ids.reshape(seld)
+            if s == 1:
+                idx_cut = idx_cut[:, 1:, :]
+                ids_cut = ids_cut[:, 1:, :]
+            elif s == -1:
+                idx_cut = idx_cut[:, :-1, :]
+                ids_cut = ids_cut[:, :-1, :]
+            else:
+                assert False
+            for (i, j) in zip(idx_cut.reshape(-1), ids_cut.reshape(-1)):
+                adj[i, j] = 1
+        return adj
+
     def index_to_coord(self, i: int) -> tuple:
         """
         Map linear index to lattice coordinate.
