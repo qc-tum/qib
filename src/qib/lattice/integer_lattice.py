@@ -99,4 +99,4 @@ class IntegerLattice(AbstractLattice):
         """
         Map lattice coordinate to linear index.
         """
-        return np.ravel_multi_index(c, self.shape)
+        return int(np.ravel_multi_index(c, self.shape))

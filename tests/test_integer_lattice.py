@@ -3,13 +3,12 @@ import unittest
 import qib
 
 
-class TestLattice(unittest.TestCase):
+class TestIntegerLattice(unittest.TestCase):
 
-    def test_integer_lattice_adjacency(self):
+    def test_lattice_adjacency(self):
         """
-        Test construction of adjacency matrices for an integer lattice.
+        Test construction of adjacency matrices.
         """
-
         # one-dimensional lattice, periodic boundary conditions
         for L in range(3, 10):
             latt = qib.lattice.IntegerLattice((L,), pbc=True)
@@ -77,9 +76,9 @@ class TestLattice(unittest.TestCase):
                             adj_ref[i, j] = 1
                 self.assertTrue(np.array_equal(adj, adj_ref))
 
-    def test_integer_lattice_coords(self):
+    def test_lattice_coords(self):
         """
-        Test coordinate indexing.
+        Test lattice coordinate indexing.
         """
         # one-dimensional lattice
         for L in range(3, 10):
