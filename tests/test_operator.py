@@ -12,20 +12,39 @@ class TestOperator(unittest.TestCase):
         """
         Test handling of Pauli strings.
         """
+        self.assertEqual(spla.norm(qop.PauliString.identity(5).as_matrix()
+                                   - sparse.identity(2**5)), 0)
         # construct Pauli string
-        z = [0, 1, 0, 1, 1]
-        x = [1, 1, 0, 1, 0]
-        q = 3
-        P = qop.PauliString((z, x, q))
-        P.as_matrix()
-        # reference calculation
+        P = qop.PauliString.from_single_paulis(5, ('Y', 1), ('X', 0), ('Y', 3), ('Z', 4), q=3)
+        # reference values
+        z_ref = [0, 1, 0, 1, 1]
+        x_ref = [1, 1, 0, 1, 0]
+        q_ref = 3
+        self.assertTrue(np.array_equal(P.z, z_ref))
+        self.assertTrue(np.array_equal(P.x, x_ref))
+        self.assertEqual(P.q, q_ref)
+        # reference matrix representation
         I = np.identity(2)
         X = np.array([[ 0.,  1.], [ 1.,  0.]])
         Y = np.array([[ 0., -1j], [ 1j,  0.]])
         Z = np.array([[ 1.,  0.], [ 0., -1.]])
-        Pref = (-1j)**q * np.kron(np.kron(np.kron(np.kron(X, Y), I), Y), Z)
-        # compare
-        self.assertTrue(np.allclose(P.as_matrix().toarray(), Pref))
+        Pref = (-1j)**q_ref * np.kron(np.kron(np.kron(np.kron(X, Y), I), Y), Z)
+        self.assertTrue(np.array_equal(P.as_matrix().toarray(), Pref))
+        # another Pauli string
+        P2 = qop.PauliString.from_single_paulis(5, ('Z', 4), ('Y', 0), ('Y', 1), ('X', 2), q=2)
+        # logical product
+        self.assertEqual(spla.norm(( P @ P2).as_matrix()
+                                   - P.as_matrix() @ P2.as_matrix()), 0)
+        # logical product for various lengths
+        for nqubits in range(1, 10):
+            Plist = []
+            for j in range(2):
+                z = np.random.randint(0, 2, nqubits)
+                x = np.random.randint(0, 2, nqubits)
+                q = np.random.randint(0, 4)
+                Plist.append(qop.PauliString(z, x, q))
+            self.assertEqual(spla.norm( (Plist[0] @ Plist[1]).as_matrix()
+                                       - Plist[0].as_matrix() @ Plist[1].as_matrix()), 0)
 
     def test_pauli_operator(self):
         """
@@ -38,7 +57,7 @@ class TestOperator(unittest.TestCase):
         weights = [-1.52, 0.687, 0.135]
         P = qop.PauliOperator(
             [qop.WeightedPauliString(
-                qop.PauliString((z[j], x[j], q[j])),
+                qop.PauliString(z[j], x[j], q[j]),
                 weights[j]) for j in range(3)])
         # reference calculation
         I = np.identity(2)
@@ -78,7 +97,7 @@ class TestOperator(unittest.TestCase):
             # onsite term
             onsite_term = qop.FieldOperatorTerm(
                 [qop.IFODesc(field, qop.IFOType.FERMI_CREATE),
-                 qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
+                  qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
                 np.diag(-μ.reshape(-1)))
             # kinetic term
             tcoeffs = -(np.diag(t[:, :, 0].reshape(-1)) @ adj_x
@@ -86,7 +105,7 @@ class TestOperator(unittest.TestCase):
             tcoeffs = tcoeffs + tcoeffs.T
             kinetic_term = qop.FieldOperatorTerm(
                 [qop.IFODesc(field, qop.IFOType.FERMI_CREATE),
-                 qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
+                  qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
                 tcoeffs)
             # superconducting pairing term
             Δcoeffs =  (np.diag(Δ[:, :, 0].reshape(-1)) @ adj_x
@@ -95,11 +114,11 @@ class TestOperator(unittest.TestCase):
             sc_terms = [
                 qop.FieldOperatorTerm(
                     [qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL),
-                     qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
+                      qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
                     Δcoeffs[0]),
                 qop.FieldOperatorTerm(
                     [qop.IFODesc(field, qop.IFOType.FERMI_CREATE),
-                     qop.IFODesc(field, qop.IFOType.FERMI_CREATE)],
+                      qop.IFODesc(field, qop.IFOType.FERMI_CREATE)],
                     Δcoeffs[1])]
             H = qop.FieldOperator([onsite_term, kinetic_term, sc_terms[0], sc_terms[1]])
             # compare
