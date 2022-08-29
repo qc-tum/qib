@@ -177,6 +177,12 @@ class PauliOperator(AbstractOperator):
             raise ValueError("all Pauli strings must have the same length")
         self.pstrings = list(pstrings)
 
+    def add_pauli_string(self, ps: WeightedPauliString):
+        """
+        Add a weighted Pauli string.
+        """
+        self.pstrings.append(ps)
+
     def as_matrix(self):
         """
         Generate the (sparse) matrix representation of the operator.

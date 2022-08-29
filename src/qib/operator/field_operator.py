@@ -50,6 +50,12 @@ class FieldOperatorTerm:
         if self.coeffs.ndim != len(self.opdesc):
             raise ValueError("number of operator descriptions must match dimension of coefficient array")
 
+    def fields(self):
+        """
+        List of all fields appearing in the term.
+        """
+        return list(set([desc.field for desc in self.opdesc]))
+
 
 class FieldOperator(AbstractOperator):
     """
@@ -64,7 +70,7 @@ class FieldOperator(AbstractOperator):
         """
         f = set()
         for term in self.terms:
-            f = f.union([desc.field for desc in term.opdesc])
+            f = f.union(term.fields())
         return list(f)
 
     def as_matrix(self):
@@ -74,7 +80,7 @@ class FieldOperator(AbstractOperator):
         fields = self.fields()
         if len(fields) != 1 or fields[0].ptype != ParticleType.FERMION:
             # currently only a single fermionic field supported
-            raise RuntimeError("not implemented yet")
+            raise NotImplementedError
         # number of lattice sites
         L = fields[0].lattice.nsites
         # assemble fermionic creation operators based on Jordan-Wigner transformation
