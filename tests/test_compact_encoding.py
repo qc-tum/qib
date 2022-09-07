@@ -117,7 +117,7 @@ class TestCompactEncoding(unittest.TestCase):
         """
         # construct fermionic field operator
         latt_fermi = qib.lattice.IntegerLattice((3, 3), pbc=False)
-        field = qib.operator.Field(qib.operator.ParticleType.FERMION, latt_fermi)
+        field = qib.field.Field(qib.field.ParticleType.FERMION, latt_fermi)
         coeffs = np.random.standard_normal(2 * (latt_fermi.nsites,))
         # symmetrize
         coeffs = 0.5 * (coeffs + coeffs.T)
@@ -187,5 +187,5 @@ class TestCompactEncoding(unittest.TestCase):
         self.assertTrue(np.allclose(ϵ, ϵref, rtol=1e-11, atol=1e-14))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

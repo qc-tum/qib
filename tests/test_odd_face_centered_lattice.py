@@ -70,5 +70,5 @@ class TestOddFaceCenteredLattice(unittest.TestCase):
                             self.assertEqual(iof, iof_ref)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -4,7 +4,7 @@ from typing import Sequence
 from qib.operator import AbstractOperator
 
 
-class PauliString:
+class PauliString(AbstractOperator):
     """
     Pauli string (sequence of identity and Pauli matrices X, Y, Z),
     together with a global phase factor.
@@ -76,8 +76,20 @@ class PauliString:
                 q = value
         return cls(z, x, q)
 
+    def is_unitary(self):
+        """
+        Whether the operator is unitary.
+        """
+        return True
+
+    def is_hermitian(self):
+        """
+        Whether the operator is Hermitian.
+        """
+        return self.q % 2 == 0
+
     @property
-    def nqubits(self):
+    def num_qubits(self):
         """
         Number of qubits, i.e., length of Pauli string, including identities.
         """
@@ -136,7 +148,7 @@ class PauliString:
         X = sparse.csr_matrix([[ 0.,  1.], [ 1.,  0.]])
         Z = sparse.csr_matrix([[ 1.,  0.], [ 0., -1.]])
         op = sparse.identity(1)
-        for i in range(self.nqubits):
+        for i in range(self.num_qubits):
             op = sparse.csr_matrix(sparse.kron(op, Z**self.z[i] @ X**self.x[i]))
             op.eliminate_zeros()
         # only use complex type when necessary
@@ -144,7 +156,7 @@ class PauliString:
         return phase * op
 
 
-class WeightedPauliString:
+class WeightedPauliString(AbstractOperator):
     """
     Pauli string with a weight factor.
     """
@@ -152,12 +164,24 @@ class WeightedPauliString:
         self.paulis = paulis
         self.weight = weight
 
+    def is_unitary(self):
+        """
+        Whether the operator is unitary.
+        """
+        return abs(self.weight) == 1
+
+    def is_hermitian(self):
+        """
+        Whether the operator is Hermitian.
+        """
+        return ([1., -1j, -1., 1j][self.paulis.q] * self.weight).imag == 0
+
     @property
-    def nqubits(self):
+    def num_qubits(self):
         """
         Number of qubits, i.e., length of Pauli string, including identities.
         """
-        return self.paulis.nqubits
+        return self.paulis.num_qubits
 
     def as_matrix(self):
         """
@@ -172,7 +196,7 @@ class PauliOperator(AbstractOperator):
     """
     def __init__(self, pstrings: Sequence[WeightedPauliString]=[]):
         # consistency check
-        nqs = [ps.nqubits for ps in pstrings]
+        nqs = [ps.num_qubits for ps in pstrings]
         if len(set(nqs)) > 1:
             raise ValueError("all Pauli strings must have the same length")
         self.pstrings = list(pstrings)
@@ -182,6 +206,29 @@ class PauliOperator(AbstractOperator):
         Add a weighted Pauli string.
         """
         self.pstrings.append(ps)
+
+    def is_unitary(self):
+        """
+        Whether the operator is unitary.
+        """
+        raise NotImplementedError
+
+    def is_hermitian(self):
+        """
+        Whether the operator is Hermitian.
+        """
+        return all(ps.is_hermitian() for ps in self.pstrings)
+
+    @property
+    def num_qubits(self):
+        """
+        Number of qubits, i.e., length of each Pauli string, including identities.
+        """
+        if self.pstrings:
+            return self.pstrings[0].num_qubits
+        else:
+            # not specified
+            return 0
 
     def as_matrix(self):
         """

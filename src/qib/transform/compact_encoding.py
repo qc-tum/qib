@@ -1,6 +1,7 @@
 import numpy as np
 from qib.lattice import IntegerLattice, OddFaceCenteredLattice
-from qib.operator import (ParticleType, IFOType, FieldOperator,
+from qib.field import ParticleType
+from qib.operator import (IFOType, FieldOperator,
                           PauliString, WeightedPauliString, PauliOperator)
 
 

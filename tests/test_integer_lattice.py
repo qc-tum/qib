@@ -102,5 +102,5 @@ class TestIntegerLattice(unittest.TestCase):
                         self.assertEqual(i, latt.coord_to_index(latt.index_to_coord(i)))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

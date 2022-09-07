@@ -2,7 +2,8 @@ import enum
 import numpy as np
 from scipy import sparse
 from typing import Sequence
-from qib.operator import AbstractOperator, ParticleType, Field
+from qib.operator import AbstractOperator
+from qib.field import ParticleType, Field
 
 
 class IFOType(enum.Enum):
@@ -16,6 +17,23 @@ class IFOType(enum.Enum):
     MAJORANA_RE   = 5   # "real" Majorana operator
     MAJORANA_IM   = 6   # "imaginary" Majorana operator
 
+    @staticmethod
+    def adjoint(otype):
+        """
+        Adjoint (conjugate transpose) operator type.
+        """
+        if not isinstance(otype, IFOType):
+            raise ValueError("incorrect argument type, expecting 'IFOType'")
+        if otype == IFOType.BOSON_CREATE:
+            return IFOType.BOSON_ANNIHIL
+        elif otype == IFOType.BOSON_ANNIHIL:
+            return IFOType.BOSON_CREATE
+        elif otype == IFOType.FERMI_CREATE:
+            return IFOType.FERMI_ANNIHIL
+        elif otype == IFOType.FERMI_ANNIHIL:
+            return IFOType.FERMI_CREATE
+        else:
+            return otype
 
 class IFODesc:
     """
@@ -50,6 +68,17 @@ class FieldOperatorTerm:
         if self.coeffs.ndim != len(self.opdesc):
             raise ValueError("number of operator descriptions must match dimension of coefficient array")
 
+    def is_hermitian(self):
+        """
+        Whether the field operator term is Hermitian.
+        """
+        n = len(self.opdesc)
+        if not all((self.opdesc[i].field == self.opdesc[n-1-i].field) and
+                   (self.opdesc[i].otype == IFOType.adjoint(self.opdesc[n-1-i].otype))
+                   for i in range(n)):
+            return False
+        return np.allclose(self.coeffs, self.coeffs.conj().T)
+
     def fields(self):
         """
         List of all fields appearing in the term.
@@ -72,6 +101,24 @@ class FieldOperator(AbstractOperator):
         for term in self.terms:
             f = f.union(term.fields())
         return list(f)
+
+    def is_unitary(self):
+        """
+        Whether the operator is unitary.
+        """
+        # might be unitary in special cases, but difficult to check,
+        # so returning False here for simplicity
+        return False
+
+    def is_hermitian(self):
+        """
+        Whether the operator is Hermitian.
+        """
+        if all(term.is_hermitian() for term in self.terms):
+            return True
+        # sum of two terms can be Hermitian, although the individual
+        # terms are not, like the superconducting pairing term
+        raise NotImplementedError
 
     def as_matrix(self):
         """
