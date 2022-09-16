@@ -41,7 +41,7 @@ class IFODesc:
     """
     def __init__(self, field: Field, otype: IFOType):
         # consistency checks
-        if field.particle_type == ParticleType.QUDIT:
+        if field.particle_type == ParticleType.BOSON:
             if (otype != IFOType.BOSON_CREATE) and (otype != IFOType.BOSON_ANNIHIL):
                 raise ValueError(f"expecting bosonic operator, but received {otype}")
         elif field.particle_type == ParticleType.FERMION:

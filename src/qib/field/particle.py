@@ -26,18 +26,18 @@ class Qubit(Particle):
         # consistency check
         if field and field.particle_type != ParticleType.QUBIT:
             raise ValueError(f"expecting qubit particle type in underlying field, received {field.particle_type}")
-        super.__init__(field, index)
+        super().__init__(field, index)
 
 
-class Qudit(Particle):
+class Boson(Particle):
     """
-    Qudit as a special quantum particle.
+    Boson as a special quantum particle.
     """
     def __init__(self, field: Field=None, index: int=-1):
         # consistency check
-        if field and field.particle_type != ParticleType.QUDIT:
-            raise ValueError(f"expecting qudit particle type in underlying field, received {field.particle_type}")
-        super.__init__(field, index)
+        if field and field.particle_type != ParticleType.BOSON:
+            raise ValueError(f"expecting boson particle type in underlying field, received {field.particle_type}")
+        super().__init__(field, index)
 
 
 class Fermion(Particle):
@@ -48,4 +48,4 @@ class Fermion(Particle):
         # consistency check
         if field and field.particle_type != ParticleType.FERMION:
             raise ValueError(f"expecting fermion particle type in underlying field, received {field.particle_type}")
-        super.__init__(field, index)
+        super().__init__(field, index)

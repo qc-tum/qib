@@ -3,7 +3,6 @@ from scipy import sparse
 import scipy.sparse.linalg as spla
 import unittest
 import qib
-import qib.operator as qop
 
 
 class TestFieldOperator(unittest.TestCase):
@@ -32,18 +31,18 @@ class TestFieldOperator(unittest.TestCase):
             adj_y = latt.adjacency_matrix_axis_shift(1, -1)
             field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
             # onsite term
-            onsite_term = qop.FieldOperatorTerm(
-                [qop.IFODesc(field, qop.IFOType.FERMI_CREATE),
-                 qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
+            onsite_term = qib.operator.FieldOperatorTerm(
+                [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
+                 qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
                 np.diag(-μ.reshape(-1)))
             self.assertTrue(onsite_term.is_hermitian())
             # kinetic term
             tcoeffs = -(np.diag(t[:, :, 0].reshape(-1)) @ adj_x
                       + np.diag(t[:, :, 1].reshape(-1)) @ adj_y)
             tcoeffs = tcoeffs + tcoeffs.T
-            kinetic_term = qop.FieldOperatorTerm(
-                [qop.IFODesc(field, qop.IFOType.FERMI_CREATE),
-                 qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
+            kinetic_term = qib.operator.FieldOperatorTerm(
+                [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
+                 qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
                 tcoeffs)
             self.assertTrue(kinetic_term.is_hermitian())
             # superconducting pairing term
@@ -51,17 +50,17 @@ class TestFieldOperator(unittest.TestCase):
                       + np.diag(Δ[:, :, 1].reshape(-1)) @ adj_y)
             Δcoeffs = [Δcoeffs, Δcoeffs.T]
             sc_terms = [
-                qop.FieldOperatorTerm(
-                    [qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL),
-                     qop.IFODesc(field, qop.IFOType.FERMI_ANNIHIL)],
+                qib.operator.FieldOperatorTerm(
+                    [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL),
+                     qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
                     Δcoeffs[0]),
-                qop.FieldOperatorTerm(
-                    [qop.IFODesc(field, qop.IFOType.FERMI_CREATE),
-                     qop.IFODesc(field, qop.IFOType.FERMI_CREATE)],
+                qib.operator.FieldOperatorTerm(
+                    [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
+                     qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE)],
                     Δcoeffs[1])]
             self.assertFalse(sc_terms[0].is_hermitian())
             self.assertFalse(sc_terms[1].is_hermitian())
-            H = qop.FieldOperator([onsite_term, kinetic_term, sc_terms[0], sc_terms[1]])
+            H = qib.FieldOperator([onsite_term, kinetic_term, sc_terms[0], sc_terms[1]])
             # compare
             self.assertAlmostEqual(spla.norm(H.as_matrix() - Href), 0)
 

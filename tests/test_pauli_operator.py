@@ -2,7 +2,7 @@ import numpy as np
 from scipy import sparse
 import scipy.sparse.linalg as spla
 import unittest
-import qib.operator as qop
+import qib
 
 
 class TestPauliOperator(unittest.TestCase):
@@ -11,11 +11,11 @@ class TestPauliOperator(unittest.TestCase):
         """
         Test handling of Pauli strings.
         """
-        self.assertEqual(spla.norm(qop.PauliString.identity(5).as_matrix()
+        self.assertEqual(spla.norm(qib.PauliString.identity(5).as_matrix()
                                    - sparse.identity(2**5)), 0)
         # construct Pauli string (single paulis and string)
-        P = qop.PauliString.from_single_paulis(5, ('Y', 1), ('X', 0), ('Y', 3), ('Z', 4), q=3)
-        P_string = qop.PauliString.from_string(5, "iXYIYZ")
+        P = qib.PauliString.from_single_paulis(5, ('Y', 1), ('X', 0), ('Y', 3), ('Z', 4), q=3)
+        P_string = qib.PauliString.from_string(5, "iXYIYZ")
         self.assertTrue(P.is_unitary())
         self.assertTrue(P_string.is_unitary())
         self.assertFalse(P.is_hermitian())
@@ -39,8 +39,8 @@ class TestPauliOperator(unittest.TestCase):
         self.assertTrue(np.array_equal(P.as_matrix().toarray(), Pref))
         self.assertTrue(np.array_equal(P_string.as_matrix().toarray(), Pref))
         # another Pauli string
-        P2 = qop.PauliString.from_single_paulis(5, ('Z', 4), ('Y', 0), ('Y', 1), ('X', 2), q=2)
-        P2_string = qop.PauliString.from_string(5, "-YYXIZ")
+        P2 = qib.PauliString.from_single_paulis(5, ('Z', 4), ('Y', 0), ('Y', 1), ('X', 2), q=2)
+        P2_string = qib.PauliString.from_string(5, "-YYXIZ")
         self.assertTrue(P2.is_unitary())
         self.assertTrue(P2_string.is_unitary())
         self.assertTrue(P2.is_hermitian())
@@ -57,7 +57,7 @@ class TestPauliOperator(unittest.TestCase):
                 z = np.random.randint(0, 2, nqubits)
                 x = np.random.randint(0, 2, nqubits)
                 q = np.random.randint(0, 4)
-                Plist.append(qop.PauliString(z, x, q))
+                Plist.append(qib.PauliString(z, x, q))
             self.assertEqual(spla.norm( (Plist[0] @ Plist[1]).as_matrix()
                                        - Plist[0].as_matrix() @ Plist[1].as_matrix()), 0)
 
@@ -71,9 +71,9 @@ class TestPauliOperator(unittest.TestCase):
         x = [[1, 1, 0, 1, 0], [0, 1, 1, 0, 0], [1, 0, 0, 0, 1]]
         q = [3, 0, 1]
         weights = [-1.52, 0.687, 0.135]
-        P = qop.PauliOperator(
-            [qop.WeightedPauliString(
-                qop.PauliString(z[j], x[j], q[j]),
+        P = qib.PauliOperator(
+            [qib.operator.WeightedPauliString(
+                qib.PauliString(z[j], x[j], q[j]),
                 weights[j]) for j in range(3)])
         self.assertEqual(P.num_qubits, 5)
         self.assertFalse(P.is_hermitian())
