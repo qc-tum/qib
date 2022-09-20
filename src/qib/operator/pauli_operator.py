@@ -40,7 +40,24 @@ class PauliString(AbstractOperator):
         """
         Construct a Pauli string from a literal string representation, like "iYZXZ".
         """
-        raise NotImplementedError
+
+        if s[0]=='-':
+            if s[1]=='i':
+                q=1
+                init=2
+            else:
+                q=2
+                init=1
+        elif s[0]=='i':
+            q=3
+            init=1
+        else:
+            q=0
+            init=0
+
+        s_tup = [(s[i+init],i) for i in range(0,nqubits)]
+        return cls.from_single_paulis(nqubits,*s_tup,q=q)
+                            
 
     @classmethod
     def from_single_paulis(cls, nqubits: int, *args, **kwargs):
