@@ -259,3 +259,13 @@ class PauliOperator(AbstractOperator):
         else:
             # dimensions are not specified
             return 0
+            
+    def __str__(self):
+        print_string = ""
+        for string in self.pstrings:
+            print_string += str(string.weight) + '\t'
+            for i in range(string.paulis.num_qubits):
+                print_string += str(string.paulis.get_pauli(i))
+            print_string += '\n'
+        return print_string
+        
