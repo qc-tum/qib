@@ -1,1 +1,2 @@
 from qib.transform.compact_encoding import compact_encode_field_operator
+from qib.transform.compact_encoding import Jordan_Wigner_encode_field_operator
