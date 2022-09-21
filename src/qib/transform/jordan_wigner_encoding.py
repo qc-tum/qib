@@ -6,8 +6,9 @@ from qib.operator import (IFOType, FieldOperator,
 
 # Only spinless Fermi Hubbard on 2D integer lattice is implemented
 # TODO: separate specific problems (es: Fermi Hubbard) that can be encoded more efficiently from a general Hamiltonian
+# Unless compact encoding, also not-nearest-neighbour terms are supported
 
-def Jordan_Wigner_encode_field_operator(fieldop: FieldOperator):
+def jordan_wigner_encode_field_operator(fieldop: FieldOperator):
     """
     Jordan - Wigner encoding 
     """
@@ -64,8 +65,7 @@ def Jordan_Wigner_encode_field_operator(fieldop: FieldOperator):
                     # note: i < j
                     if term.coeffs[i, j] == 0:
                         continue
-                    if adj[i, j] == 0:
-                        raise ValueError("only direct neighbor hopping terms supported")
+                    
                         
                     first_kinetic_str = ['I' for k in range(i)] + ['X'] + ['Z' for k in range(j-i-1)] + ['X'] + ['I' for k in range(latt_fermi.nsites-j-1)]
                     first_kinetic_pauli = PauliString.from_string(latt_enc.nsites, first_kinetic_str)                                       
