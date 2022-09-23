@@ -229,7 +229,12 @@ class PauliOperator(AbstractOperator):
     def add_pauli_string(self, ps: WeightedPauliString):
         """
         Add a weighted Pauli string.
+        Check if the string already exists and add the weights.
         """
+        for pstring in self.pstrings:
+            if pstring.paulis == ps.paulis:
+                pstring.weight += ps.weight
+                return
         self.pstrings.append(ps)
 
     def is_unitary(self):

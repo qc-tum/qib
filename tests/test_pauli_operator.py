@@ -79,6 +79,29 @@ class TestPauliOperator(unittest.TestCase):
         # compare
         self.assertTrue(np.allclose(P.as_matrix().toarray(), Pref))
 
+        # check summation of Pauli operators. First and last PauliString are the same with different weights
+        z_new = [[0, 1, 0, 1, 1], [0, 0, 1, 1, 1], [1, 1, 0, 1, 0]]
+        x_new = [[1, 1, 0, 1, 0], [0, 1, 1, 0, 0], [1, 0, 0, 0, 1]]
+        q_new = [3, 0, 1]
+        weights_new = [0.52, 1.87, -0.135]
+        P_new = qib.PauliOperator(
+            [qib.operator.WeightedPauliString(
+                qib.PauliString(z_new[j], x_new[j], q_new[j]),
+                weights_new[j]) for j in range(3)])
+        
+        P.add_pauli_string(P_new.pstrings[0])
+        self.assertTrue(len(P.pstrings) == 3)
+        self.assertTrue(P.pstrings[0].weight == weights[0]+weights_new[0])
+        P.add_pauli_string(P_new.pstrings[1])
+        self.assertTrue(len(P.pstrings) == 4)
+        P.add_pauli_string(P_new.pstrings[2])
+        self.assertTrue(len(P.pstrings) == 4)
+        self.assertTrue(P.pstrings[2].weight == weights[2]+weights_new[2])
+
+
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
