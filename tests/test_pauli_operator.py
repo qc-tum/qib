@@ -15,21 +15,16 @@ class TestPauliOperator(unittest.TestCase):
                                    - sparse.identity(2**5)), 0)
         # construct Pauli string (single paulis and string)
         P = qib.PauliString.from_single_paulis(5, ('Y', 1), ('X', 0), ('Y', 3), ('Z', 4), q=3)
-        P_string = qib.PauliString.from_string(5, "iXYIYZ")
+        self.assertTrue(P == qib.PauliString.from_string("iXYIYZ"))
         self.assertTrue(P.is_unitary())
-        self.assertTrue(P_string.is_unitary())
         self.assertFalse(P.is_hermitian())
-        self.assertFalse(P_string.is_hermitian())
         # reference values
         z_ref = [0, 1, 0, 1, 1]
         x_ref = [1, 1, 0, 1, 0]
         q_ref = 3
         self.assertTrue(np.array_equal(P.z, z_ref))
-        self.assertTrue(np.array_equal(P_string.z, z_ref))
         self.assertTrue(np.array_equal(P.x, x_ref))
-        self.assertTrue(np.array_equal(P_string.x, x_ref))
         self.assertEqual(P.q, q_ref)
-        self.assertEqual(P_string.q, q_ref)
         # reference matrix representation
         I = np.identity(2)
         X = np.array([[ 0.,  1.], [ 1.,  0.]])
@@ -37,19 +32,14 @@ class TestPauliOperator(unittest.TestCase):
         Z = np.array([[ 1.,  0.], [ 0., -1.]])
         Pref = (-1j)**q_ref * np.kron(np.kron(np.kron(np.kron(X, Y), I), Y), Z)
         self.assertTrue(np.array_equal(P.as_matrix().toarray(), Pref))
-        self.assertTrue(np.array_equal(P_string.as_matrix().toarray(), Pref))
         # another Pauli string
         P2 = qib.PauliString.from_single_paulis(5, ('Z', 4), ('Y', 0), ('Y', 1), ('X', 2), q=2)
-        P2_string = qib.PauliString.from_string(5, "-YYXIZ")
+        self.assertTrue(P2 == qib.PauliString.from_string("-YYXIZ"))
         self.assertTrue(P2.is_unitary())
-        self.assertTrue(P2_string.is_unitary())
         self.assertTrue(P2.is_hermitian())
-        self.assertTrue(P2_string.is_hermitian())
         # logical product
         self.assertEqual(spla.norm(( P @ P2).as_matrix()
                                    - P.as_matrix() @ P2.as_matrix()), 0)
-        self.assertEqual(spla.norm(( P @ P2_string).as_matrix()
-                                   - P.as_matrix() @ P2_string.as_matrix()), 0)
         # logical product for various lengths
         for nqubits in range(1, 10):
             Plist = []

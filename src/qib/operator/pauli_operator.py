@@ -36,28 +36,28 @@ class PauliString(AbstractOperator):
         return cls(z, x, 0)
 
     @classmethod
-    def from_string(cls, nqubits: int, s: str):
+    def from_string(cls, s: str):
         """
         Construct a Pauli string from a literal string representation, like "iYZXZ".
         """
-
-        if s[0]=='-':
-            if s[1]=='i':
-                q=1
-                init=2
+        # remove whitespace
+        s = s.replace(' ', '')
+        # remove a potential leading '+' sign
+        if s[0] == '+':
+            s = s[1:]
+        if s[0] == '-':
+            if s[1] == 'i':
+                q = 1
+                s = s[2:]
             else:
-                q=2
-                init=1
-        elif s[0]=='i':
-            q=3
-            init=1
+                q = 2
+                s = s[1:]
+        elif s[0] == 'i':
+            q = 3
+            s = s[1:]
         else:
-            q=0
-            init=0
-
-        s_tup = [(s[i+init],i) for i in range(0,nqubits)]
-        return cls.from_single_paulis(nqubits,*s_tup,q=q)
-                            
+            q = 0
+        return cls.from_single_paulis(len(s), *[list(reversed(x)) for x in enumerate(s)], q=q)
 
     @classmethod
     def from_single_paulis(cls, nqubits: int, *args, **kwargs):
@@ -157,6 +157,14 @@ class PauliString(AbstractOperator):
                      - np.dot(z_prod, x_prod)
                      + 2*np.dot(self.x, other.z))   # sign factor from flipping X <-> Z
         return PauliString(z_prod, x_prod, self.q + other.q + q_prod)
+
+    def __eq__(self, other):
+        """
+        Test logical equality of Pauli strings.
+        """
+        return (np.array_equal(self.z, other.z)
+            and np.array_equal(self.x, other.x)
+            and self.q == other.q)
 
     def as_matrix(self):
         """
@@ -259,7 +267,7 @@ class PauliOperator(AbstractOperator):
         else:
             # dimensions are not specified
             return 0
-            
+
     def __str__(self):
         print_string = ""
         for string in self.pstrings:
@@ -268,4 +276,3 @@ class PauliOperator(AbstractOperator):
                 print_string += str(string.paulis.get_pauli(i))
             print_string += '\n'
         return print_string
-        
