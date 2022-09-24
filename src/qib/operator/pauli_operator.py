@@ -146,6 +146,28 @@ class PauliString(AbstractOperator):
         else:
             raise ValueError(f"invalid Pauli matrix denominator, received {s}, expecting 'I', 'X', 'Y' or 'Z'")
 
+    def refactor_phase(self):
+        """
+        "Refactor" the Pauli string by setting `q` to 0
+        and returning the corresponding overall phase factor.
+        """
+        assert self.q < 4
+        phase = [1., -1j, -1., 1j][self.q]
+        self.q = 0
+        return phase
+
+    def refactor_sign(self):
+        """
+        "Refactor" the Pauli string by forcing `q` to be 0 or 1
+        and returning the corresponding overall sign factor.
+        """
+        assert self.q < 4
+        if self.q < 2:
+            return 1
+        else:
+            self.q %= 2
+            return -1
+
     def __matmul__(self, other):
         """
         Logical matrix multiplication of two Pauli strings.
@@ -228,8 +250,8 @@ class PauliOperator(AbstractOperator):
 
     def add_pauli_string(self, ps: WeightedPauliString):
         """
-        Add a weighted Pauli string.
-        Check if the string already exists and add the weights.
+        Add a weighted Pauli string. If the string already exists,
+        only its weight is updated.
         """
         for pstring in self.pstrings:
             if pstring.paulis == ps.paulis:
@@ -273,7 +295,20 @@ class PauliOperator(AbstractOperator):
             # dimensions are not specified
             return 0
 
+    def remove_zero_weight_strings(self, tol=0.0):
+        """
+        Remove the redundant Pauli strings with weight zero.
+        """
+        for i in range(len(self.pstrings)-1, -1, -1):
+            # ensure that at least one weighted Pauli string remains
+            # (even if it has zero weight) to retain dimension information
+            if abs(self.pstrings[i].weight) <= tol and len(self.pstrings) > 1:
+                self.pstrings.pop(i)
+
     def __str__(self):
+        """
+        String representation of the Pauli operator.
+        """
         print_string = ""
         for string in self.pstrings:
             print_string += str(string.weight) + '\t'

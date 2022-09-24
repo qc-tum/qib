@@ -1,78 +1,57 @@
 import numpy as np
-from qib.lattice import IntegerLattice
 from qib.field import ParticleType
 from qib.operator import (IFOType, FieldOperator,
                           PauliString, WeightedPauliString, PauliOperator)
 
-# Only spinless Fermi Hubbard on 2D integer lattice is implemented
-# TODO: separate specific problems (es: Fermi Hubbard) that can be encoded more efficiently from a general Hamiltonian
-# Unless compact encoding, also not-nearest-neighbour terms are supported
 
 def jordan_wigner_encode_field_operator(fieldop: FieldOperator):
     """
-    Jordan - Wigner encoding
+    Jordan-Wigner encode a fermionic field operator.
     """
     fields = fieldop.fields()
-    # list of all the fields. For example, Fermi-Hubbard or Born-Oppenheimer only have 1 fermionic field.
     if len(fields) != 1 or fields[0].ptype != ParticleType.FERMION:
         # currently only a single fermionic field supported
         raise NotImplementedError
 
-    latt_fermi = fields[0].lattice
-    # fermionic lattice (ex: Fermi-Hubbard model)
-    if not isinstance(latt_fermi, IntegerLattice):
-        raise RuntimeError("only integer lattices supported")
-    if latt_fermi.ndim != 2:
-        raise RuntimeError("only two-dimensional lattices supported")
-    if any(latt_fermi.pbc):
-        raise RuntimeError("only open boundary conditions supported")
+    # number of lattice sites
+    L = fields[0].lattice.nsites
+    # represent fermionic operators as Pauli strings based on Jordan-Wigner transformation
+    clist = []
+    alist = []
+    for i in range(L):
+        za = (L-i-1)*[0] + [0] + i*[1]
+        zb = (L-i-1)*[0] + [1] + i*[1]
+        x  = (L-i-1)*[0] + [1] + i*[0]
+        # require two Pauli strings per fermionic operator
+        clist.append([PauliString(za, x, 0), PauliString(zb, x, 1)])
+        alist.append([PauliString(za, x, 0), PauliString(zb, x, 3)])
 
-    latt_enc = IntegerLattice(latt_fermi.shape, pbc=False)
-    # encoded qubit lattice, same shape of fermionic lattice
-
+    # assemble overall operator
     pauliop = PauliOperator()
-    # string of encoded single pauli operators
-
     for term in fieldop.terms:
-        # iterate over terms of the Hamiltonian
-        # if spinless, only 2 operators for both on-site and kinetic term!
-        if (len(term.opdesc) == 2
-            and term.opdesc[0].otype == IFOType.FERMI_CREATE
-            and term.opdesc[1].otype == IFOType.FERMI_ANNIHIL):
+        it = np.nditer(term.coeffs, flags=["multi_index"])
+        for coeff in it:
+            if coeff == 0:
+                continue
+            pstrings = [PauliString.identity(L)]
+            for i, j in enumerate(it.multi_index):
+                if term.opdesc[i].otype == IFOType.FERMI_CREATE:
+                    pstrings = (  [ps @ clist[j][0] for ps in pstrings]
+                                + [ps @ clist[j][1] for ps in pstrings])
+                elif term.opdesc[i].otype == IFOType.FERMI_ANNIHIL:
+                    pstrings = (  [ps @ alist[j][0] for ps in pstrings]
+                                + [ps @ alist[j][1] for ps in pstrings])
+                else:
+                    raise RuntimeError(f"expecting fermionic operator, but received {term.opdesc[i].otype}")
+            # scaling factors 1/2 from representation of each fermionic operator as two Pauli strings
+            weight = 0.5 ** len(term.opdesc) * coeff
+            for ps in pstrings:
+                # include overall sign factor in weight coefficient;
+                # factoring out phase (instead of sign only)
+                # does not seem to be advantageous
+                sign = ps.refactor_sign()
+                pauliop.add_pauli_string(WeightedPauliString(ps, sign * weight))
 
-            if not np.issubdtype(term.coeffs.dtype, float):
-                raise ValueError("only real coefficient matrices for on-site and kinetic hopping term supported")
-            if not np.allclose(term.coeffs, term.coeffs.T):
-                raise ValueError("only symmetric coefficient matrices for on-site and kinetic hopping term supported")
+    pauliop.remove_zero_weight_strings(tol=1e-14)
 
-            # on-site term: \sum_i U_i n_{i} -----> \sum U_i 0.5*(I - Z)_{i}
-            # add identity (coeff = 0.5 for EACH on-site term)
-            id_coeff = 0
-
-            for i in range(latt_fermi.nsites):
-                z_i = PauliString.from_single_paulis(latt_enc.nsites, ('Z', i))
-                pauliop.add_pauli_string(WeightedPauliString(z_i, -0.5 * term.coeffs[i, i]) )
-
-                id_coeff += 0.5 * term.coeffs[i, i]
-
-            pauliop.add_pauli_string(WeightedPauliString(PauliString.identity(latt_enc.nsites), id_coeff))
-
-            # kinetic hopping term a_i^{\dagger} a_j + a_j^{\dagger} a_i
-            for i in range(latt_fermi.nsites):
-                for j in range(i + 1, latt_fermi.nsites):
-                    # note: i < j
-                    if term.coeffs[i, j] == 0:
-                        continue
-
-                    first_kinetic_str = ['I' for k in range(i)] + ['X'] + ['Z' for k in range(j-i-1)] + ['X'] + ['I' for k in range(latt_fermi.nsites-j-1)]
-                    first_kinetic_pauli = PauliString.from_string("".join(first_kinetic_str))
-
-                    second_kinetic_str = ['I' for k in range(i)] + ['Y'] + ['Z' for k in range(j-i-1)] + ['Y'] + ['I' for k in range(latt_fermi.nsites-j-1)]
-                    second_kinetic_pauli = PauliString.from_string("".join(second_kinetic_str))
-
-                    pauliop.add_pauli_string(WeightedPauliString(first_kinetic_pauli,  0.5 * term.coeffs[i, j]))
-                    pauliop.add_pauli_string(WeightedPauliString(second_kinetic_pauli,  0.5 * term.coeffs[i, j]))
-        else:
-            raise NotImplementedError
-
-    return pauliop, latt_enc
+    return pauliop
