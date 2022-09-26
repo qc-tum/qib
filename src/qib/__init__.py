@@ -12,6 +12,7 @@ from qib import (
 
 from qib.operator import (
     PauliString,
+    WeightedPauliString,
     PauliOperator,
     FieldOperator,
     Gate,

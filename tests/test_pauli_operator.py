@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import sparse
-import scipy.sparse.linalg as spla
 import unittest
 import qib
 
@@ -11,13 +10,14 @@ class TestPauliOperator(unittest.TestCase):
         """
         Test handling of Pauli strings.
         """
-        self.assertEqual(spla.norm(qib.PauliString.identity(5).as_matrix()
-                                   - sparse.identity(2**5)), 0)
+        self.assertEqual(sparse.linalg.norm(qib.PauliString.identity(5).as_matrix()
+                                            - sparse.identity(2**5)), 0)
         # construct Pauli string (single paulis and string)
         P = qib.PauliString.from_single_paulis(5, ('Y', 1), ('X', 0), ('Y', 3), ('Z', 4), q=3)
         self.assertTrue(P == qib.PauliString.from_string("iXYIYZ"))
         self.assertTrue(P.is_unitary())
         self.assertFalse(P.is_hermitian())
+        self.assertEqual(str(P), "iXYIYZ")
         # reference values
         z_ref = [0, 1, 0, 1, 1]
         x_ref = [1, 1, 0, 1, 0]
@@ -37,9 +37,10 @@ class TestPauliOperator(unittest.TestCase):
         self.assertTrue(P2 == qib.PauliString.from_string("-YYXIZ"))
         self.assertTrue(P2.is_unitary())
         self.assertTrue(P2.is_hermitian())
+        self.assertEqual(str(P2), "-YYXIZ")
         # logical product
-        self.assertEqual(spla.norm(( P @ P2).as_matrix()
-                                   - P.as_matrix() @ P2.as_matrix()), 0)
+        self.assertEqual(sparse.linalg.norm(( P @ P2).as_matrix()
+                                            - P.as_matrix() @ P2.as_matrix()), 0)
         # logical product for various lengths
         for nqubits in range(1, 10):
             Plist = []
@@ -48,9 +49,8 @@ class TestPauliOperator(unittest.TestCase):
                 x = np.random.randint(0, 2, nqubits)
                 q = np.random.randint(0, 4)
                 Plist.append(qib.PauliString(z, x, q))
-            self.assertEqual(spla.norm( (Plist[0] @ Plist[1]).as_matrix()
-                                       - Plist[0].as_matrix() @ Plist[1].as_matrix()), 0)
-
+            self.assertEqual(sparse.linalg.norm( (Plist[0] @ Plist[1]).as_matrix()
+                                                - Plist[0].as_matrix() @ Plist[1].as_matrix()), 0)
 
     def test_pauli_operator(self):
         """
@@ -62,7 +62,7 @@ class TestPauliOperator(unittest.TestCase):
         q = [3, 0, 1]
         weights = [-1.52, 0.687, 0.135]
         P = qib.PauliOperator(
-            [qib.operator.WeightedPauliString(
+            [qib.WeightedPauliString(
                 qib.PauliString(z[j], x[j], q[j]),
                 weights[j]) for j in range(3)])
         self.assertEqual(P.num_qubits, 5)
@@ -79,28 +79,24 @@ class TestPauliOperator(unittest.TestCase):
         # compare
         self.assertTrue(np.allclose(P.as_matrix().toarray(), Pref))
 
-        # check summation of Pauli operators. First and last PauliString are the same with different weights
-        z_new = [[0, 1, 0, 1, 1], [0, 0, 1, 1, 1], [1, 1, 0, 1, 0]]
-        x_new = [[1, 1, 0, 1, 0], [0, 1, 1, 0, 0], [1, 0, 0, 0, 1]]
-        q_new = [3, 0, 1]
-        weights_new = [0.52, 1.87, -0.135]
-        P_new = qib.PauliOperator(
-            [qib.operator.WeightedPauliString(
-                qib.PauliString(z_new[j], x_new[j], q_new[j]),
-                weights_new[j]) for j in range(3)])
-        
-        P.add_pauli_string(P_new.pstrings[0])
-        self.assertTrue(len(P.pstrings) == 3)
-        self.assertTrue(P.pstrings[0].weight == weights[0]+weights_new[0])
-        P.add_pauli_string(P_new.pstrings[1])
-        self.assertTrue(len(P.pstrings) == 4)
-        P.add_pauli_string(P_new.pstrings[2])
-        self.assertTrue(len(P.pstrings) == 4)
-        self.assertTrue(P.pstrings[2].weight == weights[2]+weights_new[2])
-
-
-
-
+        # check summation of Pauli operators: first and last Pauli string
+        # are the same as above, only with different weights
+        z_add = [[0, 1, 0, 1, 1], [0, 0, 1, 1, 1], [1, 1, 0, 1, 0]]
+        x_add = [[1, 1, 0, 1, 0], [0, 1, 1, 0, 0], [1, 0, 0, 0, 1]]
+        q_add = [3, 0, 1]
+        weights_add = [0.52, 1.87, -0.135]
+        wps_list = [
+            qib.WeightedPauliString(
+                qib.PauliString(z_add[j], x_add[j], q_add[j]),
+                weights_add[j]) for j in range(3)]
+        P.add_pauli_string(wps_list[0])
+        self.assertEqual(len(P.pstrings), 3)
+        self.assertTrue(P.pstrings[0].weight == weights[0] + weights_add[0])
+        P.add_pauli_string(wps_list[1])
+        self.assertEqual(len(P.pstrings), 4)
+        P.add_pauli_string(wps_list[2])
+        self.assertEqual(len(P.pstrings), 4)
+        self.assertTrue(P.pstrings[2].weight == weights[2] + weights_add[2])
 
 
 if __name__ == "__main__":

@@ -202,6 +202,24 @@ class PauliString(AbstractOperator):
         phase = [1., -1j, -1., 1j][(self.q + np.dot(self.z, self.x)) % 4]
         return phase * op
 
+    def __str__(self):
+        """
+        Literal string representation of the Pauli string.
+        """
+        if self.q == 0:
+            s = ""
+        elif self.q == 1:
+            s = "-i"
+        elif self.q == 2:
+            s = "-"
+        elif self.q == 3:
+            s = "i"
+        else:
+            assert False
+        for i in range(self.num_qubits):
+            s += self.get_pauli(i)
+        return s
+
 
 class WeightedPauliString(AbstractOperator):
     """
@@ -235,6 +253,16 @@ class WeightedPauliString(AbstractOperator):
         Generate the sparse matrix representation of the weighted Pauli string.
         """
         return self.weight * self.paulis.as_matrix()
+
+    def __str__(self):
+        """
+        Literal string representation of the weighted Pauli string.
+        """
+        phase = [1., -1j, -1., 1j][self.paulis.q]
+        s = str(phase * self.weight) + "*"
+        for i in range(self.num_qubits):
+            s += self.paulis.get_pauli(i)
+        return s
 
 
 class PauliOperator(AbstractOperator):
@@ -309,10 +337,9 @@ class PauliOperator(AbstractOperator):
         """
         String representation of the Pauli operator.
         """
-        print_string = ""
-        for string in self.pstrings:
-            print_string += str(string.weight) + '\t'
-            for i in range(string.paulis.num_qubits):
-                print_string += str(string.paulis.get_pauli(i))
-            print_string += '\n'
-        return print_string
+        ps_list = [str(ps) for ps in self.pstrings]
+        max_width = max([len(ps) for ps in ps_list])
+        s = "Pauli operator consisting of weighted Pauli strings\n"
+        for ps in ps_list:
+            s += ps.rjust(max_width) + '\n'
+        return s
