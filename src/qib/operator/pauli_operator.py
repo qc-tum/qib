@@ -314,14 +314,11 @@ class PauliOperator(AbstractOperator):
         """
         Generate the (sparse) matrix representation of the operator.
         """
-        if self.pstrings:
-            op = self.pstrings[0].as_matrix()
-            for ps in self.pstrings[1:]:
-                op += ps.as_matrix()
-            return op
-        else:
-            # dimensions are not specified
-            return 0
+        # note: dimensions are not specified if self.pstrings is empty
+        op = 0
+        for ps in self.pstrings:
+            op += ps.as_matrix()
+        return op
 
     def remove_zero_weight_strings(self, tol=0.0):
         """

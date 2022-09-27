@@ -426,10 +426,10 @@ class ControlledGate(Gate):
 class TimeEvolutionGate(Gate):
     """
     Quantum time evolution gate, i.e., matrix exponential,
-    given a field operator (Hamiltonian) `h`:
+    given a Hamiltonian `h`:
     .. math:: e^{-i h t}
     """
-    def __init__(self, h: FieldOperator, t: float):
+    def __init__(self, h, t: float):
         self.h = h
         self.t = t
 
