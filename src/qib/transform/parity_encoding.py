@@ -19,7 +19,10 @@ def parity_encode_field_operator(fieldop: FieldOperator):
     clist = []
     alist = []
     for i in range(L):
-        za = (L-i-2)*[0] + [1] + (i+1)*[0]
+        if i == 0:
+	    za = L*[0]
+        else:
+	    za = (L-i)*[0] + [1] + (i-1)*[0]
         zb = (L-i-1)*[0] + [1] + i*[1]
         x  = (L-i-1)*[1] + [1] + i*[0]
         # require two Pauli strings per fermionic operator
