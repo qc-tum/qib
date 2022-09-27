@@ -37,6 +37,7 @@ def parity_encode_field_operator(fieldop: FieldOperator):
             if coeff == 0:
                 continue
             pstrings = [PauliString.identity(L)]
+
             for i, j in enumerate(it.multi_index):
                 if term.opdesc[i].otype == IFOType.FERMI_CREATE:
                     pstrings = (  [ps @ clist[j][0] for ps in pstrings]
@@ -56,5 +57,4 @@ def parity_encode_field_operator(fieldop: FieldOperator):
                 pauliop.add_pauli_string(WeightedPauliString(ps, sign * weight))
 
     pauliop.remove_zero_weight_strings(tol=1e-14)
-
     return pauliop
