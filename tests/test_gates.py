@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.linalg import expm, block_diag
 import unittest
-import sys
 import qib
 
 
@@ -30,7 +29,7 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
                                            np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
 
-    def test_rotation_gate(self):
+    def test_rotation_gates(self):
         """
         Test implementation of rotation gates
         """
@@ -47,7 +46,7 @@ class TestGates(unittest.TestCase):
         RZ = qib.operator.RZGate(q,z_alpha)
         for gate in [RX, RY, RZ]:
             self.assertTrue(gate.is_unitary())
-            self.assertTrue(gate.is_hermitian())
+            self.assertFalse(gate.is_hermitian())
             self.assertEqual(gate.num_wires, 1)
             self.assertTrue(gate.fields() == [field])
             self.assertTrue(np.allclose(np.matmul(gate.as_matrix(),gate.inverse().as_matrix()), 
@@ -69,6 +68,38 @@ class TestGates(unittest.TestCase):
                                     qib.operator.RZGate(q,2*z_alpha).as_matrix(),
                                     rtol=1e-11,
                                     atol=1e-14))
+
+    def test_phase_gates(self):
+        """
+        Test implementation of S and T gates
+        """
+        # create a qubit the gates can act on
+        field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                qib.lattice.IntegerLattice((5,), pbc=False))
+        q = qib.field.Qubit(field, 1)
+        S = qib.operator.SGate(q)
+        S_adj = qib.operator.SGateAdj(q)
+        T = qib.operator.TGate(q)
+        T_adj = qib.operator.TGateAdj(q)
+        for gate in [S,T,S_adj,T_adj]:
+            self.assertTrue(gate.is_unitary())
+            self.assertFalse(gate.is_hermitian())
+            self.assertEqual(gate.num_wires, 1)
+            self.assertTrue(gate.fields() == [field])
+            self.assertTrue(np.allclose(np.matmul(gate.inverse().as_matrix(),gate.as_matrix()),
+                                        np.identity(2),
+                                        rtol=1e-11,
+                                        atol=1e-14))
+        self.assertTrue(np.allclose(np.matmul(S.as_matrix(),S.as_matrix()),
+                                              qib.PauliZGate().as_matrix(),
+                                              rtol=1e-11,
+                                              atol=1e-14))
+        self.assertTrue(np.allclose(np.matmul(T.as_matrix(),T.as_matrix()),
+                                              S.as_matrix(),
+                                              rtol=1e-11,
+                                              atol=1e-14))
+                                              
+                                        
 
 
     def test_controlled_gate(self):
