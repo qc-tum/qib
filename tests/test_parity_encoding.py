@@ -1,10 +1,6 @@
 import numpy as np
 from scipy import sparse
 import unittest
-
-import sys
-sys.path.append('../src')
-
 import qib
 
 
@@ -35,7 +31,7 @@ class TestParityEncoding(unittest.TestCase):
         P_eig = np.sort_complex(np.linalg.eigvalsh(P.as_matrix().toarray()))
 
         # compare
-        self.assertTrue(np.allclose(H_eig, P_eig, rtol=1e-8,atol=1e-10))
+        self.assertTrue(np.allclose(H_eig, P_eig, rtol=1e-11,atol=1e-14))
         #self.assertLess(sparse.linalg.norm(H.as_matrix() - P.as_matrix()), 1e-13)                  # as_matrix() uses Jordan-Wigner!
 
 

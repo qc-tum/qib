@@ -44,6 +44,13 @@ class Gate(AbstractOperator):
         pass
 
     @abc.abstractmethod
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        pass
+
+    @abc.abstractmethod
     def _circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
@@ -95,6 +102,12 @@ class PauliXGate(Gate):
             return [self.qubit.field]
         else:
             return []
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return self
 
     def on(self, qubit: Qubit):
         """
@@ -165,6 +178,12 @@ class PauliYGate(Gate):
         else:
             return []
 
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return self
+
     def on(self, qubit: Qubit):
         """
         Act on the specified qubit.
@@ -233,6 +252,12 @@ class PauliZGate(Gate):
             return [self.qubit.field]
         else:
             return []
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return self
 
     def on(self, qubit: Qubit):
         """
@@ -303,6 +328,265 @@ class HadamardGate(Gate):
         else:
             return []
 
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return self
+
+    def on(self, qubit: Qubit):
+        """
+        Act on the specified qubit.
+        """
+        self.qubit = qubit
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.qubit:
+            raise RuntimeError("unspecified target qubit")
+        iwire = _map_particle_to_wire(fields, self.qubit)
+        if iwire < 0:
+            raise RuntimeError("qubit not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+
+class RXGate(Gate):
+    """
+    X-axis rotation gate.
+    """
+    def __init__(self, qubit: Qubit=None, alpha=None):
+        self.qubit = qubit
+        self.alpha = alpha
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return True
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the Hadamard gate.
+        """
+        r_angle = self.alpha/2.
+        return np.array([[ np.cos(r_angle),  -1j*np.sin(r_angle)], [ -1j*np.sin(r_angle), np.cos(r_angle)]])
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 1
+
+    @property
+    def rotation_angle(self):
+        """
+        The rotation angle
+        """
+        return self.alpha
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit]
+        else:
+            return []
+
+    def fields(self):
+        """
+        Return the list fields hosting the quantum particles which the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit.field]
+        else:
+            return []
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return RXGate(self.qubit, -self.alpha)
+
+    def on(self, qubit: Qubit):
+        """
+        Act on the specified qubit.
+        """
+        self.qubit = qubit
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.qubit:
+            raise RuntimeError("unspecified target qubit")
+        iwire = _map_particle_to_wire(fields, self.qubit)
+        if iwire < 0:
+            raise RuntimeError("qubit not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+
+class RYGate(Gate):
+    """
+    Y-axis rotation gate
+    """
+    def __init__(self, qubit: Qubit=None, alpha=None):
+        self.qubit = qubit
+        self.alpha = alpha
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return True
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the Hadamard gate.
+        """
+        r_angle = self.alpha/2.
+        return np.array([[ np.cos(r_angle),  -np.sin(r_angle)], [ np.sin(r_angle), np.cos(r_angle)]])
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 1
+
+    @property
+    def rotation_angle(self):
+        """
+        The rotation angle
+        """
+        return self.alpha
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit]
+        else:
+            return []
+
+    def fields(self):
+        """
+        Return the list fields hosting the quantum particles which the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit.field]
+        else:
+            return []
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return RYGate(self.qubit, -self.alpha)
+
+    def on(self, qubit: Qubit):
+        """
+        Act on the specified qubit.
+        """
+        self.qubit = qubit
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.qubit:
+            raise RuntimeError("unspecified target qubit")
+        iwire = _map_particle_to_wire(fields, self.qubit)
+        if iwire < 0:
+            raise RuntimeError("qubit not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+
+class RZGate(Gate):
+    """
+    Z-axis rotation gate
+    """
+    def __init__(self, qubit: Qubit=None, alpha=None):
+        self.qubit = qubit
+        self.alpha = alpha
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return True
+
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the Hadamard gate.
+        """
+        r_angle = self.alpha/2.
+        return np.array([[ np.exp(-1j*r_angle),  0], [ 0, np.exp(1j*r_angle)]])
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 1
+
+    @property
+    def rotation_angle(self):
+        """
+        The rotation angle
+        """
+        return self.alpha
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit]
+        else:
+            return []
+
+    def fields(self):
+        """
+        Return the list fields hosting the quantum particles which the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit.field]
+        else:
+            return []
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return RZGate(self.qubit, -self.alpha)
+
     def on(self, qubit: Qubit):
         """
         Act on the specified qubit.
@@ -344,6 +628,12 @@ class ControlledGate(Gate):
         Whether the gate is Hermitian.
         """
         return self.tgate.is_hermitian()
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return self
 
     def as_matrix(self):
         """
@@ -472,6 +762,12 @@ class TimeEvolutionGate(Gate):
         Return the list fields hosting the quantum particles which the gate acts on.
         """
         return self.h.fields()
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return TimeEvolutionGate(self.h,-self.t)
 
     def _circuit_matrix(self, fields: Sequence[Field]):
         """
