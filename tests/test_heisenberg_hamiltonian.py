@@ -19,6 +19,7 @@ class TestHeisenbergHamiltonian(unittest.TestCase):
         field = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
         H = qib.operator.HeisenbergHamiltonian(field, J, h)
         self.assertEqual(H.fields(), [field])
+        self.assertTrue(H.is_hermitian())
         Hmat = H.as_matrix()
         # must be symmetric
         self.assertAlmostEqual(sparse.linalg.norm(Hmat - Hmat.conj().T), 0)
