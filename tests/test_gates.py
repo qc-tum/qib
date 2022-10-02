@@ -31,43 +31,30 @@ class TestGates(unittest.TestCase):
 
     def test_rotation_gates(self):
         """
-        Test implementation of rotation gates
+        Test implementation of rotation gates.
         """
         # create a qubit the gates can act on
         field = qib.field.Field(qib.field.ParticleType.QUBIT,
                                 qib.lattice.IntegerLattice((5,), pbc=False))
         q = qib.field.Qubit(field, 1)
-        x_alpha = np.random.uniform(0,2*np.pi)
-        y_alpha = np.random.uniform(0,2*np.pi)
-        z_alpha = np.random.uniform(0,2*np.pi)
-
-        RX = qib.operator.RXGate(q,x_alpha)
-        RY = qib.operator.RYGate(q,y_alpha)
-        RZ = qib.operator.RZGate(q,z_alpha)
-        for gate in [RX, RY, RZ]:
+        θlist = np.random.uniform(0, 2*np.pi, size=3)
+        gates = [qib.RxGate(θlist[0], q),
+                 qib.RyGate(θlist[1], q),
+                 qib.RzGate(θlist[2], q)]
+        gates2ang = [qib.RxGate(2*θlist[0], q),
+                     qib.RyGate(2*θlist[1], q),
+                     qib.RzGate(2*θlist[2], q)]
+        for gate, gate2ang in zip(gates, gates2ang):
             self.assertTrue(gate.is_unitary())
             self.assertFalse(gate.is_hermitian())
             self.assertEqual(gate.num_wires, 1)
             self.assertTrue(gate.fields() == [field])
-            self.assertTrue(np.allclose(np.matmul(gate.as_matrix(),gate.inverse().as_matrix()), 
-                                                  np.identity(2),
-                                                  rtol=1e-11,
-                                                  atol=1e-14))
+            self.assertTrue(np.allclose(np.matmul(gate.as_matrix(), gate.inverse().as_matrix()),
+                                        np.identity(2)))
             self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
                                            np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
-        
-        self.assertTrue(np.allclose(np.matmul(RX.as_matrix(),RX.as_matrix()), 
-                                    qib.operator.RXGate(q,2*x_alpha).as_matrix(),
-                                    rtol=1e-11,
-                                    atol=1e-14))
-        self.assertTrue(np.allclose(np.matmul(RY.as_matrix(),RY.as_matrix()), 
-                                    qib.operator.RYGate(q,2*y_alpha).as_matrix(),
-                                    rtol=1e-11,
-                                    atol=1e-14))
-        self.assertTrue(np.allclose(np.matmul(RZ.as_matrix(),RZ.as_matrix()), 
-                                    qib.operator.RZGate(q,2*z_alpha).as_matrix(),
-                                    rtol=1e-11,
-                                    atol=1e-14))
+            self.assertTrue(np.allclose(gate.as_matrix() @ gate.as_matrix(),
+                                        gate2ang.as_matrix()))
 
     def test_phase_gates(self):
         """
@@ -78,29 +65,20 @@ class TestGates(unittest.TestCase):
                                 qib.lattice.IntegerLattice((5,), pbc=False))
         q = qib.field.Qubit(field, 1)
         S = qib.operator.SGate(q)
-        S_adj = qib.operator.SGateAdj(q)
         T = qib.operator.TGate(q)
-        T_adj = qib.operator.TGateAdj(q)
-        for gate in [S,T,S_adj,T_adj]:
+        S_adj = qib.operator.SAdjGate(q)
+        T_adj = qib.operator.TAdjGate(q)
+        for gate in [S, T, S_adj, T_adj]:
             self.assertTrue(gate.is_unitary())
             self.assertFalse(gate.is_hermitian())
             self.assertEqual(gate.num_wires, 1)
             self.assertTrue(gate.fields() == [field])
-            self.assertTrue(np.allclose(np.matmul(gate.inverse().as_matrix(),gate.as_matrix()),
-                                        np.identity(2),
-                                        rtol=1e-11,
-                                        atol=1e-14))
-        self.assertTrue(np.allclose(np.matmul(S.as_matrix(),S.as_matrix()),
-                                              qib.PauliZGate().as_matrix(),
-                                              rtol=1e-11,
-                                              atol=1e-14))
-        self.assertTrue(np.allclose(np.matmul(T.as_matrix(),T.as_matrix()),
-                                              S.as_matrix(),
-                                              rtol=1e-11,
-                                              atol=1e-14))
-                                              
-                                        
-
+            self.assertTrue(np.allclose(gate.inverse().as_matrix() @ gate.as_matrix(),
+                                        np.identity(2)))
+        self.assertTrue(np.allclose(S.as_matrix() @ S.as_matrix(),
+                                    qib.PauliZGate().as_matrix()))
+        self.assertTrue(np.allclose(T.as_matrix() @ T.as_matrix(),
+                                    S.as_matrix()))
 
     def test_controlled_gate(self):
         """
@@ -196,6 +174,10 @@ class TestGates(unittest.TestCase):
         gate = qib.TimeEvolutionGate(h, t)
         self.assertEqual(gate.num_wires, 2)
         self.assertTrue(gate.fields() == [field])
+        self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
+                                    np.identity(2*gate.num_wires)))
+        self.assertTrue(np.allclose(gate.as_matrix() @ gate.as_matrix(),
+                                    qib.operator.TimeEvolutionGate(h, 2*t).as_matrix()))
         # reference calculation
         r = np.array([J, 0, 0.5*(μ1 - μ2)])
         ω = np.linalg.norm(r)
@@ -208,14 +190,6 @@ class TestGates(unittest.TestCase):
         exp_h_ref = block_diag(np.identity(1), inner_block, [[np.exp(-1j*t*(μ1 + μ2))]])
         self.assertTrue(np.allclose(gate.as_matrix(), exp_h_ref))
         self.assertTrue(np.allclose(gate._circuit_matrix([field]).toarray(), exp_h_ref))
-        self.assertTrue(np.allclose(np.matmul(gate.as_matrix(),gate.inverse().as_matrix()), 
-                                                  np.identity(2*gate.num_wires),
-                                                  rtol=1e-11,
-                                                  atol=1e-14))
-        self.assertTrue(np.allclose(np.matmul(gate.as_matrix(),gate.as_matrix()), 
-                                    qib.operator.TimeEvolutionGate(h,2*t).as_matrix(),
-                                    rtol=1e-11,
-                                    atol=1e-14))
 
 
 def permute_gate_wires(u: np.ndarray, perm):

@@ -21,6 +21,9 @@ from qib.operator import (
     PauliYGate,
     PauliZGate,
     HadamardGate,
+    RxGate,
+    RyGate,
+    RzGate,
     ControlledGate,
     TimeEvolutionGate,
 )

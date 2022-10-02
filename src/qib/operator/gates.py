@@ -4,7 +4,7 @@ from scipy.linalg import expm, block_diag
 from scipy.sparse import csr_matrix
 from typing import Sequence
 from qib.field import Field, Particle, Qubit
-from qib.operator import AbstractOperator, FieldOperator
+from qib.operator import AbstractOperator
 
 
 class Gate(AbstractOperator):
@@ -39,7 +39,7 @@ class Gate(AbstractOperator):
     @abc.abstractmethod
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         pass
 
@@ -96,7 +96,7 @@ class PauliXGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -171,7 +171,7 @@ class PauliYGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -246,7 +246,7 @@ class PauliZGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -321,7 +321,7 @@ class HadamardGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -359,13 +359,13 @@ class HadamardGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
-class RXGate(Gate):
+class RxGate(Gate):
     """
     X-axis rotation gate.
     """
-    def __init__(self, qubit: Qubit=None, alpha=None):
+    def __init__(self, theta: float, qubit: Qubit=None):
+        self.theta = theta
         self.qubit = qubit
-        self.alpha = alpha
 
     def is_hermitian(self):
         """
@@ -375,10 +375,11 @@ class RXGate(Gate):
 
     def as_matrix(self):
         """
-        Generate the matrix representation of the Hadamard gate.
+        Generate the matrix representation of the gate.
         """
-        r_angle = self.alpha/2.
-        return np.array([[ np.cos(r_angle),  -1j*np.sin(r_angle)], [ -1j*np.sin(r_angle), np.cos(r_angle)]])
+        c = np.cos(self.theta/2)
+        s = np.sin(self.theta/2)
+        return np.array([[c, -1j*s], [-1j*s, c]])
 
     @property
     def num_wires(self):
@@ -392,7 +393,7 @@ class RXGate(Gate):
         """
         The rotation angle
         """
-        return self.alpha
+        return self.theta
 
     def particles(self):
         """
@@ -405,7 +406,7 @@ class RXGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -416,7 +417,7 @@ class RXGate(Gate):
         """
         Return the inverse operator.
         """
-        return RXGate(self.qubit, -self.alpha)
+        return RxGate(-self.theta, self.qubit)
 
     def on(self, qubit: Qubit):
         """
@@ -443,13 +444,13 @@ class RXGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
-class RYGate(Gate):
+class RyGate(Gate):
     """
     Y-axis rotation gate
     """
-    def __init__(self, qubit: Qubit=None, alpha=None):
+    def __init__(self, theta: float, qubit: Qubit=None):
+        self.theta = theta
         self.qubit = qubit
-        self.alpha = alpha
 
     def is_hermitian(self):
         """
@@ -459,10 +460,11 @@ class RYGate(Gate):
 
     def as_matrix(self):
         """
-        Generate the matrix representation of the Hadamard gate.
+        Generate the matrix representation of the gate.
         """
-        r_angle = self.alpha/2.
-        return np.array([[ np.cos(r_angle),  -np.sin(r_angle)], [ np.sin(r_angle), np.cos(r_angle)]])
+        c = np.cos(self.theta/2)
+        s = np.sin(self.theta/2)
+        return np.array([[c, -s], [s, c]])
 
     @property
     def num_wires(self):
@@ -476,7 +478,7 @@ class RYGate(Gate):
         """
         The rotation angle
         """
-        return self.alpha
+        return self.theta
 
     def particles(self):
         """
@@ -489,7 +491,7 @@ class RYGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -500,7 +502,7 @@ class RYGate(Gate):
         """
         Return the inverse operator.
         """
-        return RYGate(self.qubit, -self.alpha)
+        return RyGate(-self.theta, self.qubit)
 
     def on(self, qubit: Qubit):
         """
@@ -527,13 +529,13 @@ class RYGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
-class RZGate(Gate):
+class RzGate(Gate):
     """
     Z-axis rotation gate
     """
-    def __init__(self, qubit: Qubit=None, alpha=None):
+    def __init__(self, theta: float, qubit: Qubit=None):
+        self.theta = theta
         self.qubit = qubit
-        self.alpha = alpha
 
     def is_hermitian(self):
         """
@@ -541,13 +543,12 @@ class RZGate(Gate):
         """
         return False
 
-
     def as_matrix(self):
         """
-        Generate the matrix representation of the Hadamard gate.
+        Generate the matrix representation of the gate.
         """
-        r_angle = self.alpha/2.
-        return np.array([[ np.exp(-1j*r_angle),  0], [ 0, np.exp(1j*r_angle)]])
+        x = np.exp(1j*self.theta/2)
+        return np.array([[x.conj(), 0], [0, x]])
 
     @property
     def num_wires(self):
@@ -561,7 +562,7 @@ class RZGate(Gate):
         """
         The rotation angle
         """
-        return self.alpha
+        return self.theta
 
     def particles(self):
         """
@@ -574,7 +575,7 @@ class RZGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -585,7 +586,7 @@ class RZGate(Gate):
         """
         Return the inverse operator.
         """
-        return RZGate(self.qubit, -self.alpha)
+        return RzGate(-self.theta, self.qubit)
 
     def on(self, qubit: Qubit):
         """
@@ -614,7 +615,7 @@ class RZGate(Gate):
 
 class SGate(Gate):
     """
-    S gate - provides a phase shift of pi/2
+    S (phase) gate - provides a phase shift of pi/2.
     """
     def __init__(self, qubit: Qubit=None):
         self.qubit = qubit
@@ -625,12 +626,11 @@ class SGate(Gate):
         """
         return False
 
-
     def as_matrix(self):
         """
-        Generate the matrix representation of the Hadamard gate.
+        Generate the matrix representation of the gate.
         """
-        return np.array([[ 1,  0], [ 0, 1j]])
+        return np.array([[ 1.,  0.], [ 0.,  1j]])
 
     @property
     def num_wires(self):
@@ -650,7 +650,7 @@ class SGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -661,7 +661,7 @@ class SGate(Gate):
         """
         Return the inverse operator.
         """
-        return SGateAdj(self.qubit)
+        return SAdjGate(self.qubit)
 
     def on(self, qubit: Qubit):
         """
@@ -688,9 +688,9 @@ class SGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
-class SGateAdj(Gate):
+class SAdjGate(Gate):
     """
-    Adjoint of S gate - provides a phase shift of -pi/2
+    Adjoint of S gate - provides a phase shift of -pi/2.
     """
     def __init__(self, qubit: Qubit=None):
         self.qubit = qubit
@@ -701,12 +701,11 @@ class SGateAdj(Gate):
         """
         return False
 
-
     def as_matrix(self):
         """
-        Generate the matrix representation of the Hadamard gate.
+        Generate the matrix representation of the gate.
         """
-        return np.array([[ 1,  0], [ 0, -1j]])
+        return np.array([[ 1.,  0.], [ 0., -1j]])
 
     @property
     def num_wires(self):
@@ -726,7 +725,7 @@ class SGateAdj(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -766,7 +765,7 @@ class SGateAdj(Gate):
 
 class TGate(Gate):
     """
-    T gate - provides a phase shift of pi/4
+    T gate - provides a phase shift of pi/4.
     """
     def __init__(self, qubit: Qubit=None):
         self.qubit = qubit
@@ -777,12 +776,11 @@ class TGate(Gate):
         """
         return False
 
-
     def as_matrix(self):
         """
-        Generate the matrix representation of the Hadamard gate.
+        Generate the matrix representation of the gate.
         """
-        return np.array([[ 1,  0], [ 0, (1+1j)/np.sqrt(2)]])
+        return np.array([[ 1.,  0.], [ 0., (1+1j)/np.sqrt(2)]])
 
     @property
     def num_wires(self):
@@ -802,7 +800,7 @@ class TGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -813,7 +811,7 @@ class TGate(Gate):
         """
         Return the inverse operator.
         """
-        return TGateAdj(self.qubit)
+        return TAdjGate(self.qubit)
 
     def on(self, qubit: Qubit):
         """
@@ -840,9 +838,9 @@ class TGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
-class TGateAdj(Gate):
+class TAdjGate(Gate):
     """
-    Adjoint of T gate - provides a phase shift of -pi/4
+    Adjoint of T gate - provides a phase shift of -pi/4.
     """
     def __init__(self, qubit: Qubit=None):
         self.qubit = qubit
@@ -853,12 +851,11 @@ class TGateAdj(Gate):
         """
         return False
 
-
     def as_matrix(self):
         """
-        Generate the matrix representation of the Hadamard gate.
+        Generate the matrix representation of the gate.
         """
-        return np.array([[ 1,  0], [ 0, (1-1j)/np.sqrt(2)]])
+        return np.array([[ 1.,  0.], [ 0., (1-1j)/np.sqrt(2)]])
 
     @property
     def num_wires(self):
@@ -878,7 +875,7 @@ class TGateAdj(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         if self.qubit:
             return [self.qubit.field]
@@ -962,7 +959,7 @@ class ControlledGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         return list(set(self.tgate.fields() + [q.field for q in self.control_qubits]))
 
@@ -1063,7 +1060,7 @@ class TimeEvolutionGate(Gate):
 
     def fields(self):
         """
-        Return the list fields hosting the quantum particles which the gate acts on.
+        Return the list of fields hosting the quantum particles which the gate acts on.
         """
         return self.h.fields()
 
