@@ -12,6 +12,7 @@ from qib.operator.gates import (
     RxGate,
     RyGate,
     RzGate,
+    RotationGate,
     SGate,
     SAdjGate,
     TGate,

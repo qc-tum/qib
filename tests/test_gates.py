@@ -37,28 +37,40 @@ class TestGates(unittest.TestCase):
         field = qib.field.Field(qib.field.ParticleType.QUBIT,
                                 qib.lattice.IntegerLattice((5,), pbc=False))
         q = qib.field.Qubit(field, 1)
-        θlist = np.random.uniform(0, 2*np.pi, size=3)
-        gates = [qib.RxGate(θlist[0], q),
-                 qib.RyGate(θlist[1], q),
-                 qib.RzGate(θlist[2], q)]
-        gates2ang = [qib.RxGate(2*θlist[0], q),
-                     qib.RyGate(2*θlist[1], q),
-                     qib.RzGate(2*θlist[2], q)]
-        for gate, gate2ang in zip(gates, gates2ang):
+        θ = np.random.uniform(0, 2*np.pi)
+        nθ = np.random.standard_normal(size=3)
+        gates = [qib.RxGate(θ, q),
+                 qib.RyGate(θ, q),
+                 qib.RzGate(θ, q),
+                 qib.RotationGate(nθ, q)]
+        gates2ang = [qib.RxGate(2*θ, q),
+                     qib.RyGate(2*θ, q),
+                     qib.RzGate(2*θ, q),
+                     qib.RotationGate(2*nθ, q)]
+        for i in range(4):
+            gate = gates[i]
             self.assertTrue(gate.is_unitary())
             self.assertFalse(gate.is_hermitian())
             self.assertEqual(gate.num_wires, 1)
             self.assertTrue(gate.fields() == [field])
-            self.assertTrue(np.allclose(np.matmul(gate.as_matrix(), gate.inverse().as_matrix()),
+            self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
                                         np.identity(2)))
             self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
                                            np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
             self.assertTrue(np.allclose(gate.as_matrix() @ gate.as_matrix(),
-                                        gate2ang.as_matrix()))
+                                        gates2ang[i].as_matrix()))
+            if i < 3:
+                vθ = np.zeros(3)
+                vθ[i] = θ
+                self.assertTrue(np.allclose(gate.as_matrix(),
+                                            qib.RotationGate(vθ).as_matrix()))
+        H = qib.HadamardGate().as_matrix()
+        self.assertTrue(np.allclose(H @ gates[0].as_matrix() @ H,
+                                        gates[2].as_matrix()))
 
     def test_phase_gates(self):
         """
-        Test implementation of S and T gates
+        Test implementation of S and T gates.
         """
         # create a qubit the gates can act on
         field = qib.field.Field(qib.field.ParticleType.QUBIT,

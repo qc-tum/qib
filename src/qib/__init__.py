@@ -24,6 +24,7 @@ from qib.operator import (
     RxGate,
     RyGate,
     RzGate,
+    RotationGate,
     ControlledGate,
     TimeEvolutionGate,
 )

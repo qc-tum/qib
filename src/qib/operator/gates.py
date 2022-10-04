@@ -613,6 +613,89 @@ class RzGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
+class RotationGate(Gate):
+    """
+    General rotation gate; the rotation angle and axis are combined into a single vector.
+    """
+    def __init__(self, ntheta: Sequence[float], qubit: Qubit=None):
+        self.ntheta = np.array(ntheta, copy=False)
+        if self.ntheta.shape != (3,):
+            raise ValueError("'ntheta' must be a vector of length 3")
+        self.qubit = qubit
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return False
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the gate.
+        """
+        theta = np.linalg.norm(self.ntheta)
+        if theta == 0:
+            return np.identity(2)
+        n = self.ntheta / theta
+        return (     np.cos(theta/2)*np.identity(2)
+                - 1j*np.sin(theta/2)*np.array([[n[2], n[0] - 1j*n[1]], [n[0] + 1j*n[1], -n[2]]]))
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 1
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit]
+        else:
+            return []
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit.field]
+        else:
+            return []
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return RotationGate(-self.ntheta, self.qubit)
+
+    def on(self, qubit: Qubit):
+        """
+        Act on the specified qubit.
+        """
+        self.qubit = qubit
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.qubit:
+            raise RuntimeError("unspecified target qubit")
+        iwire = _map_particle_to_wire(fields, self.qubit)
+        if iwire < 0:
+            raise RuntimeError("qubit not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+
 class SGate(Gate):
     """
     S (phase) gate - provides a phase shift of pi/2.
@@ -1068,7 +1151,7 @@ class TimeEvolutionGate(Gate):
         """
         Return the inverse operator.
         """
-        return TimeEvolutionGate(self.h,-self.t)
+        return TimeEvolutionGate(self.h, -self.t)
 
     def _circuit_matrix(self, fields: Sequence[Field]):
         """
