@@ -11,7 +11,7 @@ class TriangularLattice(AbstractLattice):
     """
     def __init__(self, shape: Sequence[int], pbc=False):
         if len(shape) > 2: 
-            raise NotImplementedError("Triangular lattices require 2 dimensions, {len(shape)} were given")
+            raise NotImplementedError("Triangular lattices require at most 2 dimensions, {len(shape)} were given")
         self.shape = tuple(shape)
         # whether to assume periodic boundary conditions along individual axes
         if isinstance(pbc, bool):
