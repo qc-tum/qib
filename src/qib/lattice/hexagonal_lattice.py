@@ -29,6 +29,8 @@ class HexagonalLattice(AbstractLattice):
             raise NotImplementedError("Hexagonal lattices require 2 dimensions, {len(shape)} were given")
         self.shape = tuple(shape)
         self.convention = convention
+        self.shape_square = self._shape_square
+        self.nsites_square = self._nsites_square
         if pbc is True:
             # TODO: add pbc in adjacency matrix
             raise NotImplementedError("The hexagonal lattice doesn't hold periodic boundary conditions yet")
@@ -48,7 +50,7 @@ class HexagonalLattice(AbstractLattice):
         return len(self.shape)
 
     @property
-    def shape_square(self) -> tuple:
+    def _shape_square(self) -> tuple:
         """
         Shape of the equivalent square lattice.
         Includes the 2 extra points.
@@ -68,7 +70,7 @@ class HexagonalLattice(AbstractLattice):
         return (nrows_square,ncols_square)
 
     @property
-    def nsites_square(self) -> int:
+    def _nsites_square(self) -> int:
         """
         Number of lattice sites in the equivalent square lattice.
         Includes the 2 extra points.
@@ -97,18 +99,15 @@ class HexagonalLattice(AbstractLattice):
             d_square = 1
             parity_shift_condition = (self.shape[0]>1)
         
-        shape_square = self.shape_square
-        nrows_square, ncols_square = shape_square
-        nsites_square = self.nsites_square
-        adj = np.zeros((nsites_square, nsites_square), dtype=int)
-        idx = np.arange(nsites_square).reshape((nrows_square,ncols_square))
+        adj = np.zeros((self.nsites_square, self.nsites_square), dtype=int)
+        idx = np.arange(self.nsites_square).reshape(self.shape_square)
         # the y axis for COLS_SHIFTED_UP and x axis for ROWS_SHIFTED_LEFT are treated like the square graph case.  
         # the other axis only has half of the connections.
         for d in range(self.ndim):
             for s in [-1, 1]:
                 ids = np.roll(idx, s, axis=d)
                 # single out axis `d`
-                seld = (math.prod(shape_square[:d]), shape_square[d], math.prod(shape_square[d+1:]))
+                seld = (math.prod(self.shape_square[:d]), self.shape_square[d], math.prod(self.shape_square[d+1:]))
                 idx_cut = idx.reshape(seld)
                 ids_cut = ids.reshape(seld)
                 if s == 1:
@@ -125,28 +124,15 @@ class HexagonalLattice(AbstractLattice):
                 else:
                     for (i, j) in zip(idx_cut.reshape(-1), ids_cut.reshape(-1)):
                         if parity_shift_condition:
-                            if (s == -1 and (i+i//ncols_square)%2 == 0) or (s == 1 and (i+i//ncols_square)%2 == 1):
+                            if (s == -1 and (i+i//self.shape_square[1])%2 == 0) or (s == 1 and (i+i//self.shape_square[1])%2 == 1):
                                 adj[i, j] = 1    
                         else:
                             if (s == -1 and i%2 == 0) or (s == 1 and i%2 == 1):
                                 adj[i, j] = 1  
         if delete:
-            adj = self._delete_extra_points(adj, (nrows_square,ncols_square))
+            adj = self._delete_extra_points(adj, self.shape_square)
         return adj
-    
-    # TODO: change these functions
-    def index_to_coord(self, i: int) -> tuple:
-        """
-        Map linear index to lattice coordinate.
-        """
-        return np.unravel_index(i, self.shape_square)
 
-    def coord_to_index(self, c) -> int:
-        """
-        Map lattice coordinate to linear index.
-        """
-        return int(np.ravel_multi_index(c, self.shape_square))
-        
     def _delete_extra_points(self, adj, shape):
         # two extra points, they need to be eliminated.
         if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP and self.shape[1]>1:
@@ -169,5 +155,67 @@ class HexagonalLattice(AbstractLattice):
                 adj = np.delete(adj, adj.shape[1]-1, 1)
                 
         return adj
-        
-        
+
+    def index_to_coord(self, i: int, delete=True) -> tuple:
+        """
+        Map linear index to the equivalent square lattice coordinate.
+        If delete=True the two extra points of the equivalent square lattice are not counted in.
+        """
+        shift = 0
+        if delete:
+            assert i < self.nsites
+            if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP and self.shape[1] > 1:
+                if i >= self.shape_square[1]-1 and self.shape[1]%2 == 0:
+                    shift += 1
+                if i >= (self.shape_square[0]-1)*self.shape_square[1]-shift:
+                    shift += 1
+            if self.convention == HexagonalLatticeConvention.ROWS_SHIFTED_LEFT and self.shape[0] > 1:
+                if i >= self.shape_square[1]-1:
+                    shift += 1
+                if i >= (self.shape_square[0]-1)*self.shape_square[1]-shift and  self.shape[0]%2 == 0:
+                    shift += 1
+                
+        return np.unravel_index((i+shift), self.shape_square)
+
+    def coord_to_index(self, c, delete=True) -> int:
+        """
+        Map lattice coordinate to the equivalent square lattice coordinate.
+        If delete=True the two extra points of the equivalent square lattice are not counted in.
+        """
+        shift = 0
+        if delete:
+            if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP and self.shape[1] > 1:
+                # even and odd columns specific cases
+                if self.shape[1]%2 == 0:
+                    if c[0] == 0 and c[1] == self.shape_square[1]-1:
+                        return None
+                    elif c[0] > 0:
+                        shift += 1
+                else:
+                    if c[0] == self.shape_square[0]-1 and c[1] == self.shape_square[1]-1:
+                        return None
+                # common shift for even and odd cases
+                if c[0] == self.shape_square[0]-1:
+                    if c[1] == 0:
+                        return None
+                    else:
+                        shift += 1
+            if self.convention == HexagonalLatticeConvention.ROWS_SHIFTED_LEFT and self.shape[0] > 1:
+                # even and odd columns specific cases
+                if self.shape[0]%2 == 0:
+                    if c[0] == self.shape_square[0]-1:
+                        if c[1] == 0:
+                            return None
+                        else:
+                            shift += 1
+                else:
+                    if c[0] == self.shape_square[0]-1 and c[1] == self.shape_square[1]-1:
+                        return None
+                # common shift for even and odd cases
+                if c[0] == 0:
+                    if c[1] == self.shape_square[1]-1:
+                        return None
+                else:
+                    shift += 1
+        return int(np.ravel_multi_index(c, self.shape_square)) - shift
+            

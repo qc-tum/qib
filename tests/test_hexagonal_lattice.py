@@ -81,6 +81,20 @@ class TestHexagonalLattice(unittest.TestCase):
                         adj_ref = np.delete(adj_ref, (Lx)*(2*Ly+2)-1, 1)
                 self.assertTrue(np.array_equal(adj, adj_ref))
 
-        
+    def test_lattice_coords(self):
+        """
+        Test lattice coordinate indexing.
+        """
+        # two-dimensional lattice, open boundary conditions
+        for Lx in range(1, 5):
+            for Ly in range(1, 5):
+                #print(Lx,Ly)
+                latt = qib.lattice.HexagonalLattice((Lx, Ly), pbc=False, convention=qib.lattice.HexagonalLatticeConvention.COLS_SHIFTED_UP)
+                for i in range(latt.nsites):
+                    self.assertEqual(i, latt.coord_to_index(latt.index_to_coord(i)))
+                latt = qib.lattice.HexagonalLattice((Lx, Ly), pbc=False, convention=qib.lattice.HexagonalLatticeConvention.ROWS_SHIFTED_LEFT)
+                for i in range(latt.nsites):
+                    self.assertEqual(i, latt.coord_to_index(latt.index_to_coord(i)))
+
 if __name__ == "__main__":
     unittest.main()
