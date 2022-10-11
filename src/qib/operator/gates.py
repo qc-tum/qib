@@ -999,7 +999,7 @@ class TAdjGate(Gate):
 class ControlledGate(Gate):
     """
     A controlled quantum gate with an arbitrary number of control qubits.
-
+    The control qubits have to be set separately.
     Use the reference to the target gate to set the qubits (or particles) it acts on.
     """
     def __init__(self, tgate: Gate, ncontrols: int):
@@ -1017,7 +1017,7 @@ class ControlledGate(Gate):
         """
         Return the inverse operator.
         """
-        return self
+        return ControlledGate(self.tgate.inverse(), self.ncontrols).set_control(self.control_qubits)
 
     def as_matrix(self):
         """
