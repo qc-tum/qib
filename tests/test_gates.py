@@ -144,6 +144,11 @@ class TestGates(unittest.TestCase):
         self.assertTrue(cexph.fields() == [field2, field3] or cexph.fields() == [field3, field2])
         self.assertTrue(np.array_equal(cexph._circuit_matrix([field2, field3]).toarray(),
                                        permute_gate_wires(np.kron(np.identity(2), cexph_mat_ref), [2, 3, 4, 5, 6, 1, 0])))
+        # inverse
+        cexph_inverse = qib.ControlledGate(qib.TimeEvolutionGate(h, -t), 1)
+        cexph_inverse.set_control(qc)
+        self.assertTrue(np.array_equal(cexph.inverse()._circuit_matrix([field2, field3]).toarray(), 
+                                       cexph_inverse._circuit_matrix([field2, field3]).toarray()))
 
     def test_time_evolution_gate(self):
         """
