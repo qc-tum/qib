@@ -3,6 +3,7 @@ from qib.operator.pauli_operator import PauliString, WeightedPauliString, PauliO
 from qib.operator.field_operator import IFOType, IFODesc, FieldOperatorTerm, FieldOperator
 from qib.operator.ising_hamiltonian import IsingConvention, IsingHamiltonian
 from qib.operator.heisenberg_hamiltonian import HeisenbergHamiltonian
+from qib.operator.fermi_hubbard_hamiltonian import FermiHubbardHamiltonian
 from qib.operator.gates import (
     Gate,
     PauliXGate,
