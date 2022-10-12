@@ -130,29 +130,59 @@ class HexagonalLattice(AbstractLattice):
                             if (s == -1 and i%2 == 0) or (s == 1 and i%2 == 1):
                                 adj[i, j] = 1  
         if delete:
-            adj = self._delete_extra_points(adj, self.shape_square)
+            adj = self._delete_extra_points(adj)
+        else:
+            adj = self._disconnect_extra_points(adj)
         return adj
 
-    def _delete_extra_points(self, adj, shape):
-        # two extra points, they need to be eliminated.
+    def _delete_extra_points(self, adj):
+        """
+        Deletes the 2 extra points from the adjacency matrix.
+        """
         if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP and self.shape[1]>1:
-            adj = np.delete(adj, (shape[0]-1)*shape[1], 0)
-            adj = np.delete(adj, (shape[0]-1)*shape[1], 1)
-            if shape[1]%2 == 0:
-                adj = np.delete(adj, adj.shape[0]-1, 0)
-                adj = np.delete(adj, adj.shape[1]-1, 1)
+            adj = np.delete(adj, (self.shape_square[0]-1)*self.shape_square[1], 0)
+            adj = np.delete(adj, (self.shape_square[0]-1)*self.shape_square[1], 1)
+            if self.shape_square[1]%2 == 0:
+                adj = np.delete(adj, -1, 0)
+                adj = np.delete(adj, -1, 1)
             else:
-                adj = np.delete(adj, shape[1]-1, 0)
-                adj = np.delete(adj, shape[1]-1, 1)
+                adj = np.delete(adj, self.shape_square[1]-1, 0)
+                adj = np.delete(adj, self.shape_square[1]-1, 1)
         if self.convention == HexagonalLatticeConvention.ROWS_SHIFTED_LEFT and self.shape[0]>1:
-            adj = np.delete(adj, shape[1]-1, 0)
-            adj = np.delete(adj, shape[1]-1, 1)
-            if shape[0]%2 == 1:
-                adj = np.delete(adj, (shape[0]-1)*shape[1]-1, 0)
-                adj = np.delete(adj, (shape[0]-1)*shape[1]-1, 1)
+            adj = np.delete(adj, self.shape_square[1]-1, 0)
+            adj = np.delete(adj, self.shape_square[1]-1, 1)
+            if self.shape_square[0]%2 == 1:
+                adj = np.delete(adj, (self.shape_square[0]-1)*self.shape_square[1]-1, 0)
+                adj = np.delete(adj, (self.shape_square[0]-1)*self.shape_square[1]-1, 1)
             else:
-                adj = np.delete(adj, adj.shape[0]-1, 0)
-                adj = np.delete(adj, adj.shape[1]-1, 1)
+                adj = np.delete(adj, -1, 0)
+                adj = np.delete(adj, -1, 1)
+                
+        return adj
+        
+    def _disconnect_extra_points(self, adj):
+        """
+        Disconnects the 2 extra points from the adjacency matrix.
+        They are still counted in, but are not connected anymore to the rest of the lattice.
+        """
+        if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP and self.shape[1]>1:
+            adj[(self.shape_square[0]-1)*self.shape_square[1], :] = 0
+            adj[:, (self.shape_square[0]-1)*self.shape_square[1]] = 0
+            if self.shape_square[1]%2 == 0:
+                adj[-1, :] = 0
+                adj[:, -1] = 0
+            else:
+                adj[self.shape_square[1]-1, :] = 0
+                adj[:, self.shape_square[1]-1] = 0
+        if self.convention == HexagonalLatticeConvention.ROWS_SHIFTED_LEFT and self.shape[0]>1:
+            adj[self.shape_square[1]-1, :] = 0
+            adj[:, self.shape_square[1]-1] = 0
+            if self.shape_square[0]%2 == 1:
+                adj[(self.shape_square[0]-1)*self.shape_square[1], :] = 0
+                adj[:, (self.shape_square[0]-1)*self.shape_square[1]] = 0
+            else:
+                adj[-1, :] = 0
+                adj[:, -1] = 0
                 
         return adj
 
@@ -174,7 +204,6 @@ class HexagonalLattice(AbstractLattice):
                     shift += 1
                 if i >= (self.shape_square[0]-1)*self.shape_square[1]-shift and  self.shape[0]%2 == 0:
                     shift += 1
-                
         return np.unravel_index((i+shift), self.shape_square)
 
     def coord_to_index(self, c, delete=True) -> int:
