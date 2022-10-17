@@ -24,13 +24,14 @@ class HexagonalLattice(AbstractLattice):
     Hexagonal lattice.
     The lattice has n full hexagons per row and m full hexagons per column.      
     """
-    def __init__(self, shape: Sequence[int], pbc=False, convention: HexagonalLatticeConvention=HexagonalLatticeConvention.COLS_SHIFTED_UP):
+    def __init__(self, shape: Sequence[int], pbc=False, delete=False, convention: HexagonalLatticeConvention=HexagonalLatticeConvention.COLS_SHIFTED_UP):
         if len(shape) != 2: 
             raise NotImplementedError("Hexagonal lattices require 2 dimensions, {len(shape)} were given")
         self.shape = tuple(shape)
         self.convention = convention
         self.shape_square = self._shape_square
         self.nsites_square = self._nsites_square
+        self.delete = delete
         if pbc is True:
             # TODO: add pbc in adjacency matrix
             raise NotImplementedError("The hexagonal lattice doesn't hold periodic boundary conditions yet")
@@ -39,8 +40,12 @@ class HexagonalLattice(AbstractLattice):
     def nsites(self) -> int:
         """
         Number of lattice sites.
+        If delete=False, it includes the 2 extra points if they are needed.
         """
-        return 2*self.shape[0]*self.shape[1] +2*(self.shape[0]+self.shape[1])
+        if not self.delete and ((self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP and self.shape[1]>1) or (self.convention == HexagonalLatticeConvention.ROWS_SHIFTED_LEFT and self.shape[0]>1)):
+            return 2*self.shape[0]*self.shape[1] +2*(self.shape[0]+self.shape[1]) + 2
+        else:
+            return 2*self.shape[0]*self.shape[1] +2*(self.shape[0]+self.shape[1])
 
     @property
     def ndim(self) -> int:
@@ -77,7 +82,7 @@ class HexagonalLattice(AbstractLattice):
         """
         return self.shape_square[0]*self.shape_square[1]
 
-    def adjacency_matrix(self, delete=True):
+    def adjacency_matrix(self):
         """
         Construct the adjacency matrix, indicating nearest neighbors.
         Hexagonal lattice equivalent to a rectangular one:
@@ -86,6 +91,8 @@ class HexagonalLattice(AbstractLattice):
         \_/ \_/ \_/ == |_| |_| |_|
           \_/ \_/      . |_| |_| .
           
+        If delete == True, the 2 extra points are eliminated from the adjacency matrix.
+        Otherwise, they are just disconnected (corresponding rows and columns are 0)
         """
         # An equivalent square graph is built.
         # For the COLS_SHIFTED_UP case (opposite for ROWS_SHIFTED_LEFT):
@@ -129,7 +136,7 @@ class HexagonalLattice(AbstractLattice):
                         else:
                             if (s == -1 and i%2 == 0) or (s == 1 and i%2 == 1):
                                 adj[i, j] = 1  
-        if delete:
+        if self.delete:
             adj = self._delete_extra_points(adj)
         else:
             adj = self._disconnect_extra_points(adj)
@@ -186,13 +193,13 @@ class HexagonalLattice(AbstractLattice):
                 
         return adj
 
-    def index_to_coord(self, i: int, delete=True) -> tuple:
+    def index_to_coord(self, i: int) -> tuple:
         """
         Map linear index to the equivalent square lattice coordinate.
-        If delete=True the two extra points of the equivalent square lattice are not counted in.
+        If self.delete=True the two extra points of the equivalent square lattice are not counted in.
         """
         shift = 0
-        if delete:
+        if self.delete:
             assert i < self.nsites
             if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP and self.shape[1] > 1:
                 if i >= self.shape_square[1]-1 and self.shape[1]%2 == 0:
@@ -206,13 +213,13 @@ class HexagonalLattice(AbstractLattice):
                     shift += 1
         return np.unravel_index((i+shift), self.shape_square)
 
-    def coord_to_index(self, c, delete=True) -> int:
+    def coord_to_index(self, c) -> int:
         """
         Map lattice coordinate to the equivalent square lattice coordinate.
         If delete=True the two extra points of the equivalent square lattice are not counted in.
         """
         shift = 0
-        if delete:
+        if self.delete:
             if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP and self.shape[1] > 1:
                 # even and odd columns specific cases
                 if self.shape[1]%2 == 0:

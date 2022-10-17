@@ -103,10 +103,13 @@ class TriangularLattice(AbstractLattice):
         """
         Map linear index to lattice coordinate.
         """
+        assert i < self.nsites
         return np.unravel_index(i, self.shape)
 
     def coord_to_index(self, c) -> int:
         """
         Map lattice coordinate to linear index.
         """
+        for i in range(len(self.shape)):
+            assert c[i] < self.shape[i]
         return int(np.ravel_multi_index(c, self.shape))
