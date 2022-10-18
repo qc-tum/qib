@@ -32,7 +32,7 @@ class HeisenbergHamiltonian(AbstractOperator):
         Whether the Hamiltonian is unitary.
         """
         H = self.as_matrix().toarray()
-        return np.allclose(H*H, np.identity(self.field.lattice.nsites))
+        return np.allclose(H@H, np.identity(self.field.lattice.nsites))
 
     def is_hermitian(self):
         """

@@ -2,14 +2,14 @@ import enum
 import numpy as np
 from typing import Sequence, Union
 from qib.field import ParticleType, Field
+from qib.lattice import SpinLattice
 from qib.operator import AbstractOperator, FieldOperator, FieldOperatorTerm, IFOType, IFODesc
 
-# TODO: implement model with spin
 # TODO: possibility of non-uniform parameters?
 
 class FermiHubbardHamiltonian(AbstractOperator):
     """
-    Fermi - Hubbard Hamiltonian: 
+    Fermi - Hubbard Hamiltonian:
       - interaction matrix `t`
       - potential term `u`
     on a lattice.
@@ -20,19 +20,21 @@ class FermiHubbardHamiltonian(AbstractOperator):
             raise ValueError(f"expecting a field with fermionic particle type, but received {field.particle_type}")
         if not isinstance(t, float):
             raise ValueError(f"expecting a float for 't', received {type(t)}")
-        if spin:
-            raise NotImplementedError(f"The Fermi-Hubbard model with spin has not been implemented yet")
-        self.field = field
+
         self.t = t
         self.u = u
+        if spin and not isinstance(field.lattice, SpinLattice):
+            raise ValueError(f"expecting a spin lattice when 'spin' is True")
         self.spin = spin
+        self.field = field
+        
 
     def is_unitary(self):
         """
         Whether the Hamiltonian is unitary.
         """
         H = self.as_matrix().toarray()
-        return np.allclose(H*H, np.identity(self.field.lattice.nsites))
+        return np.allclose(H@H, np.identity(self.field.lattice.nsites))
 
     def is_hermitian(self):
         """
@@ -47,14 +49,24 @@ class FermiHubbardHamiltonian(AbstractOperator):
         latt = self.field.lattice
         L = latt.nsites
         adj = latt.adjacency_matrix()
-        assert adj.shape == (L, L)
-        t = self.t*adj
-        u = self.u*np.identity(len(adj))   
-        
-        # kinetic term (only nearest neighbours)
-        kin_ops = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE),IFODesc(self.field, IFOType.FERMI_ANNIHIL)],t)
-        # potential term (only on-site)
-        pot_ops = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE), IFODesc(self.field, IFOType.FERMI_ANNIHIL)],u)
+        assert adj.shape == (L,L)
+        if self.spin:
+            t = self.t*np.kron(np.identity(L), adj[:L, :L])
+            u = np.zeros((L,L,L,L))
+            for i in range(L):
+                u[i,i,i,i] = self.u
+            # kinetic term (only nearest neighbours)
+            kin_ops = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE),IFODesc(self.field, IFOType.FERMI_ANNIHIL)],t)
+            # potential term (only on-site)
+            pot_ops = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE), IFODesc(self.field, IFOType.FERMI_ANNIHIL), IFODesc(self.field, IFOType.FERMI_CREATE), IFODesc(self.field, IFOType.FERMI_ANNIHIL)],u)
+            
+        else:
+            t = self.t*adj
+            u = self.u*np.identity(len(adj))
+            # kinetic term (only nearest neighbours)
+            kin_ops = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE),IFODesc(self.field, IFOType.FERMI_ANNIHIL)],t)
+            # potential term (only on-site)
+            pot_ops = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE), IFODesc(self.field, IFOType.FERMI_ANNIHIL)],u)
         return FieldOperator([kin_ops, pot_ops])
 
     def as_matrix(self):
