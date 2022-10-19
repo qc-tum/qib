@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="qib",
     version="0.0.1",
-    packages=find_packages(where="src"),
+    packages=setuptools.find_packages(where="src", include=["qib", "qib.*"]),
     package_dir={"": "src", "qib": "src/qib"},
     install_requires=[
         "numpy",
