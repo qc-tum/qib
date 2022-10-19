@@ -11,7 +11,7 @@ def jordan_wigner_encode_field_operator(fieldop: FieldOperator):
     fields = fieldop.fields()
     if len(fields) != 1 or fields[0].ptype != ParticleType.FERMION:
         # currently only a single fermionic field supported
-        raise NotImplementedError
+        raise NotImplementedError(f"only a single fermionic field supported.")
 
     # number of lattice sites
     L = fields[0].lattice.nsites
