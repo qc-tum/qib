@@ -17,3 +17,6 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/qc-tum/qib"
+
+[tool.setuptools.packages.find]
+where = ["src"]
