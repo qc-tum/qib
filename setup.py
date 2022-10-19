@@ -1,9 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="qib",
     version="0.0.1",
-    packages=setuptools.find_packages(where="src", include=["qib", "qib.*"]),
+    packages=find_packages(where="src", include=["qib", "qib.*"]),
     package_dir={"": "src", "qib": "src/qib"},
     install_requires=[
         "numpy",
