@@ -1,5 +1,4 @@
 import numpy as np
-from scipy import sparse
 import unittest
 import qib
 
@@ -68,7 +67,7 @@ class TestFermiHubbardHamiltonian(unittest.TestCase):
         # uniform parameters, integer lattice
         Lx, Ly = (3,5)
         latt = qib.lattice.IntegerLattice((Lx,Ly), pbc=False)
-        field = qib.field.Field(qib.field.ParticleType.FERMION, qib.lattice.SpinLattice(latt, nspin=2))
+        field = qib.field.Field(qib.field.ParticleType.FERMION, qib.lattice.LayeredLattice(latt, 2))
         adj = latt.adjacency_matrix()
         t = np.random.uniform(-5,5)
         u = np.random.uniform(-5,5)
@@ -99,7 +98,7 @@ class TestFermiHubbardHamiltonian(unittest.TestCase):
         # uniform parameters, hexagonal lattice
         Lx, Ly = (3,5)
         latt = qib.lattice.HexagonalLattice((3,5), pbc=False)
-        field = qib.field.Field(qib.field.ParticleType.FERMION, qib.lattice.SpinLattice(latt, nspin=2))
+        field = qib.field.Field(qib.field.ParticleType.FERMION, qib.lattice.LayeredLattice(latt, 2))
         adj = latt.adjacency_matrix()
         t = np.random.uniform(-5,5)
         u = np.random.uniform(-5,5)
@@ -125,6 +124,7 @@ class TestFermiHubbardHamiltonian(unittest.TestCase):
                     self.assertTrue(op[0].coeffs[i,j] == t)
                 self.assertTrue(op[0].coeffs[i,j] == op[0].coeffs[j,i])
             self.assertTrue(op[0].coeffs[i,i] == 0)
+
 
 if __name__ == "__main__":
     unittest.main()

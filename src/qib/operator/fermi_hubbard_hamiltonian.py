@@ -1,9 +1,8 @@
-import enum
 import numpy as np
-from typing import Sequence, Union
 from qib.field import ParticleType, Field
-from qib.lattice import SpinLattice
+from qib.lattice import LayeredLattice
 from qib.operator import AbstractOperator, FieldOperator, FieldOperatorTerm, IFOType, IFODesc
+
 
 # TODO: possibility of non-uniform parameters?
 
@@ -23,11 +22,11 @@ class FermiHubbardHamiltonian(AbstractOperator):
 
         self.t = t
         self.u = u
-        if spin and not isinstance(field.lattice, SpinLattice):
-            raise ValueError(f"expecting a spin lattice when 'spin' is True")
+        if spin and not isinstance(field.lattice, LayeredLattice):
+            raise ValueError("expecting a layered lattice when 'spin' is True")
         self.spin = spin
         self.field = field
-        
+
 
     def is_unitary(self):
         """
@@ -59,7 +58,7 @@ class FermiHubbardHamiltonian(AbstractOperator):
             kin_ops = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE),IFODesc(self.field, IFOType.FERMI_ANNIHIL)],t)
             # potential term (only on-site)
             pot_ops = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE), IFODesc(self.field, IFOType.FERMI_ANNIHIL), IFODesc(self.field, IFOType.FERMI_CREATE), IFODesc(self.field, IFOType.FERMI_ANNIHIL)],u)
-            
+
         else:
             t = self.t*adj
             u = self.u*np.identity(len(adj))
