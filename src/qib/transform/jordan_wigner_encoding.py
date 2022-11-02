@@ -4,7 +4,7 @@ from qib.operator import (IFOType, FieldOperator,
                           PauliString, WeightedPauliString, PauliOperator)
 
 
-def jordan_wigner_encode_field_operator(fieldop: FieldOperator):
+def jordan_wigner_encode_field_operator(fieldop: FieldOperator) -> PauliOperator:
     """
     Jordan-Wigner encode a fermionic field operator.
     """
@@ -53,5 +53,6 @@ def jordan_wigner_encode_field_operator(fieldop: FieldOperator):
                 pauliop.add_pauli_string(WeightedPauliString(ps, sign * weight))
 
     pauliop.remove_zero_weight_strings(tol=1e-14)
-
+    #print(pauliop.as_matrix().toarray())                                                                             # IT WORKS?
+    #print(pauliop.pstrings)  
     return pauliop
