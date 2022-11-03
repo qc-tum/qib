@@ -1,4 +1,3 @@
-import enum
 from typing import Sequence
 from qib.field import ParticleType, Field
 from qib.operator import AbstractOperator, PauliString, WeightedPauliString, PauliOperator
@@ -22,7 +21,7 @@ class HeisenbergHamiltonian(AbstractOperator):
                 raise ValueError(f"expecting real numeric value for J[{i}], received {J[i]}")
             if not (isinstance(h[i], int) or isinstance(h[i], float)):
                 raise ValueError(f"expecting real numeric value for h[{i}], received {h[i]}")
-            
+
         self.field = field
         self.J = tuple(J)
         self.h = tuple(h)
@@ -31,8 +30,9 @@ class HeisenbergHamiltonian(AbstractOperator):
         """
         Whether the Hamiltonian is unitary.
         """
-        H = self.as_matrix().toarray()
-        return np.allclose(H@H, np.identity(self.field.lattice.nsites))
+        # unitary only in some non-typical cases,
+        # so returning False here for simplicity
+        return False
 
     def is_hermitian(self):
         """
@@ -50,15 +50,15 @@ class HeisenbergHamiltonian(AbstractOperator):
         assert adj.shape == (L, L)
         op = PauliOperator()
 
-        for k,gate in enumerate(['X','Y','Z']):
+        for k, gate in enumerate(['X', 'Y', 'Z']):
             for i in range(L):
                 for j in range(i + 1, L):
                     if adj[i, j] == 0:
                         continue
                     # interaction term
                     # site 0 corresponds to fastest varying index
-                
-                    op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, L - j - 1), (gate, L - i - 1)), self.J[k]))  
+                    op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, L - j - 1), (gate, L - i - 1)), self.J[k]))
+                # field term
                 op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, L - i - 1)), self.h[k]))
         return op
 

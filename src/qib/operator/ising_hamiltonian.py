@@ -42,9 +42,10 @@ class IsingHamiltonian(AbstractOperator):
         """
         Whether the Hamiltonian is unitary.
         """
-        H = self.as_matrix().toarray()
-        return np.allclose(H@H, np.identity(self.field.lattice.nsites))
-        
+        # unitary only in some non-typical cases,
+        # so returning False here for simplicity
+        return False
+
     def is_hermitian(self):
         """
         Whether the Hamiltonian is Hermitian.
