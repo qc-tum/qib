@@ -4,8 +4,7 @@ from qib import (
     operator,
     circuit,
     transform,
-    algorithm,
-    ansatz,
+    vqe,
     util
 )
 

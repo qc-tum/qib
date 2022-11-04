@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Sequence
 from qib.operator import AbstractOperator, PauliOperator
-from qib.ansatz import Ansatz
-from qib.util import Optimizer
+from qib.vqe.ansatz import Ansatz
+from qib.vqe.optimizer import Optimizer
 from scipy.optimize import minimize, OptimizeResult
 
 
