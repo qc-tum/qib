@@ -48,7 +48,7 @@ class TestLayeredLattice(unittest.TestCase):
             for i in range(latt.nsites):
                 self.assertEqual(i, latt.coord_to_index(latt.index_to_coord(i)))
             # hexagonal base lattice
-            for convention in qib.lattice.HexagonalLatticeConvention:
+            for convention in qib.lattice.ShiftedLatticeConvention:
                 hexlatt = qib.lattice.HexagonalLattice((3, 4), pbc=False, convention=convention)
                 latt = qib.lattice.LayeredLattice(hexlatt, nlayers)
                 for i in range(latt.nsites):
