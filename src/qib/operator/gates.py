@@ -1,6 +1,7 @@
 import abc
 import numpy as np
-from scipy.linalg import expm, block_diag
+from enum import Enum
+from scipy.linalg import expm, sqrtm, block_diag
 from scipy.sparse import csr_matrix
 from typing import Sequence
 from qib.field import Field, Particle, Qubit
@@ -1161,6 +1162,152 @@ class TimeEvolutionGate(Gate):
         for f in fields:
             if f.local_dim != 2:
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        prtcl = self.particles()
+        assert len(prtcl) == self.num_wires
+        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
+class BlockEncodingMethod(Enum):
+    """
+    Block encoding method.
+    """
+    Wx  = 1
+    Wxi = 2 # inverse Wx
+    R   = 3
+
+
+class BlockEncodingGate(Gate):
+    """
+    Block encoding gate of a Hamiltonian `h`, assumed to be Hermitian
+    and normalized such that its spectral norm is bounded by 1.
+    Output state is Hamiltonian applied to principal input state
+    if auxiliary qubit(s) is initialized to |0>.
+    """
+    def __init__(self, h, method: BlockEncodingMethod):
+        self.h = h
+        self.method = method
+        self.auxiliary_qubits = []
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        if self.method == BlockEncodingMethod.Wx:
+            return False
+        elif self.method == BlockEncodingMethod.Wxi:
+            return False
+        elif self.method == BlockEncodingMethod.R:
+            # assuming that `h` is Hermitian
+            return True
+        raise NotImplementedError(f"encoding method {self.method} not supported yet")
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        fields = self.h.fields()
+        return sum(f.lattice.nsites for f in fields) + self.num_aux_qubits
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        if len(self.auxiliary_qubits) != self.num_aux_qubits:
+            raise RuntimeError(f"require {self.num_aux_qubits} auxiliary qubits, but have {len(self.auxiliary_qubits)}")
+        prtcl = []
+        fields = self.h.fields()
+        for f in fields:
+            prtcl += [Particle(f, i) for i in range(f.lattice.nsites)]
+        prtcl += self.auxiliary_qubits
+        return prtcl
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        if self.method == BlockEncodingMethod.Wx:
+            ginv = BlockEncodingGate(self.h, BlockEncodingMethod.Wxi)
+            if self.auxiliary_qubits:
+                ginv.set_auxiliary_qubits(self.auxiliary_qubits)
+            return ginv
+        elif self.method == BlockEncodingMethod.Wxi:
+            ginv = BlockEncodingGate(self.h, BlockEncodingMethod.Wx)
+            if self.auxiliary_qubits:
+                ginv.set_auxiliary_qubits(self.auxiliary_qubits)
+            return ginv
+        elif self.method == BlockEncodingMethod.R:
+            return self
+        raise NotImplementedError(f"encoding method {self.method} not supported yet")
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set(self.h.fields() + [q.field for q in self.auxiliary_qubits]))
+
+    def encoded_operator(self):
+        """
+        Get the encoded operator.
+        """
+        return self.h
+
+    @property
+    def num_aux_qubits(self):
+        """
+        Number of auxiliary qubits.
+        """
+        if self.method == BlockEncodingMethod.Wx:
+            return 1
+        elif self.method == BlockEncodingMethod.Wxi:
+            return 1
+        elif self.method == BlockEncodingMethod.R:
+            return 1
+        raise NotImplementedError(f"encoding method {self.method} not supported yet")
+
+    def set_auxiliary_qubits(self, *args):
+        """
+        Set the auxiliary qubits.
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            auxiliary_qubits = list(args[0])
+        else:
+            auxiliary_qubits = list(args)
+        if len(auxiliary_qubits) != self.num_aux_qubits:
+            raise ValueError(f"require {self.num_aux_qubits} auxiliary qubits, but received {len(auxiliary_qubits)}")
+        self.auxiliary_qubits = auxiliary_qubits
+        # enable chaining
+        return self
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the block encoding gate.
+        """
+        # assuming that `h` is Hermitian and that its spectral norm is bounded by 1
+        hmat = self.h.as_matrix().toarray()
+        sq1h = sqrtm(np.identity(hmat.shape[0]) - hmat @ hmat)
+        if self.method == BlockEncodingMethod.Wx:
+            return np.block([[hmat, 1j*sq1h], [1j*sq1h, hmat]])
+        elif self.method == BlockEncodingMethod.Wxi:
+            return np.block([[hmat, -1j*sq1h], [-1j*sq1h, hmat]])
+        elif self.method == BlockEncodingMethod.R:
+            return np.block([[hmat, sq1h], [sq1h, -hmat]])
+        raise NotImplementedError(f"encoding method {self.method} not supported yet")
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if len(self.auxiliary_qubits) != self.num_aux_qubits:
+            raise RuntimeError("unspecified auxiliary qubit(s)")
         prtcl = self.particles()
         assert len(prtcl) == self.num_wires
         iwire = [_map_particle_to_wire(fields, p) for p in prtcl]

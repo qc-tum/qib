@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.linalg import expm, block_diag
+from scipy import sparse
 import unittest
 import qib
 
@@ -159,7 +160,7 @@ class TestGates(unittest.TestCase):
         # inverse
         cexph_inverse = qib.ControlledGate(qib.TimeEvolutionGate(h, -t), 1)
         cexph_inverse.set_control(qc)
-        self.assertTrue(np.array_equal(cexph.inverse()._circuit_matrix([field2, field3]).toarray(), 
+        self.assertTrue(np.array_equal(cexph.inverse()._circuit_matrix([field2, field3]).toarray(),
                                        cexph_inverse._circuit_matrix([field2, field3]).toarray()))
 
     def test_time_evolution_gate(self):
@@ -192,7 +193,7 @@ class TestGates(unittest.TestCase):
         self.assertEqual(gate.num_wires, 2)
         self.assertTrue(gate.fields() == [field])
         self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
-                                    np.identity(2*gate.num_wires)))
+                                    np.identity(2**gate.num_wires)))
         self.assertTrue(np.allclose(gate.as_matrix() @ gate.as_matrix(),
                                     qib.operator.TimeEvolutionGate(h, 2*t).as_matrix()))
         # reference calculation
@@ -207,6 +208,49 @@ class TestGates(unittest.TestCase):
         exp_h_ref = block_diag(np.identity(1), inner_block, [[np.exp(-1j*t*(μ1 + μ2))]])
         self.assertTrue(np.allclose(gate.as_matrix(), exp_h_ref))
         self.assertTrue(np.allclose(gate._circuit_matrix([field]).toarray(), exp_h_ref))
+
+    def test_block_encoding_gate(self):
+        """
+        Test the block encoding gate.
+        """
+        # construct a simple Hamiltonian
+        L = 5
+        latt = qib.lattice.IntegerLattice((L,), pbc=True)
+        field1 = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
+        H = qib.operator.HeisenbergHamiltonian(field1, np.random.standard_normal(size=3),
+                                                       np.random.standard_normal(size=3))
+        # rescale parameters (effectively rescales overall Hamiltonian)
+        scale = 1.25 * np.linalg.norm(H.as_matrix().toarray(), ord=2)
+        H.J /= scale
+        H.h /= scale
+        # auxiliary qubit
+        field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((4,), pbc=False))
+        q = qib.field.Qubit(field2, 1)
+        for method in qib.operator.BlockEncodingMethod:
+            gate = qib.BlockEncodingGate(H, method)
+            self.assertEqual(gate.num_wires, L + 1)
+            self.assertTrue(gate.encoded_operator() is H)
+            gmat = gate.as_matrix()
+            self.assertTrue(np.allclose(gmat @ gmat.conj().T,
+                                        np.identity(2**gate.num_wires)))
+            self.assertTrue(np.allclose(gmat @ gate.inverse().as_matrix(),
+                                        np.identity(2**gate.num_wires)))
+            gate.set_auxiliary_qubits([q])
+            self.assertTrue(gate.fields() == [field1, field2] or gate.fields() == [field2, field1])
+            # principal quantum state
+            ψp = qib.util.crandn(2**L)
+            ψp /= np.linalg.norm(ψp)
+            # quantum state on auxiliary register
+            ψa = np.kron(np.kron(qib.util.crandn(4), [1, 0]), qib.util.crandn(2))
+            ψa /= np.linalg.norm(ψa)
+            # overall quantum state
+            ψ = np.kron(ψa, ψp)
+            # projection |0><0| acting on auxiliary qubit
+            Pa = sparse.kron(sparse.kron(sparse.identity(4), sparse.diags([1., 0.])), sparse.identity(2**(L + 1)))
+            # text block-encoding of Hamiltonian
+            self.assertTrue(np.allclose(Pa @ (gate._circuit_matrix([field1, field2]) @ ψ),
+                                        np.kron(ψa, H.as_matrix() @ ψp)))
 
 
 def permute_gate_wires(u: np.ndarray, perm):

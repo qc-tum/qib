@@ -17,6 +17,7 @@ from qib.operator import (
     PauliOperator,
     FieldOperator,
     IsingHamiltonian,
+    HeisenbergHamiltonian,
     Gate,
     PauliXGate,
     PauliYGate,
@@ -28,6 +29,7 @@ from qib.operator import (
     RotationGate,
     ControlledGate,
     TimeEvolutionGate,
+    BlockEncodingGate,
 )
 
 from qib.circuit import Circuit
