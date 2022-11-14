@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Sequence
-from qib.operator import AbstractOperator, PauliOperator
+from qib.operator import PauliOperator
 from qib.vqe.ansatz import Ansatz
 from qib.vqe.optimizer import Optimizer
 from scipy.optimize import minimize, OptimizeResult
@@ -52,5 +52,5 @@ class VQE:
         if self._optimal_params is None:
             return None
         else:
-            state = self.ansatz.as_matrix(params).toarray()@self.initial_state
+            state = self.ansatz.as_matrix(self._optimal_params).toarray()@self.initial_state
             return [measure_expectation_statevector(s_op, state) for s_op in secondary_ops]

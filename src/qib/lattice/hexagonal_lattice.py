@@ -1,6 +1,4 @@
 import math
-import enum
-import numpy as np
 from typing import Sequence
 from qib.lattice import AbstractLattice
 from qib.lattice.shifted_lattice_convention import ShiftedLatticeConvention

@@ -1,6 +1,5 @@
 import numpy as np
-import enum
-from typing import Sequence, Callable
+
 
 class Optimizer:
     """

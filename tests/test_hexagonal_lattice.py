@@ -89,6 +89,7 @@ class TestHexagonalLattice(unittest.TestCase):
         """
         Test lattice coordinate indexing.
         """
+
         # two-dimensional lattice, open boundary conditions
         for Lx in range(1, 5):
             for Ly in range(1, 5):

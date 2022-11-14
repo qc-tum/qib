@@ -1,8 +1,7 @@
-import abc
 import numpy as np
 from scipy import sparse
 from scipy.linalg import expm
-from typing import Union, Sequence, Callable
+from typing import Sequence
 from qib.operator import (AbstractOperator, IFOType, IFODesc, FieldOperator, FieldOperatorTerm)
 from qib.transform import jordan_wigner_encode_field_operator
 from qib.lattice import LayeredLattice
