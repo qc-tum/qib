@@ -1,6 +1,5 @@
 import numpy as np
 from scipy import sparse
-import scipy.sparse.linalg as spla
 import unittest
 import qib
 
@@ -23,7 +22,7 @@ class TestFieldOperator(unittest.TestCase):
             # reference Hamiltonian
             Href = construct_tight_binding_hamiltonian(μ, t, Δ, pbc=pbc)
             # must be symmetric
-            self.assertEqual(spla.norm(Href - Href.conj().T), 0)
+            self.assertEqual(sparse.linalg.norm(Href - Href.conj().T), 0)
 
             # construct fermionic field operator
             latt = qib.lattice.IntegerLattice(lattsize, pbc=pbc)
@@ -62,7 +61,7 @@ class TestFieldOperator(unittest.TestCase):
             self.assertFalse(sc_terms[1].is_hermitian())
             H = qib.FieldOperator([onsite_term, kinetic_term, sc_terms[0], sc_terms[1]])
             # compare
-            self.assertAlmostEqual(spla.norm(H.as_matrix() - Href), 0)
+            self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - Href), 0)
 
 
 

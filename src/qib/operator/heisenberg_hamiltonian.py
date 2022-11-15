@@ -57,9 +57,9 @@ class HeisenbergHamiltonian(AbstractOperator):
                         continue
                     # interaction term
                     # site 0 corresponds to fastest varying index
-                    op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, L - j - 1), (gate, L - i - 1)), self.J[k]))
+                    op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, i), (gate, j)), self.J[k]))
                 # field term
-                op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, L - i - 1)), self.h[k]))
+                op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, i)), self.h[k]))
         return op
 
     def as_matrix(self):

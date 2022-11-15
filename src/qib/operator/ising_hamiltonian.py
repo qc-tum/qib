@@ -73,11 +73,11 @@ class IsingHamiltonian(AbstractOperator):
                     continue
                 # interaction term
                 # site 0 corresponds to fastest varying index
-                op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (A, L - j - 1), (A, L - i - 1)), self.J))
+                op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (A, i), (A, j)), self.J))
             # longitudinal field term
-            op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (A, L - i - 1)), self.h))
+            op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (A, i)), self.h))
             # transverse field term
-            op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (B, L - i - 1)), self.g))
+            op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (B, i)), self.g))
         return op
 
     def as_matrix(self):

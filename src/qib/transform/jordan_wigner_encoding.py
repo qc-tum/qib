@@ -11,7 +11,7 @@ def jordan_wigner_encode_field_operator(fieldop: FieldOperator) -> PauliOperator
     fields = fieldop.fields()
     if len(fields) != 1 or fields[0].ptype != ParticleType.FERMION:
         # currently only a single fermionic field supported
-        raise NotImplementedError(f"only a single fermionic field supported.")
+        raise NotImplementedError("only a single fermionic field supported")
 
     # number of lattice sites
     L = fields[0].lattice.nsites
@@ -19,9 +19,9 @@ def jordan_wigner_encode_field_operator(fieldop: FieldOperator) -> PauliOperator
     clist = []
     alist = []
     for i in range(L):
-        za = (L-i-1)*[0] + [0] + i*[1]
-        zb = (L-i-1)*[0] + [1] + i*[1]
-        x  = (L-i-1)*[0] + [1] + i*[0]
+        za = i*[1] + [0] + (L-i-1)*[0]
+        zb = i*[1] + [1] + (L-i-1)*[0]
+        x  = i*[0] + [1] + (L-i-1)*[0]
         # require two Pauli strings per fermionic operator
         clist.append([PauliString(za, x, 0), PauliString(zb, x, 1)])
         alist.append([PauliString(za, x, 0), PauliString(zb, x, 3)])
@@ -51,6 +51,6 @@ def jordan_wigner_encode_field_operator(fieldop: FieldOperator) -> PauliOperator
                 # does not seem to be advantageous
                 sign = ps.refactor_sign()
                 pauliop.add_pauli_string(WeightedPauliString(ps, sign * weight))
-
     pauliop.remove_zero_weight_strings(tol=1e-14)
+
     return pauliop

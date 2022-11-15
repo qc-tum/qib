@@ -22,9 +22,9 @@ def parity_encode_field_operator(fieldop: FieldOperator):
         if i == 0:
             za = L*[0]
         else:
-            za = (L-i)*[0] + [1] + (i-1)*[0]
-        zb = (L-i-1)*[0] + [1] + i*[0]
-        x  = (L-i-1)*[1] + [1] + i*[0]
+            za = (i-1)*[0] + [1] + (L-i)*[0]
+        zb = i*[0] + [1] + (L-i-1)*[0]
+        x  = i*[0] + [1] + (L-i-1)*[1]
         # require two Pauli strings per fermionic operator
         clist.append([PauliString(za, x, 0), PauliString(zb, x, 1)])
         alist.append([PauliString(za, x, 0), PauliString(zb, x, 3)])
@@ -55,6 +55,6 @@ def parity_encode_field_operator(fieldop: FieldOperator):
                 # does not seem to be advantageous
                 sign = ps.refactor_sign()
                 pauliop.add_pauli_string(WeightedPauliString(ps, sign * weight))
-
     pauliop.remove_zero_weight_strings(tol=1e-14)
+
     return pauliop
