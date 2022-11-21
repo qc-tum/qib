@@ -1018,7 +1018,10 @@ class ControlledGate(Gate):
         """
         Return the inverse operator.
         """
-        return ControlledGate(self.tgate.inverse(), self.ncontrols).set_control(self.control_qubits)
+        invgate = ControlledGate(self.tgate.inverse(), self.ncontrols)
+        if self.control_qubits:
+            invgate.set_control(self.control_qubits)
+        return invgate
 
     def as_matrix(self):
         """
@@ -1092,6 +1095,115 @@ class ControlledGate(Gate):
         icwire = sorted([_map_particle_to_wire(fields, q) for q in self.control_qubits])
         itwire = [_map_particle_to_wire(fields, p) for p in tprtcl]
         iwire = itwire + icwire     # target wires come first
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
+class MultiplexedGate(Gate):
+    """
+    Multiplexed gate (control qubits select a unitary), generalizing a controlled gate.
+    """
+    def __init__(self, tgates: Sequence[Gate], ncontrols: int):
+        if len(tgates) != 2**ncontrols:
+            assert ValueError(f"require {2**ncontrols} target gates for {ncontrols} control qubits")
+        self.tgates = list(tgates)
+        self.ncontrols = ncontrols
+        self.control_qubits = []
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return all(g.is_hermitian() for g in self.tgates)
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        invgate = MultiplexedGate([g.inverse() for g in self.tgates], self.ncontrols)
+        if self.control_qubits:
+            invgate.set_control(self.control_qubits)
+        return invgate
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the multiplexed gate.
+        """
+        tgmat = [g.as_matrix() for g in self.tgates]
+        # target gates correspond to faster varying indices
+        return block_diag(*tgmat)
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        assert self.tgates
+        return self.tgates[0].num_wires + self.ncontrols
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        assert self.tgates
+        tprtcl = self.tgates[0].particles()
+        for g in self.tgates:
+            assert tprtcl == g.particles(), "particles of all target gates must match"
+        return tprtcl + self.control_qubits
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        assert self.tgates
+        for g in self.tgates:
+            assert self.tgates[0].fields() == g.fields(), "fields of all target gates must match"
+        return list(set(self.tgates[0].fields() + [q.field for q in self.control_qubits]))
+
+    def target_gates(self):
+        """
+        Get the target gates.
+        """
+        return self.tgates
+
+    @property
+    def num_controls(self):
+        """
+        The number of control qubits.
+        """
+        return self.ncontrols
+
+    def set_control(self, *args):
+        """
+        Set the control qubits.
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            control_qubits = list(args[0])
+        else:
+            control_qubits = list(args)
+        if len(control_qubits) != self.ncontrols:
+            raise ValueError(f"require {self.ncontrols} control qubits, but received {len(control_qubits)}")
+        self.control_qubits = control_qubits
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if len(self.control_qubits) != self.ncontrols:
+            raise RuntimeError("unspecified control qubit(s)")
+        for g in self.tgates:
+            if len(g.particles()) != g.num_wires:
+                raise RuntimeError("unspecified target gate particle(s)")
+        prtcl = self.particles()
+        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])

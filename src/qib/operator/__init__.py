@@ -19,6 +19,7 @@ from qib.operator.gates import (
     TGate,
     TAdjGate,
     ControlledGate,
+    MultiplexedGate,
     TimeEvolutionGate,
     BlockEncodingMethod,
     BlockEncodingGate,

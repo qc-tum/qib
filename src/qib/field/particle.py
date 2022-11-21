@@ -17,6 +17,12 @@ class Particle:
         """
         return self.field.particle_type
 
+    def __eq__(self, other):
+        """
+        Logical equality test of two particles.
+        """
+        return self.field == other.field and self.index == other.index
+
 
 class Qubit(Particle):
     """

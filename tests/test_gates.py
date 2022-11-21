@@ -163,6 +163,69 @@ class TestGates(unittest.TestCase):
         self.assertTrue(np.array_equal(cexph.inverse()._circuit_matrix([field2, field3]).toarray(),
                                        cexph_inverse._circuit_matrix([field2, field3]).toarray()))
 
+    def test_multiplexed_gate(self):
+        """
+        Test implementation of multiplexed quantum gates.
+        """
+        field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((5,), pbc=False))
+        qt = qib.field.Qubit(field1, 1)
+        tgates = [qib.PauliXGate(qt),
+                  qib.RotationGate(np.random.standard_normal(size=3), qt),
+                  qib.operator.SGate(qt),
+                  qib.HadamardGate(qt)]
+        # construct a multiplexed gate
+        mplxg = qib.MultiplexedGate(tgates, 2)
+        self.assertEqual(mplxg.num_wires, 3)
+        self.assertEqual(mplxg.num_controls, 2)
+        self.assertTrue(np.array_equal(mplxg.as_matrix(), block_diag(*(g.as_matrix() for g in tgates))))
+        qa = qib.field.Qubit(field1, 0)
+        qb = qib.field.Qubit(field1, 3)
+        mplxg.set_control([qb, qa])
+        # mplxg.target_gate().on(qa)
+        self.assertTrue(mplxg.fields() == [field1])
+        self.assertTrue(np.array_equal(mplxg._circuit_matrix([field1]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(4), mplxg.as_matrix()), [0, 3, 1, 4, 2])))
+        # additional field
+        field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((2,), pbc=False))
+        qc = qib.field.Qubit(field2, 1)
+        # mplxg.target_gate().on(qc)
+        mplxg.set_control([qb, qc])
+        self.assertEqual(mplxg.num_wires, 3)
+        self.assertTrue(mplxg.fields() == [field1, field2] or mplxg.fields() == [field2, field1])
+        self.assertTrue(np.array_equal(mplxg._circuit_matrix([field1, field2]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(16), mplxg.as_matrix()), [4, 1, 2, 5, 0, 6, 3])))
+
+        # multiplexed time evolution gate
+        # construct a simple Hamiltonian
+        latt = qib.lattice.IntegerLattice((5,), pbc=False)
+        field3 = qib.field.Field(qib.field.ParticleType.FERMION, latt)
+        h = [None, None]
+        for i in range(2):
+            # field operator term
+            coeffs = qib.util.crandn((5, 5))
+            coeffs = 0.5 * (coeffs + coeffs.conj().T)
+            term = qib.operator.FieldOperatorTerm(
+                [qib.operator.IFODesc(field3, qib.operator.IFOType.FERMI_CREATE),
+                 qib.operator.IFODesc(field3, qib.operator.IFOType.FERMI_ANNIHIL)],
+                coeffs)
+            self.assertTrue(term.is_hermitian())
+            h[i] = qib.FieldOperator([term])
+        # time
+        t = [1.2, 0.7]
+        mplxg = qib.MultiplexedGate([qib.TimeEvolutionGate(h[i], t[i]) for i in range(2)], 1)
+        self.assertEqual(mplxg.num_wires, 6)
+        mplxg_mat_ref = sum(np.kron(np.diag(np.identity(2)[:, i]),
+                                    expm(-1j*t[i]*h[i].as_matrix().toarray())) for i in range(2))
+        self.assertTrue(np.allclose(mplxg.as_matrix(), mplxg_mat_ref))
+        mplxg.set_control(qc)
+        self.assertTrue(mplxg.fields() == [field2, field3] or mplxg.fields() == [field3, field2])
+        self.assertTrue(np.array_equal(mplxg._circuit_matrix([field2, field3]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(2), mplxg_mat_ref), [2, 3, 4, 5, 6, 1, 0])))
+        # inverse
+        self.assertTrue(np.allclose(mplxg.inverse().as_matrix() @ mplxg.as_matrix(), np.identity(2**6)))
+
     def test_time_evolution_gate(self):
         """
         Test the quantum time evolution gate.

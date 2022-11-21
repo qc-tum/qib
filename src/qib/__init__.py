@@ -28,6 +28,7 @@ from qib.operator import (
     RzGate,
     RotationGate,
     ControlledGate,
+    MultiplexedGate,
     TimeEvolutionGate,
     BlockEncodingGate,
 )
