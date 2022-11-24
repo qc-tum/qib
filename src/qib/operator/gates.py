@@ -997,6 +997,109 @@ class TAdjGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
+class PrepareGate(Gate):
+    """
+    Vector "preparation" gate.
+    """
+    def __init__(self, vec, nqubits: int, transpose=False):
+        vec = np.array(vec)
+        if vec.ndim != 1:
+            raise ValueError("expecting a vector")
+        if not np.isrealobj(vec):
+            raise ValueError("only real-valued vectors supported")
+        if vec.shape[0] != 2**nqubits:
+            raise ValueError(f"input vector must have length 2^nqubits = {2**nqubits}")
+        # note: using 1-norm here by convention
+        n = np.linalg.norm(vec, ord=1)
+        if abs(n - 1) > 1e-12:
+            vec /= n
+        self.vec = vec
+        self.nqubits = nqubits
+        self.qubits = []
+        self.transpose = transpose
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        # in general not Hermitian
+        # TODO: can one construct a Hermitian realization?
+        return False
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the "preparation" gate.
+        """
+        x = np.sign(self.vec) * np.sqrt(np.abs(self.vec))
+        # use QR decomposition for extension to full basis
+        Q = np.linalg.qr(x.reshape((-1, 1)), mode="complete")[0]
+        if np.dot(x, Q[:, 0]) < 0:
+            Q[:, 0] = -Q[:, 0]
+        if not self.transpose:
+            return Q
+        else:
+            return Q.T
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return self.nqubits
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return self.qubits
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set([q.field for q in self.qubits]))
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        invgate = PrepareGate(self.vec, self.nqubits, not self.transpose)
+        if self.qubits:
+            invgate.on(self.qubits)
+        return invgate
+
+    def on(self, *args):
+        """
+        Act on the specified qubit(s).
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            qubits = list(args[0])
+        else:
+            qubits = list(args)
+        if len(qubits) != self.nqubits:
+            raise ValueError(f"expecting {self.nqubits} qubits, but received {len(qubits)}")
+        self.qubits = qubits
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if len(self.qubits) != self.nqubits:
+            raise RuntimeError("unspecified qubit(s)")
+        prtcl = self.particles()
+        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
 class ControlledGate(Gate):
     """
     A controlled quantum gate with an arbitrary number of control qubits.

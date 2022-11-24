@@ -93,6 +93,30 @@ class TestGates(unittest.TestCase):
         self.assertTrue(np.allclose(T.as_matrix() @ T.as_matrix(),
                                     S.as_matrix()))
 
+    def test_prepare_gate(self):
+        """
+        Test implementation of the "prepare" gate.
+        """
+        gate = qib.PrepareGate(np.random.standard_normal(size=8), 3)
+        # must be normalized
+        self.assertTrue(np.allclose(np.linalg.norm(gate.vec, ord=1), 1))
+        self.assertTrue(gate.is_unitary())
+        self.assertFalse(gate.is_hermitian())
+        self.assertEqual(gate.num_wires, 3)
+        self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
+                                    np.identity(8)))
+        gmat = gate.as_matrix()
+        self.assertTrue(np.allclose(gmat[:, 0], np.sign(gate.vec) * np.sqrt(np.abs(gate.vec))))
+        field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                qib.lattice.IntegerLattice((5,), pbc=False))
+        qa = qib.field.Qubit(field, 0)
+        qb = qib.field.Qubit(field, 3)
+        qc = qib.field.Qubit(field, 2)
+        gate.on((qa, qb, qc))
+        self.assertTrue(gate.fields() == [field])
+        self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(4), gmat), [0, 3, 2, 1, 4])))
+
     def test_controlled_gate(self):
         """
         Test implementation of controlled quantum gates.

@@ -27,6 +27,7 @@ from qib.operator import (
     RyGate,
     RzGate,
     RotationGate,
+    PrepareGate,
     ControlledGate,
     MultiplexedGate,
     TimeEvolutionGate,
