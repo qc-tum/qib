@@ -18,6 +18,12 @@ class Circuit:
         """
         self.gates.append(gate)
 
+    def prepend_gate(self, gate: Gate):
+        """
+        Prepend a quantum gate.
+        """
+        self.gates.insert(0, gate)
+
     def fields(self):
         """
         List of all fields appearing in the circuit.

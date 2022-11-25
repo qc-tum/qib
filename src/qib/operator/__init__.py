@@ -18,6 +18,7 @@ from qib.operator.gates import (
     SAdjGate,
     TGate,
     TAdjGate,
+    PhaseFactorGate,
     PrepareGate,
     ControlledGate,
     MultiplexedGate,

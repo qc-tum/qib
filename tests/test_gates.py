@@ -93,6 +93,28 @@ class TestGates(unittest.TestCase):
         self.assertTrue(np.allclose(T.as_matrix() @ T.as_matrix(),
                                     S.as_matrix()))
 
+    def test_phase_factor_gate(self):
+        """
+        Test implementation of the phase factor gate.
+        """
+        gate = qib.PhaseFactorGate(np.random.standard_normal(), 3)
+        self.assertTrue(gate.is_unitary())
+        self.assertFalse(gate.is_hermitian())
+        self.assertEqual(gate.num_wires, 3)
+        gmat = gate.as_matrix()
+        self.assertTrue(np.allclose(gmat, np.exp(1j*gate.phi) * np.identity(8)))
+        self.assertTrue(np.allclose(gmat @ gate.inverse().as_matrix(),
+                                    np.identity(8)))
+        field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                qib.lattice.IntegerLattice((5,), pbc=False))
+        qa = qib.field.Qubit(field, 0)
+        qb = qib.field.Qubit(field, 3)
+        qc = qib.field.Qubit(field, 2)
+        gate.on((qa, qb, qc))
+        self.assertTrue(gate.fields() == [field])
+        self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(4), gmat), [0, 3, 2, 1, 4])))
+
     def test_prepare_gate(self):
         """
         Test implementation of the "prepare" gate.

@@ -997,6 +997,85 @@ class TAdjGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
+class PhaseFactorGate(Gate):
+    """
+    Phase factor gate: multiplication by the phase factor
+    .. math:: e^{i \phi}
+    """
+    def __init__(self, phi: float, nwires: int):
+        self.phi = phi
+        self.nwires = nwires
+        self.prtcl = []
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return False
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the phase factor gate.
+        """
+        # TODO: generalize base 2
+        return np.exp(1j*self.phi) * np.identity(2**self.nwires)
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return self.nwires
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return self.prtcl
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set([p.field for p in self.prtcl]))
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return PhaseFactorGate(-self.phi, self.nwires)
+
+    def on(self, *args):
+        """
+        Act on the specified particle(s).
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            prtcl = list(args[0])
+        else:
+            prtcl = list(args)
+        if len(prtcl) != self.nwires:
+            raise ValueError(f"require {self.nwires} particles, but received {len(prtcl)}")
+        self.prtcl = prtcl
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.prtcl:
+            raise RuntimeError("unspecified target particle(s)")
+        iwire = [_map_particle_to_wire(fields, p) for p in self.prtcl]
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
 class PrepareGate(Gate):
     """
     Vector "preparation" gate.
