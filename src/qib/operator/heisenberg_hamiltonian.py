@@ -74,3 +74,10 @@ class HeisenbergHamiltonian(AbstractOperator):
         List of fields the Hamiltonian acts on.
         """
         return [self.field]
+
+    @property
+    def num_particles(self):
+        """
+        Number of the particles
+        """
+        return self.field.lattice.nsites

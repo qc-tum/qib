@@ -3,7 +3,7 @@ import numpy as np
 from enum import Enum
 from scipy.linalg import expm, sqrtm, block_diag
 from scipy.sparse import csr_matrix
-from typing import Sequence
+from typing import Sequence, Union
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
 
@@ -617,6 +617,7 @@ class RzGate(Gate):
 class RotationGate(Gate):
     """
     General rotation gate; the rotation angle and axis are combined into a single vector.
+    ntheta must be a vector of length 3 (theta_x, theta_y, theta_z)
     """
     def __init__(self, ntheta: Sequence[float], qubit: Qubit=None):
         self.ntheta = np.array(ntheta, copy=False)
@@ -1423,6 +1424,199 @@ class BlockEncodingGate(Gate):
         prtcl = self.particles()
         assert len(prtcl) == self.num_wires
         iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
+class ProjectorControlledPhaseShift(Gate):
+    """
+    Projector-controlled phase shift gate.
+    Building block for Qubitization.
+    Projector is state |0> on the encoding (auxiliary) qubit
+    TODO: generalize for different states
+    """
+    def __init__(self, encoding_qubits: Union[Qubit,Sequence[Qubit]]=None, auxiliary_qubits: Union[Qubit,Sequence[Qubit]]=None, theta: float=None):
+        if type(auxiliary_qubits) == Qubit:
+            self.auxiliary_qubits = [auxiliary_qubits]
+        elif auxiliary_qubits is not None:
+            self.auxiliary_qubits = list(auxiliary_qubits)
+        if type(encoding_qubits) == Qubit:
+            self.encoding_qubits = [encoding_qubits]
+        elif auxiliary_qubits is not None:
+            self.encoding_qubits = list(encoding_qubits)
+        self.theta = theta
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return False
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return ProjectorControlledPhaseShift(self.encoding_qubits, self.auxiliary_qubits, -self.theta)
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the controlled gate.
+        Note: The control state is |0> on the encoding qubit (I have to apply X gates)
+        TODO: generalize for more than one auxiliary qubit
+        """
+        if self.theta is None:
+            raise ValueError("the angle theta has not been initialized")
+        projector_NOT = ControlledGate(PauliXGate(self.auxiliary_qubits[0]), 1)
+        projector_NOT.set_control(self.encoding_qubits[0])
+        cp_matrix = projector_NOT.as_matrix()
+        return np.kron(PauliXGate(self.encoding_qubits[0]).as_matrix(), np.identity(2)) @ cp_matrix \
+               @ np.kron(np.identity(2), RzGate(2*self.theta, self.auxiliary_qubits[0]).as_matrix()) \
+               @ cp_matrix @ np.kron(PauliXGate(self.encoding_qubits[0]).as_matrix(), np.identity(2))
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return len(self.auxiliary_qubits) + len(self.encoding_qubits)
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return self.encoding_qubits + self.auxiliary_qubits
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set([enc.field for enc in self.encoding_qubits] + [aux.field for aux in self.auxiliary_qubits]))
+
+    def set_theta(self, theta):
+        """
+        Set the angle theta
+        """
+        self.theta = theta
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        iawire = [_map_particle_to_wire(fields, self.auxiliary_qubits[0])]
+        iewire = [_map_particle_to_wire(fields, self.encoding_qubits[0])]
+        iwire = iawire + iewire     # target wires come first
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
+class EigenvalueTransformationGate(Gate):
+    """
+    Eigenvalue transformation for a given unitary (encoding).
+    It requires the unitary gate that gets processed, the projector-controlled phase shift and the list of angles for the processing.
+    """
+    def __init__(self, block_encoding: BlockEncodingGate, processing_gate: ProjectorControlledPhaseShift, theta_seq: Sequence[float]=None):
+        assert block_encoding.is_unitary()
+        # Check that the encoding auxiliary gate is only one and is the same for both gates
+        assert len(processing_gate.encoding_qubits)==1 and len(block_encoding.auxiliary_qubits)==1 
+        assert all([processing_gate.encoding_qubits[i] == block_encoding.auxiliary_qubits[i] for i in range(1)])
+        self.block_encoding = block_encoding
+        self.processing_gate = processing_gate
+        if theta_seq is not None:
+            self.theta_seq = list(theta_seq)
+        else: 
+            self.theta_seq = theta_seq
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        raise False
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return self.block_encoding.num_wires + len(self.processing_gate.auxiliary_qubits)
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return list(set(self.block_encoding.particles + self.processing_gate.particles))
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return EigenvalueTransformationGate(self.block_encoding.inverse(), self.processing_gate.inverse(), [-t for t in self.theta_seq])
+    
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set(self.block_encoding.fields + self.processing_gate.fields))
+
+    def set_theta_seq(self, theta_seq: Sequence[float]):
+        """
+        Set the angles theta for the eigenvalue transformation
+        """
+        if theta_seq is not None:
+            self.theta_seq = list(theta_seq)
+        else: 
+            self.theta_seq = theta_seq
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the eigenvalue transformation
+        """
+        if not self.theta_seq:
+            raise ValueError("the angles 'theta' have not been initialized")
+        matrix = np.identity(2**self.num_wires)
+        id_for_projector = np.identity(2**self.block_encoding.encoded_operator().num_particles)
+        id_for_unitary = np.identity(2**len(self.processing_gate.auxiliary_qubits))
+        U_inv_matrix = self.block_encoding.inverse().as_matrix()
+        U_matrix = self.block_encoding.as_matrix()
+        if(len(self.theta_seq)%2==0):
+            dim = len(self.theta_seq)//2
+            start = 0
+        else:
+            dim = (len(self.theta_seq)-1)//2
+            self.processing_gate.set_theta(self.theta_seq[0])
+            matrix = matrix @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
+                            @ np.kron(U_matrix, id_for_unitary)
+            start = 1
+        for i in range(start, dim):
+            self.processing_gate.set_theta(self.theta_seq[2*i-start])
+            matrix =  matrix @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
+                             @ np.kron(U_inv_matrix, id_for_unitary)
+            self.processing_gate.set_theta(self.theta_seq[2*i+1-start])
+            matrix =  matrix @  np.kron(id_for_projector, self.processing_gate.as_matrix()) \
+                             @  np.kron(U_matrix, id_for_unitary)
+        return matrix
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if len(self.auxiliary_qubits) != self.num_aux_qubits:
+            raise RuntimeError("unspecified auxiliary qubit(s)")
+        ihwire = [_map_particle_to_wire(fields, h_prtcl) for h_prtcl in range(self.block_encoding.encoded_operator().num_particles)]
+        iawire = [_map_particle_to_wire(fields, self.processing_gate.auxiliary_qubits[0])]
+        iewire = [_map_particle_to_wire(fields, self.processing_gate.encoding_qubits[0])]
+        iwire = iawire + iewire + ihwire    # target wires come first
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
