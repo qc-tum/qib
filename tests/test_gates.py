@@ -361,6 +361,83 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.allclose(Pa @ (gate._circuit_matrix([field1, field2]) @ ψ),
                                         np.kron(ψa, H.as_matrix() @ ψp)))
 
+    def test_projector_controlled_phase_shift_gate(self):
+        """
+        Test the projector controlled phase shift gate
+        """
+        # auxiliary qubit (for encoding)
+        field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((4,), pbc=False))
+        q_enc = qib.field.Qubit(field2, 1)
+        # auxiliary qubit (for signal processing)
+        field3 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((4,), pbc=False))
+        q_anc = qib.field.Qubit(field3, 1)
+        processing = qib.ProjectorControlledPhaseShift(q_enc, q_anc)
+        cnot = qib.ControlledGate(qib.PauliXGate(q_anc), 1)
+        cnot.set_control(q_enc)
+        # must return identity
+        theta=0.
+        processing.set_theta(theta)
+        self.assertTrue(np.allclose(processing.as_matrix(), np.identity(4)))
+        # must return - identity
+        theta=np.pi
+        processing.set_theta(theta)
+        self.assertTrue(np.allclose(processing.as_matrix(), -np.identity(4)))
+        # phase rotation is (-1j)*Z
+        theta=np.pi/2
+        processing.set_theta(theta)
+        mat_ref = np.kron(qib.PauliXGate().as_matrix(), np.identity(2)) \
+                @ cnot.as_matrix() \
+                @ np.kron(np.identity(2), (-1j)*qib.PauliZGate().as_matrix()) \
+                @ cnot.as_matrix() \
+                @ np.kron(qib.PauliXGate().as_matrix(), np.identity(2))
+        self.assertTrue(np.allclose(processing.as_matrix(), mat_ref))
+        # inverse
+        theta = np.random.uniform(0,2*np.pi)
+        processing.set_theta(theta)
+        dir_mat = processing.as_matrix()
+        processing.set_theta(-theta)
+        inv_mat = processing.inverse().as_matrix()
+        self.assertTrue(np.allclose(dir_mat, inv_mat))
+        # check particles, wires and fields
+        self.assertTrue(processing.num_wires==2)
+        self.assertTrue(processing.particles() == [q_enc, q_anc] or processing.particles() == [q_anc, q_enc])
+        self.assertTrue(processing.fields() == [q_enc.field, q_anc.field] or processing.fields() == [q_anc.field, q_enc.field])
+
+    def test_eigenvalue_transformation_gate(self):
+        """
+        Test the eigenvalue transformation gate
+        """
+        # construct a simple Hamiltonian
+        L = 5
+        latt = qib.lattice.IntegerLattice((L,), pbc=True)
+        field1 = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
+        H = qib.operator.HeisenbergHamiltonian(field1, np.random.standard_normal(size=3),
+                                                       np.random.standard_normal(size=3))
+        # rescale parameters (effectively rescales overall Hamiltonian)
+        scale = 1.25 * np.linalg.norm(H.as_matrix().toarray(), ord=2)
+        H.J /= scale
+        H.h /= scale
+        # auxiliary qubit
+        field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((4,), pbc=False))
+        q_enc = qib.field.Qubit(field2, 1)
+        field3 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((4,), pbc=False))
+        q_anc = qib.field.Qubit(field3, 1)
+        for method in qib.operator.BlockEncodingMethod:
+            encoding = qib.BlockEncodingGate(H, method)
+            encoding.set_auxiliary_qubits([q_enc])
+            processing = qib.ProjectorControlledPhaseShift(q_enc, q_anc)
+            eigen_transform = qib.EigenvalueTransformationGate(encoding,processing)
+            # if theta==0 I get the encoding hamiltonian
+            eigen_transform.set_theta_seq([0])
+            self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.kron(encoding.as_matrix(), np.identity(2))))
+            # if theta_1==0 and theta_2==0 I get the identity
+            eigen_transform.set_theta_seq([0,0])
+            self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.identity(2**eigen_transform.num_wires)))
+            #TODO: add more tests
 
 def permute_gate_wires(u: np.ndarray, perm):
     """

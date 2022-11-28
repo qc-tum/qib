@@ -9,14 +9,14 @@ class TestVQE(unittest.TestCase):
         """
         Test VQE + qUCC ansatz.
         """
-        latt = qib.lattice.IntegerLattice((2, 2))
+        latt = qib.lattice.LayeredLattice(qib.lattice.IntegerLattice((2, 2)),2)
         n = latt.nsites
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         hamiltonian = qib.operator.FermiHubbardHamiltonian(field, -1., 5., False)
         pauli_ham = qib.transform.jordan_wigner_encode_field_operator(hamiltonian.as_field_operator())
 
         # BUG: it doesn't work when all entries for x0 are 0.
-        opt = qib.vqe.Optimizer(x0=None, method="COBYLA", tol=1e-6)
+        opt = qib.vqe.Optimizer(x0=None, method="COBYLA", tol=1e-4)
         # it doesn't work that well with double excitations...
         ans = qib.vqe.ansatz.qUCC(field, excitations="s", embedding="jordan_wigner")
         state_0 = np.array([1])

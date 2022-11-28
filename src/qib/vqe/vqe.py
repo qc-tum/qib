@@ -34,7 +34,8 @@ class VQE:
         def energy_func(params):
             # starts form _initial_state and applies ansatz.
             state = self.ansatz.as_matrix(params).toarray()@self.initial_state
-            return measure_expectation_statevector(pauli_op, state)
+            energy = measure_expectation_statevector(pauli_op, state)
+            return energy
             
         res = minimize(fun = energy_func,
                        x0 = self.optimizer.x0,
