@@ -616,8 +616,8 @@ class RzGate(Gate):
 
 class RotationGate(Gate):
     """
-    General rotation gate; the rotation angle and axis are combined into a single vector.
-    ntheta must be a vector of length 3 (theta_x, theta_y, theta_z)
+    General rotation gate; the rotation angle and axis are combined into
+    a single vector `ntheta` of length 3.
     """
     def __init__(self, ntheta: Sequence[float], qubit: Qubit=None):
         self.ntheta = np.array(ntheta, copy=False)
@@ -1000,8 +1000,7 @@ class TAdjGate(Gate):
 
 class PhaseFactorGate(Gate):
     """
-    Phase factor gate: multiplication by the phase factor
-    .. math:: e^{i \phi}
+    Phase factor gate: multiplication by the phase factor :math:`e^{i \phi}`.
     """
     def __init__(self, phi: float, nwires: int):
         self.phi = phi
@@ -1396,8 +1395,7 @@ class MultiplexedGate(Gate):
 class TimeEvolutionGate(Gate):
     """
     Quantum time evolution gate, i.e., matrix exponential,
-    given a Hamiltonian `h`:
-    .. math:: e^{-i h t}
+    given a Hamiltonian `h`: :math:`e^{-i h t}`.
     """
     def __init__(self, h, t: float):
         self.h = h
@@ -1707,13 +1705,13 @@ class EigenvalueTransformationGate(Gate):
     def __init__(self, block_encoding: BlockEncodingGate, processing_gate: ProjectorControlledPhaseShift, theta_seq: Sequence[float]=None):
         assert block_encoding.is_unitary()
         # Check that the encoding auxiliary gate is only one and is the same for both gates
-        assert len(processing_gate.encoding_qubits)==1 and len(block_encoding.auxiliary_qubits)==1 
+        assert len(processing_gate.encoding_qubits)==1 and len(block_encoding.auxiliary_qubits)==1
         assert all([processing_gate.encoding_qubits[i] == block_encoding.auxiliary_qubits[i] for i in range(1)])
         self.block_encoding = block_encoding
         self.processing_gate = processing_gate
         if theta_seq is not None:
             self.theta_seq = list(theta_seq)
-        else: 
+        else:
             self.theta_seq = theta_seq
 
     def is_hermitian(self):
@@ -1740,7 +1738,7 @@ class EigenvalueTransformationGate(Gate):
         Return the inverse operator.
         """
         return EigenvalueTransformationGate(self.block_encoding.inverse(), self.processing_gate.inverse(), [-t for t in self.theta_seq])
-    
+
     def fields(self):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
@@ -1753,7 +1751,7 @@ class EigenvalueTransformationGate(Gate):
         """
         if theta_seq is not None:
             self.theta_seq = list(theta_seq)
-        else: 
+        else:
             self.theta_seq = theta_seq
 
     def as_matrix(self):
@@ -1763,7 +1761,7 @@ class EigenvalueTransformationGate(Gate):
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
         matrix = np.identity(2**self.num_wires)
-        id_for_projector = np.identity(2**self.block_encoding.encoded_operator().num_particles)
+        id_for_projector = np.identity(2**self.block_encoding.encoded_operator().nsites)
         id_for_unitary = np.identity(2**len(self.processing_gate.auxiliary_qubits))
         U_inv_matrix = self.block_encoding.inverse().as_matrix()
         U_matrix = self.block_encoding.as_matrix()
@@ -1795,7 +1793,7 @@ class EigenvalueTransformationGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if len(self.auxiliary_qubits) != self.num_aux_qubits:
             raise RuntimeError("unspecified auxiliary qubit(s)")
-        ihwire = [_map_particle_to_wire(fields, h_prtcl) for h_prtcl in range(self.block_encoding.encoded_operator().num_particles)]
+        ihwire = [_map_particle_to_wire(fields, h_prtcl) for h_prtcl in range(self.block_encoding.encoded_operator().nsites)]
         iawire = [_map_particle_to_wire(fields, self.processing_gate.auxiliary_qubits[0])]
         iewire = [_map_particle_to_wire(fields, self.processing_gate.encoding_qubits[0])]
         iwire = iawire + iewire + ihwire    # target wires come first

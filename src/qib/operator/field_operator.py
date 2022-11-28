@@ -57,7 +57,7 @@ class IFODesc:
 class FieldOperatorTerm:
     """
     Field operator term in second quantization, e.g.,
-    .. math:: \sum_{j,k} h_{j,k} a^{\dagger}_j a_k
+    :math:`\sum_{j,k} h_{j,k} a^{\dagger}_j a_k`.
 
     Each summation index is associated with a field and the
     operator type (e.g., fermionic creation operator).
