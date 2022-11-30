@@ -1182,13 +1182,19 @@ class PrepareGate(Gate):
 class ControlledGate(Gate):
     """
     A controlled quantum gate with an arbitrary number of control qubits.
-    The control qubits have to be set separately.
-    Use the reference to the target gate to set the qubits (or particles) it acts on.
+    The control qubits have to be set explicitly.
+    The target qubits (or particles) are specified via the target gate.
     """
-    def __init__(self, tgate: Gate, ncontrols: int):
+    def __init__(self, tgate: Gate, ncontrols: int, bitpattern: int=-1):
         self.tgate = tgate
         self.ncontrols = ncontrols
         self.control_qubits = []
+        # standard case: control is active if all control qubits are in |1> state
+        if bitpattern < 0:
+            bitpattern = 2**ncontrols - 1
+        if bitpattern >= 2**ncontrols:
+            raise ValueError(f"integer in `bitpattern` must be smaller than 2**ncontrols = {2**ncontrols}")
+        self.bitpattern = bitpattern
 
     def is_hermitian(self):
         """
@@ -1200,7 +1206,7 @@ class ControlledGate(Gate):
         """
         Return the inverse operator.
         """
-        invgate = ControlledGate(self.tgate.inverse(), self.ncontrols)
+        invgate = ControlledGate(self.tgate.inverse(), self.ncontrols, self.bitpattern)
         if self.control_qubits:
             invgate.set_control(self.control_qubits)
         return invgate
@@ -1211,7 +1217,10 @@ class ControlledGate(Gate):
         """
         tgmat = self.tgate.as_matrix()
         # target gate corresponds to faster varying indices
-        return block_diag(np.identity((2**self.ncontrols - 1) * tgmat.shape[0]), tgmat)
+        cidx = np.zeros(2**self.ncontrols)
+        cidx[self.bitpattern] = 1
+        return (  np.kron(np.diag(1 - cidx), np.identity(tgmat.shape[0]))
+                + np.kron(np.diag(cidx), tgmat))
 
     @property
     def num_wires(self):
@@ -1269,14 +1278,10 @@ class ControlledGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if len(self.control_qubits) != self.ncontrols:
             raise RuntimeError("unspecified control qubit(s)")
-        tprtcl = self.tgate.particles()
-        if len(tprtcl) != self.tgate.num_wires:
+        if len(self.tgate.particles()) != self.tgate.num_wires:
             raise RuntimeError("unspecified target gate particle(s)")
-        # the ordering of control qubits is irrelevant,
-        # so we sort indices to avoid unncessary wire permutations
-        icwire = sorted([_map_particle_to_wire(fields, q) for q in self.control_qubits])
-        itwire = [_map_particle_to_wire(fields, p) for p in tprtcl]
-        iwire = itwire + icwire     # target wires come first
+        prtcl = self.particles()
+        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])

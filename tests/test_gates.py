@@ -168,11 +168,12 @@ class TestGates(unittest.TestCase):
         self.assertTrue(np.array_equal(cnot._circuit_matrix([field2, field1]).toarray(),
                                        permute_gate_wires(np.kron(np.identity(8), cnot.as_matrix()), [0, 1, 3, 4, 2])))
 
-        # construct the Toffoli gate
-        toffoli = qib.ControlledGate(qib.PauliXGate(), 2)
+        # construct a Toffoli-like gate, activated by |10>
+        toffoli = qib.ControlledGate(qib.PauliXGate(), 2, bitpattern=2)
         self.assertEqual(toffoli.num_wires, 3)
         self.assertEqual(toffoli.num_controls, 2)
-        self.assertTrue(np.array_equal(toffoli.as_matrix(), np.identity(8)[[0, 1, 2, 3, 4, 5, 7, 6]]))
+        self.assertTrue(np.array_equal(toffoli.as_matrix(), np.identity(8)[[0, 1, 2, 3, 5, 4, 6, 7]]))
+        self.assertTrue(np.allclose(toffoli.as_matrix() @ toffoli.inverse().as_matrix(), np.identity(8)))
         toffoli.set_control(qc, qb)
         toffoli.target_gate().on(qa)
         self.assertTrue(toffoli.fields() == [field1, field2] or toffoli.fields() == [field2, field1])
