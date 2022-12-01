@@ -34,7 +34,8 @@ from qib.operator import (
     TimeEvolutionGate,
     BlockEncodingGate,
     ProjectorControlledPhaseShift,
-    EigenvalueTransformationGate
+    EigenvalueTransformationGate,
+    GeneralGate
 )
 
 from qib.circuit import Circuit

@@ -1808,6 +1808,88 @@ class EigenvalueTransformationGate(Gate):
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
 
+class GeneralGate(Gate):
+    """
+    General (user-defined) quantum gate, specified by a unitary matrix.
+    """
+    def __init__(self, mat, nwires: int):
+        mat = np.array(mat, copy=False)
+        if mat.shape != (2**nwires, 2**nwires):
+            raise ValueError(f"`mat` must be a {2**nwires} x {2**nwires} matrix")
+        if not np.allclose(mat @ mat.conj().T, np.identity(mat.shape[0])):
+            raise ValueError("`mat` must be unitary")
+        self.mat = mat
+        self.nwires = nwires
+        self.prtcl = []
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return np.allclose(self.mat, self.mat.conj().T)
+
+    def as_matrix(self):
+        """
+        Return the matrix representation of the gate.
+        """
+        return self.mat
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return self.nwires
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return self.prtcl
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set([p.field for p in self.prtcl]))
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return GeneralGate(self.mat.conj().T, self.nwires)
+
+    def on(self, *args):
+        """
+        Act on the specified particle(s).
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            prtcl = list(args[0])
+        else:
+            prtcl = list(args)
+        if len(prtcl) != self.nwires:
+            raise ValueError(f"require {self.nwires} particles, but received {len(prtcl)}")
+        self.prtcl = prtcl
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.prtcl:
+            raise RuntimeError("unspecified target particle(s)")
+        iwire = [_map_particle_to_wire(fields, p) for p in self.prtcl]
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
 def _map_particle_to_wire(fields: Sequence[Field], p: Particle):
     """
     Map a particle to a quantum wire.

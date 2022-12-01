@@ -26,5 +26,6 @@ from qib.operator.gates import (
     BlockEncodingMethod,
     BlockEncodingGate,
     ProjectorControlledPhaseShift,
-    EigenvalueTransformationGate
+    EigenvalueTransformationGate,
+    GeneralGate
 )

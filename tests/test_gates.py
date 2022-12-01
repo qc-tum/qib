@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import expm, block_diag
 from scipy import sparse
+from scipy.stats import unitary_group
 import unittest
 import qib
 
@@ -439,6 +440,26 @@ class TestGates(unittest.TestCase):
             eigen_transform.set_theta_seq([0,0])
             self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.identity(2**eigen_transform.num_wires)))
             #TODO: add more tests
+
+    def test_general_gate(self):
+        """
+        Test implementation of a general (user-defined) quantum gate.
+        """
+        gate = qib.GeneralGate(unitary_group.rvs(8), 3)
+        self.assertTrue(gate.is_unitary())
+        self.assertEqual(gate.num_wires, 3)
+        self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
+                                    np.identity(8)))
+        field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                qib.lattice.IntegerLattice((5,), pbc=False))
+        qa = qib.field.Qubit(field, 0)
+        qb = qib.field.Qubit(field, 3)
+        qc = qib.field.Qubit(field, 2)
+        gate.on((qa, qb, qc))
+        self.assertTrue(gate.fields() == [field])
+        self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(4), gate.as_matrix()), [0, 3, 2, 1, 4])))
+
 
 def permute_gate_wires(u: np.ndarray, perm):
     """
