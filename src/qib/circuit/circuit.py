@@ -18,6 +18,12 @@ class Circuit:
         """
         self.gates.append(gate)
 
+    def append_circuit(self, other):
+        """
+        Append the gates from another quantum circuit to the current circuit.
+        """
+        self.gates += other.gates
+
     def prepend_gate(self, gate: Gate):
         """
         Prepend a quantum gate.
@@ -33,14 +39,18 @@ class Circuit:
             f = f.union(g.fields())
         return list(f)
 
-    def as_matrix(self, fields: Sequence[Field]=[]):
+    def inverse(self):
+        """
+        Construct the "inverse" circuit: reversed list of adjoint gates.
+        """
+        return Circuit([g.inverse() for g in reversed(self.gates)])
+
+    def as_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the circuit.
         """
         if not self.gates:
             raise RuntimeError("missing gates, hence cannot compute matrix representation of circuit")
-        if not fields:
-            fields = self.fields()
         mat = self.gates[0]._circuit_matrix(fields)
         for g in self.gates[1:]:
             mat = g._circuit_matrix(fields) @ mat
