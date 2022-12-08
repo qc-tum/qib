@@ -2,6 +2,8 @@ import numpy as np
 from scipy.linalg import expm, block_diag
 from scipy import sparse
 import unittest
+import sys
+sys.path.append('../src')
 import qib
 
 
@@ -88,6 +90,8 @@ class TestGates(unittest.TestCase):
             self.assertTrue(gate.fields() == [field])
             self.assertTrue(np.allclose(gate.inverse().as_matrix() @ gate.as_matrix(),
                                         np.identity(2)))
+            self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
+                                           np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
         self.assertTrue(np.allclose(S.as_matrix() @ S.as_matrix(),
                                     qib.PauliZGate().as_matrix()))
         self.assertTrue(np.allclose(T.as_matrix() @ T.as_matrix(),
@@ -289,7 +293,7 @@ class TestGates(unittest.TestCase):
         # auxiliary qubit
         field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
                                  qib.lattice.IntegerLattice((4,), pbc=False))
-        q = qib.field.Qubit(field2, 1)
+        q = qib.field.Qubit(field2, 0)
         for method in qib.operator.BlockEncodingMethod:
             gate = qib.BlockEncodingGate(H, method)
             self.assertEqual(gate.num_wires, L + 1)
@@ -305,15 +309,16 @@ class TestGates(unittest.TestCase):
             ψp = qib.util.crandn(2**L)
             ψp /= np.linalg.norm(ψp)
             # quantum state on auxiliary register
-            ψa = np.kron(np.kron(qib.util.crandn(4), [1, 0]), qib.util.crandn(2))
+            ψa = np.kron(qib.util.crandn(8), [1, 0])
             ψa /= np.linalg.norm(ψa)
             # overall quantum state
             ψ = np.kron(ψa, ψp)
             # projection |0><0| acting on auxiliary qubit
-            Pa = sparse.kron(sparse.kron(sparse.identity(4), sparse.diags([1., 0.])), sparse.identity(2**(L + 1)))
+            Pa = sparse.kron(sparse.kron(sparse.identity(8), sparse.diags([1., 0.])), sparse.identity(2**(L)))
             # text block-encoding of Hamiltonian
             self.assertTrue(np.allclose(Pa @ (gate._circuit_matrix([field1, field2]) @ ψ),
                                         np.kron(ψa, H.as_matrix() @ ψp)))
+            self.assertTrue(np.allclose(gate._circuit_matrix([field1, field2]).toarray(), np.kron(np.identity(2**3), gate.as_matrix())))
 
     def test_projector_controlled_phase_shift_gate(self):
         """
@@ -358,6 +363,8 @@ class TestGates(unittest.TestCase):
         self.assertTrue(processing.num_wires==2)
         self.assertTrue(processing.particles() == [q_enc, q_anc] or processing.particles() == [q_anc, q_enc])
         self.assertTrue(processing.fields() == [q_enc.field, q_anc.field] or processing.fields() == [q_anc.field, q_enc.field])
+        wires_order = [2, 3, 0, 4, 5, 6, 1, 7]
+        self.assertTrue(np.allclose(processing._circuit_matrix([field2, field3]).toarray(), permute_gate_wires(np.kron(processing.as_matrix(), np.identity(2**6)), wires_order)))
 
     def test_eigenvalue_transformation_gate(self):
         """

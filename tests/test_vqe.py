@@ -16,9 +16,9 @@ class TestVQE(unittest.TestCase):
         pauli_ham = qib.transform.jordan_wigner_encode_field_operator(hamiltonian.as_field_operator())
 
         # BUG: it doesn't work when all entries for x0 are 0.
-        opt = qib.vqe.Optimizer(x0=None, method="COBYLA", tol=1e-4)
+        opt = qib.algorithms.vqe.Optimizer(x0=None, method="COBYLA", tol=1e-4)
         # it doesn't work that well with double excitations...
-        ans = qib.vqe.ansatz.qUCC(field, excitations="s", embedding="jordan_wigner")
+        ans = qib.algorithms.vqe.ansatz.qUCC(field, excitations="s", embedding="jordan_wigner")
         state_0 = np.array([1])
         # first n_occ sites occupied
         n_occ = 2
@@ -26,7 +26,7 @@ class TestVQE(unittest.TestCase):
             state_0 = np.kron(np.array([0, 1]), state_0)
         for i in range(n-n_occ):
             state_0 = np.kron(np.array([1, 0]), state_0)
-        solv = qib.vqe.VQE(ansatz=ans, optimizer=opt, initial_state=state_0, measure_method="statevector")
+        solv = qib.algorithms.vqe.VQE(ansatz=ans, optimizer=opt, initial_state=state_0, measure_method="statevector")
         self.assertTrue(solv.run(pauli_ham).success)
         #print(solv.run(pauli_ham))
 

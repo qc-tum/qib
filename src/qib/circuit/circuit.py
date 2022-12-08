@@ -21,20 +21,22 @@ class Circuit:
     def fields(self):
         """
         List of all fields appearing in the circuit.
+        Warning: the order of fields may change at every iteration
         """
         f = set()
         for g in self.gates:
             f = f.union(g.fields())
         return list(f)
 
-    def as_matrix(self, fields: Sequence[Field]=[]):
+    def as_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the circuit.
         """
         if not self.gates:
             raise RuntimeError("missing gates, hence cannot compute matrix representation of circuit")
+        # Warning: do not use the ones saved in self.fields() because the order is not fixed 
         if not fields:
-            fields = self.fields()
+            raise RuntimeError("missing fields, hence cannot compute matrix representation of circuit")
         mat = self.gates[0]._circuit_matrix(fields)
         for g in self.gates[1:]:
             mat = g._circuit_matrix(fields) @ mat

@@ -1460,6 +1460,30 @@ class ProjectorControlledPhaseShift(Gate):
         """
         return ProjectorControlledPhaseShift(self.encoding_qubits, self.auxiliary_qubits, -self.theta)
 
+    def set_encoding_qubits(self, *args):
+        """
+        Set the encoding qubits.
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            encoding_qubits = list(args[0])
+        else:
+            encoding_qubits = list(args)
+        self.encoding_qubits = encoding_qubits
+        # enable chaining
+        return self
+
+    def set_auxiliary_qubits(self, *args):
+        """
+        Set the auxiliary qubits.
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            auxiliary_qubits = list(args[0])
+        else:
+            auxiliary_qubits = list(args)
+        self.auxiliary_qubits = auxiliary_qubits
+        # enable chaining
+        return self
+
     def as_matrix(self):
         """
         Generate the matrix representation of the controlled gate.
@@ -1508,9 +1532,12 @@ class ProjectorControlledPhaseShift(Gate):
         for f in fields:
             if f.local_dim != 2:
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
-        iawire = [_map_particle_to_wire(fields, self.auxiliary_qubits[0])]
-        iewire = [_map_particle_to_wire(fields, self.encoding_qubits[0])]
+        """
+        iawire = [_map_particle_to_wire(fields, anc_q) for anc_q in self.auxiliary_qubits]
+        iewire = [_map_particle_to_wire(fields, enc_q) for enc_q in self.encoding_qubits]
         iwire = iawire + iewire     # target wires come first
+        """
+        iwire = [_map_particle_to_wire(fields, p) for p in self.particles()]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1521,6 +1548,7 @@ class EigenvalueTransformationGate(Gate):
     """
     Eigenvalue transformation for a given unitary (encoding).
     It requires the unitary gate that gets processed, the projector-controlled phase shift and the list of angles for the processing.
+    ***** DEPRECATED: Use EigenvalueTransformation in qib/qubitization *****
     """
     def __init__(self, block_encoding: BlockEncodingGate, processing_gate: ProjectorControlledPhaseShift, theta_seq: Sequence[float]=None):
         assert block_encoding.is_unitary()
@@ -1551,7 +1579,11 @@ class EigenvalueTransformationGate(Gate):
         """
         Return the list of quantum particles the gate acts on.
         """
-        return list(set(self.block_encoding.particles + self.processing_gate.particles))
+        tot_part = self.block_encoding.particles().copy()
+        for p in self.processing_gate.particles():
+            if p not in tot_part:
+                tot_part.append(p)
+        return tot_part
 
     def inverse(self):
         """
@@ -1581,7 +1613,8 @@ class EigenvalueTransformationGate(Gate):
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
         matrix = np.identity(2**self.num_wires)
-        id_for_projector = np.identity(2**self.block_encoding.encoded_operator().num_particles)
+        fields = self.block_encoding.encoded_operator().fields()
+        id_for_projector = np.identity(2**sum(f.lattice.nsites for f in fields))
         id_for_unitary = np.identity(2**len(self.processing_gate.auxiliary_qubits))
         U_inv_matrix = self.block_encoding.inverse().as_matrix()
         U_matrix = self.block_encoding.as_matrix()
@@ -1591,16 +1624,19 @@ class EigenvalueTransformationGate(Gate):
         else:
             dim = (len(self.theta_seq)-1)//2
             self.processing_gate.set_theta(self.theta_seq[0])
-            matrix = matrix @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
-                            @ np.kron(U_matrix, id_for_unitary)
+            matrix = np.kron(U_matrix, id_for_unitary) \
+                   @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
+                   @ matrix
             start = 1
         for i in range(start, dim):
             self.processing_gate.set_theta(self.theta_seq[2*i-start])
-            matrix =  matrix @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
-                             @ np.kron(U_inv_matrix, id_for_unitary)
+            matrix =  np.kron(U_inv_matrix, id_for_unitary) \
+                   @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
+                   @ matrix
             self.processing_gate.set_theta(self.theta_seq[2*i+1-start])
-            matrix =  matrix @  np.kron(id_for_projector, self.processing_gate.as_matrix()) \
-                             @  np.kron(U_matrix, id_for_unitary)
+            matrix = np.kron(U_matrix, id_for_unitary) \
+                   @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
+                   @ matrix 
         return matrix
 
     def _circuit_matrix(self, fields: Sequence[Field]):
@@ -1611,12 +1647,19 @@ class EigenvalueTransformationGate(Gate):
         for f in fields:
             if f.local_dim != 2:
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
-        if len(self.auxiliary_qubits) != self.num_aux_qubits:
-            raise RuntimeError("unspecified auxiliary qubit(s)")
-        ihwire = [_map_particle_to_wire(fields, h_prtcl) for h_prtcl in range(self.block_encoding.encoded_operator().num_particles)]
-        iawire = [_map_particle_to_wire(fields, self.processing_gate.auxiliary_qubits[0])]
-        iewire = [_map_particle_to_wire(fields, self.processing_gate.encoding_qubits[0])]
+        '''
+        part_h = self.block_encoding.particles()
+        for p in range(len(self.processing_gate.particles())):
+            if self.processing_gate.particles()[p] in part_h:
+                part_h.pop(p)
+        ihwire = [_map_particle_to_wire(fields, h_q) for h_q in part_h]
+        iawire = [_map_particle_to_wire(fields, aux_q) for aux_q in self.processing_gate.auxiliary_qubits]
+        iewire = [_map_particle_to_wire(fields, enc_q) for enc_q in self.processing_gate.encoding_qubits]
         iwire = iawire + iewire + ihwire    # target wires come first
+        '''
+        prtcl = self.particles()
+        assert len(prtcl) == self.num_wires
+        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
