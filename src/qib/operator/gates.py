@@ -616,8 +616,8 @@ class RzGate(Gate):
 
 class RotationGate(Gate):
     """
-    General rotation gate; the rotation angle and axis are combined into a single vector.
-    ntheta must be a vector of length 3 (theta_x, theta_y, theta_z)
+    General rotation gate; the rotation angle and axis are combined into
+    a single vector `ntheta` of length 3.
     """
     def __init__(self, ntheta: Sequence[float], qubit: Qubit=None):
         self.ntheta = np.array(ntheta, copy=False)
@@ -998,16 +998,203 @@ class TAdjGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
 
+class PhaseFactorGate(Gate):
+    """
+    Phase factor gate: multiplication by the phase factor :math:`e^{i \phi}`.
+    """
+    def __init__(self, phi: float, nwires: int):
+        self.phi = phi
+        self.nwires = nwires
+        self.prtcl = []
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return False
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the phase factor gate.
+        """
+        # TODO: generalize base 2
+        return np.exp(1j*self.phi) * np.identity(2**self.nwires)
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return self.nwires
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return self.prtcl
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set([p.field for p in self.prtcl]))
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return PhaseFactorGate(-self.phi, self.nwires)
+
+    def on(self, *args):
+        """
+        Act on the specified particle(s).
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            prtcl = list(args[0])
+        else:
+            prtcl = list(args)
+        if len(prtcl) != self.nwires:
+            raise ValueError(f"require {self.nwires} particles, but received {len(prtcl)}")
+        self.prtcl = prtcl
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.prtcl:
+            raise RuntimeError("unspecified target particle(s)")
+        iwire = [_map_particle_to_wire(fields, p) for p in self.prtcl]
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
+class PrepareGate(Gate):
+    """
+    Vector "preparation" gate.
+    """
+    def __init__(self, vec, nqubits: int, transpose=False):
+        vec = np.array(vec)
+        if vec.ndim != 1:
+            raise ValueError("expecting a vector")
+        if not np.isrealobj(vec):
+            raise ValueError("only real-valued vectors supported")
+        if vec.shape[0] != 2**nqubits:
+            raise ValueError(f"input vector must have length 2^nqubits = {2**nqubits}")
+        # note: using 1-norm here by convention
+        n = np.linalg.norm(vec, ord=1)
+        if abs(n - 1) > 1e-12:
+            vec /= n
+        self.vec = vec
+        self.nqubits = nqubits
+        self.qubits = []
+        self.transpose = transpose
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        # in general not Hermitian
+        # TODO: can one construct a Hermitian realization?
+        return False
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the "preparation" gate.
+        """
+        x = np.sign(self.vec) * np.sqrt(np.abs(self.vec))
+        # use QR decomposition for extension to full basis
+        Q = np.linalg.qr(x.reshape((-1, 1)), mode="complete")[0]
+        if np.dot(x, Q[:, 0]) < 0:
+            Q[:, 0] = -Q[:, 0]
+        if not self.transpose:
+            return Q
+        else:
+            return Q.T
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return self.nqubits
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return self.qubits
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set([q.field for q in self.qubits]))
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        invgate = PrepareGate(self.vec, self.nqubits, not self.transpose)
+        if self.qubits:
+            invgate.on(self.qubits)
+        return invgate
+
+    def on(self, *args):
+        """
+        Act on the specified qubit(s).
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            qubits = list(args[0])
+        else:
+            qubits = list(args)
+        if len(qubits) != self.nqubits:
+            raise ValueError(f"expecting {self.nqubits} qubits, but received {len(qubits)}")
+        self.qubits = qubits
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if len(self.qubits) != self.nqubits:
+            raise RuntimeError("unspecified qubit(s)")
+        prtcl = self.particles()
+        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
 class ControlledGate(Gate):
     """
     A controlled quantum gate with an arbitrary number of control qubits.
-    The control qubits have to be set separately.
-    Use the reference to the target gate to set the qubits (or particles) it acts on.
+    The control qubits have to be set explicitly.
+    The target qubits (or particles) are specified via the target gate.
     """
-    def __init__(self, tgate: Gate, ncontrols: int):
+    def __init__(self, tgate: Gate, ncontrols: int, bitpattern: int=-1):
         self.tgate = tgate
         self.ncontrols = ncontrols
         self.control_qubits = []
+        # standard case: control is active if all control qubits are in |1> state
+        if bitpattern < 0:
+            bitpattern = 2**ncontrols - 1
+        if bitpattern >= 2**ncontrols:
+            raise ValueError(f"integer in `bitpattern` must be smaller than 2**ncontrols = {2**ncontrols}")
+        self.bitpattern = bitpattern
 
     def is_hermitian(self):
         """
@@ -1019,7 +1206,7 @@ class ControlledGate(Gate):
         """
         Return the inverse operator.
         """
-        invgate = ControlledGate(self.tgate.inverse(), self.ncontrols)
+        invgate = ControlledGate(self.tgate.inverse(), self.ncontrols, self.bitpattern)
         if self.control_qubits:
             invgate.set_control(self.control_qubits)
         return invgate
@@ -1030,7 +1217,10 @@ class ControlledGate(Gate):
         """
         tgmat = self.tgate.as_matrix()
         # target gate corresponds to faster varying indices
-        return block_diag(np.identity((2**self.ncontrols - 1) * tgmat.shape[0]), tgmat)
+        cidx = np.zeros(2**self.ncontrols)
+        cidx[self.bitpattern] = 1
+        return (  np.kron(np.diag(1 - cidx), np.identity(tgmat.shape[0]))
+                + np.kron(np.diag(cidx), tgmat))
 
     @property
     def num_wires(self):
@@ -1088,14 +1278,10 @@ class ControlledGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if len(self.control_qubits) != self.ncontrols:
             raise RuntimeError("unspecified control qubit(s)")
-        tprtcl = self.tgate.particles()
-        if len(tprtcl) != self.tgate.num_wires:
+        if len(self.tgate.particles()) != self.tgate.num_wires:
             raise RuntimeError("unspecified target gate particle(s)")
-        # the ordering of control qubits is irrelevant,
-        # so we sort indices to avoid unncessary wire permutations
-        icwire = sorted([_map_particle_to_wire(fields, q) for q in self.control_qubits])
-        itwire = [_map_particle_to_wire(fields, p) for p in tprtcl]
-        iwire = itwire + icwire     # target wires come first
+        prtcl = self.particles()
+        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1214,8 +1400,7 @@ class MultiplexedGate(Gate):
 class TimeEvolutionGate(Gate):
     """
     Quantum time evolution gate, i.e., matrix exponential,
-    given a Hamiltonian `h`:
-    .. math:: e^{-i h t}
+    given a Hamiltonian `h`: :math:`e^{-i h t}`.
     """
     def __init__(self, h, t: float):
         self.h = h
@@ -1553,13 +1738,13 @@ class EigenvalueTransformationGate(Gate):
     def __init__(self, block_encoding: BlockEncodingGate, processing_gate: ProjectorControlledPhaseShift, theta_seq: Sequence[float]=None):
         assert block_encoding.is_unitary()
         # Check that the encoding auxiliary gate is only one and is the same for both gates
-        assert len(processing_gate.encoding_qubits)==1 and len(block_encoding.auxiliary_qubits)==1 
+        assert len(processing_gate.encoding_qubits)==1 and len(block_encoding.auxiliary_qubits)==1
         assert all([processing_gate.encoding_qubits[i] == block_encoding.auxiliary_qubits[i] for i in range(1)])
         self.block_encoding = block_encoding
         self.processing_gate = processing_gate
         if theta_seq is not None:
             self.theta_seq = list(theta_seq)
-        else: 
+        else:
             self.theta_seq = theta_seq
 
     def is_hermitian(self):
@@ -1590,7 +1775,7 @@ class EigenvalueTransformationGate(Gate):
         Return the inverse operator.
         """
         return EigenvalueTransformationGate(self.block_encoding.inverse(), self.processing_gate.inverse(), [-t for t in self.theta_seq])
-    
+
     def fields(self):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
@@ -1603,7 +1788,7 @@ class EigenvalueTransformationGate(Gate):
         """
         if theta_seq is not None:
             self.theta_seq = list(theta_seq)
-        else: 
+        else:
             self.theta_seq = theta_seq
 
     def as_matrix(self):
@@ -1613,8 +1798,7 @@ class EigenvalueTransformationGate(Gate):
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
         matrix = np.identity(2**self.num_wires)
-        fields = self.block_encoding.encoded_operator().fields()
-        id_for_projector = np.identity(2**sum(f.lattice.nsites for f in fields))
+        id_for_projector = np.identity(2**self.block_encoding.encoded_operator().nsites)
         id_for_unitary = np.identity(2**len(self.processing_gate.auxiliary_qubits))
         U_inv_matrix = self.block_encoding.inverse().as_matrix()
         U_matrix = self.block_encoding.as_matrix()
@@ -1647,19 +1831,91 @@ class EigenvalueTransformationGate(Gate):
         for f in fields:
             if f.local_dim != 2:
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
-        '''
-        part_h = self.block_encoding.particles()
-        for p in range(len(self.processing_gate.particles())):
-            if self.processing_gate.particles()[p] in part_h:
-                part_h.pop(p)
-        ihwire = [_map_particle_to_wire(fields, h_q) for h_q in part_h]
-        iawire = [_map_particle_to_wire(fields, aux_q) for aux_q in self.processing_gate.auxiliary_qubits]
-        iewire = [_map_particle_to_wire(fields, enc_q) for enc_q in self.processing_gate.encoding_qubits]
-        iwire = iawire + iewire + ihwire    # target wires come first
-        '''
         prtcl = self.particles()
         assert len(prtcl) == self.num_wires
         iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        if any([iw < 0 for iw in iwire]):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum([f.lattice.nsites for f in fields])
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+
+class GeneralGate(Gate):
+    """
+    General (user-defined) quantum gate, specified by a unitary matrix.
+    """
+    def __init__(self, mat, nwires: int):
+        mat = np.array(mat, copy=False)
+        if mat.shape != (2**nwires, 2**nwires):
+            raise ValueError(f"`mat` must be a {2**nwires} x {2**nwires} matrix")
+        if not np.allclose(mat @ mat.conj().T, np.identity(mat.shape[0])):
+            raise ValueError("`mat` must be unitary")
+        self.mat = mat
+        self.nwires = nwires
+        self.prtcl = []
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return np.allclose(self.mat, self.mat.conj().T)
+
+    def as_matrix(self):
+        """
+        Return the matrix representation of the gate.
+        """
+        return self.mat
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return self.nwires
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return self.prtcl
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        return list(set([p.field for p in self.prtcl]))
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return GeneralGate(self.mat.conj().T, self.nwires)
+
+    def on(self, *args):
+        """
+        Act on the specified particle(s).
+        """
+        if len(args) == 1 and isinstance(args[0], Sequence):
+            prtcl = list(args[0])
+        else:
+            prtcl = list(args)
+        if len(prtcl) != self.nwires:
+            raise ValueError(f"require {self.nwires} particles, but received {len(prtcl)}")
+        self.prtcl = prtcl
+        # enable chaining
+        return self
+
+    def _circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.prtcl:
+            raise RuntimeError("unspecified target particle(s)")
+        iwire = [_map_particle_to_wire(fields, p) for p in self.prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])

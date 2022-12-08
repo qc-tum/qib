@@ -25,6 +25,9 @@ class TestCircuit(unittest.TestCase):
         h_cnot = cnot.as_matrix() @ np.kron(hadamard.as_matrix(), np.identity(2))
         self.assertTrue(np.array_equal(circuit.as_matrix([field1, field2]).toarray(),
                                        permute_gate_wires(np.kron(np.identity(8), h_cnot), [4, 0, 1, 3, 2])))
+        self.assertTrue(np.allclose(circuit.as_matrix([field1, field2]).toarray()
+            @ circuit.inverse().as_matrix([field1, field2]).toarray(),
+            np.identity(2**5)))
 
 
 def permute_gate_wires(u: np.ndarray, perm):

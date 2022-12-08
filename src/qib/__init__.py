@@ -27,12 +27,15 @@ from qib.operator import (
     RyGate,
     RzGate,
     RotationGate,
+    PhaseFactorGate,
+    PrepareGate,
     ControlledGate,
     MultiplexedGate,
     TimeEvolutionGate,
     BlockEncodingGate,
     ProjectorControlledPhaseShift,
-    EigenvalueTransformationGate
+    EigenvalueTransformationGate,
+    GeneralGate
 )
 
 from qib.circuit import Circuit

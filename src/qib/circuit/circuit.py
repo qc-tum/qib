@@ -18,6 +18,18 @@ class Circuit:
         """
         self.gates.append(gate)
 
+    def append_circuit(self, other):
+        """
+        Append the gates from another quantum circuit to the current circuit.
+        """
+        self.gates += other.gates
+
+    def prepend_gate(self, gate: Gate):
+        """
+        Prepend a quantum gate.
+        """
+        self.gates.insert(0, gate)
+
     def fields(self):
         """
         List of all fields appearing in the circuit.
@@ -27,6 +39,12 @@ class Circuit:
         for g in self.gates:
             f = f.union(g.fields())
         return list(f)
+
+    def inverse(self):
+        """
+        Construct the "inverse" circuit: reversed list of adjoint gates.
+        """
+        return Circuit([g.inverse() for g in reversed(self.gates)])
 
     def as_matrix(self, fields: Sequence[Field]):
         """

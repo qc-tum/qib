@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import expm, block_diag
 from scipy import sparse
+from scipy.stats import unitary_group
 import unittest
 import sys
 sys.path.append('../src')
@@ -97,6 +98,52 @@ class TestGates(unittest.TestCase):
         self.assertTrue(np.allclose(T.as_matrix() @ T.as_matrix(),
                                     S.as_matrix()))
 
+    def test_phase_factor_gate(self):
+        """
+        Test implementation of the phase factor gate.
+        """
+        gate = qib.PhaseFactorGate(np.random.standard_normal(), 3)
+        self.assertTrue(gate.is_unitary())
+        self.assertFalse(gate.is_hermitian())
+        self.assertEqual(gate.num_wires, 3)
+        gmat = gate.as_matrix()
+        self.assertTrue(np.allclose(gmat, np.exp(1j*gate.phi) * np.identity(8)))
+        self.assertTrue(np.allclose(gmat @ gate.inverse().as_matrix(),
+                                    np.identity(8)))
+        field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                qib.lattice.IntegerLattice((5,), pbc=False))
+        qa = qib.field.Qubit(field, 0)
+        qb = qib.field.Qubit(field, 3)
+        qc = qib.field.Qubit(field, 2)
+        gate.on((qa, qb, qc))
+        self.assertTrue(gate.fields() == [field])
+        self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(4), gmat), [0, 3, 2, 1, 4])))
+
+    def test_prepare_gate(self):
+        """
+        Test implementation of the "prepare" gate.
+        """
+        gate = qib.PrepareGate(np.random.standard_normal(size=8), 3)
+        # must be normalized
+        self.assertTrue(np.allclose(np.linalg.norm(gate.vec, ord=1), 1))
+        self.assertTrue(gate.is_unitary())
+        self.assertFalse(gate.is_hermitian())
+        self.assertEqual(gate.num_wires, 3)
+        self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
+                                    np.identity(8)))
+        gmat = gate.as_matrix()
+        self.assertTrue(np.allclose(gmat[:, 0], np.sign(gate.vec) * np.sqrt(np.abs(gate.vec))))
+        field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                qib.lattice.IntegerLattice((5,), pbc=False))
+        qa = qib.field.Qubit(field, 0)
+        qb = qib.field.Qubit(field, 3)
+        qc = qib.field.Qubit(field, 2)
+        gate.on((qa, qb, qc))
+        self.assertTrue(gate.fields() == [field])
+        self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(4), gmat), [0, 3, 2, 1, 4])))
+
     def test_controlled_gate(self):
         """
         Test implementation of controlled quantum gates.
@@ -126,11 +173,12 @@ class TestGates(unittest.TestCase):
         self.assertTrue(np.array_equal(cnot._circuit_matrix([field2, field1]).toarray(),
                                        permute_gate_wires(np.kron(np.identity(8), cnot.as_matrix()), [0, 1, 3, 4, 2])))
 
-        # construct the Toffoli gate
-        toffoli = qib.ControlledGate(qib.PauliXGate(), 2)
+        # construct a Toffoli-like gate, activated by |10>
+        toffoli = qib.ControlledGate(qib.PauliXGate(), 2, bitpattern=2)
         self.assertEqual(toffoli.num_wires, 3)
         self.assertEqual(toffoli.num_controls, 2)
-        self.assertTrue(np.array_equal(toffoli.as_matrix(), np.identity(8)[[0, 1, 2, 3, 4, 5, 7, 6]]))
+        self.assertTrue(np.array_equal(toffoli.as_matrix(), np.identity(8)[[0, 1, 2, 3, 5, 4, 6, 7]]))
+        self.assertTrue(np.allclose(toffoli.as_matrix() @ toffoli.inverse().as_matrix(), np.identity(8)))
         toffoli.set_control(qc, qb)
         toffoli.target_gate().on(qa)
         self.assertTrue(toffoli.fields() == [field1, field2] or toffoli.fields() == [field2, field1])
@@ -399,6 +447,26 @@ class TestGates(unittest.TestCase):
             eigen_transform.set_theta_seq([0,0])
             self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.identity(2**eigen_transform.num_wires)))
             #TODO: add more tests
+
+    def test_general_gate(self):
+        """
+        Test implementation of a general (user-defined) quantum gate.
+        """
+        gate = qib.GeneralGate(unitary_group.rvs(8), 3)
+        self.assertTrue(gate.is_unitary())
+        self.assertEqual(gate.num_wires, 3)
+        self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
+                                    np.identity(8)))
+        field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                qib.lattice.IntegerLattice((5,), pbc=False))
+        qa = qib.field.Qubit(field, 0)
+        qb = qib.field.Qubit(field, 3)
+        qc = qib.field.Qubit(field, 2)
+        gate.on((qa, qb, qc))
+        self.assertTrue(gate.fields() == [field])
+        self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
+                                       permute_gate_wires(np.kron(np.identity(4), gate.as_matrix()), [0, 3, 2, 1, 4])))
+
 
 def permute_gate_wires(u: np.ndarray, perm):
     """

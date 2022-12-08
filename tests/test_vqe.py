@@ -9,7 +9,7 @@ class TestVQE(unittest.TestCase):
         """
         Test VQE + qUCC ansatz.
         """
-        latt = qib.lattice.LayeredLattice(qib.lattice.IntegerLattice((2, 2)),2)
+        latt = qib.lattice.IntegerLattice((2, 2))
         n = latt.nsites
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         hamiltonian = qib.operator.FermiHubbardHamiltonian(field, -1., 5., False)

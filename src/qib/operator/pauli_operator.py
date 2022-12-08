@@ -2,6 +2,7 @@ import numpy as np
 from scipy import sparse
 from typing import Sequence
 from qib.operator import AbstractOperator
+from qib.field import ParticleType, Field
 
 
 class PauliString(AbstractOperator):
@@ -11,6 +12,7 @@ class PauliString(AbstractOperator):
 
     Using check matrix representation (similar to Qiskit convention)
     by storing binary arrays `z` and `x`. The logical Pauli string is
+
     .. math:: (-i)^q \otimes_{k=0}^{n-1} (-i)^{z_k x_k} Z^{z_k} X^{x_k}
 
     Using convention that Pauli matrix at site 0 corresponds to fastest varying index.
@@ -278,6 +280,7 @@ class PauliOperator(AbstractOperator):
         if len(set(nqs)) > 1:
             raise ValueError("all Pauli strings must have the same length")
         self.pstrings = list(pstrings)
+        self.field = None
 
     def add_pauli_string(self, ps: WeightedPauliString):
         """
@@ -332,6 +335,28 @@ class PauliOperator(AbstractOperator):
             # (even if it has zero weight) to retain dimension information
             if abs(self.pstrings[i].weight) <= tol and len(self.pstrings) > 1:
                 self.pstrings.pop(i)
+
+    def set_field(self, field: Field):
+        """
+        Set a field which the Pauli operator acts on
+        (such that it can be used like a Hamiltonian).
+        """
+        if field.particle_type != ParticleType.QUBIT:
+            raise ValueError(f"expecting a field with qubit particle type, but received {field.particle_type}")
+        if field.lattice.nsites != self.num_qubits:
+            raise ValueError(f"field lattice has {field.lattice.nsites} qubits, but Pauli string acts on {self.num_qubits} qubits")
+        self.field = field
+        # enable chaining
+        return self
+
+    def fields(self):
+        """
+        List of fields the Pauli operator acts on.
+        """
+        if self.field is not None:
+            return [self.field]
+        else:
+            return []
 
     def __str__(self):
         """

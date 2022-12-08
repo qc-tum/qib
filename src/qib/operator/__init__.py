@@ -18,11 +18,14 @@ from qib.operator.gates import (
     SAdjGate,
     TGate,
     TAdjGate,
+    PhaseFactorGate,
+    PrepareGate,
     ControlledGate,
     MultiplexedGate,
     TimeEvolutionGate,
     BlockEncodingMethod,
     BlockEncodingGate,
     ProjectorControlledPhaseShift,
-    EigenvalueTransformationGate
+    EigenvalueTransformationGate,
+    GeneralGate
 )
