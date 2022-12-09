@@ -105,7 +105,7 @@ class FieldOperator(AbstractOperator):
         """
         if len(self.terms) == 0:
             return []
-        f_list = self.term[0].fields().copy()
+        f_list = self.terms[0].fields().copy()
         for term in self.terms[1:]:
             for f in term.fields():
                 if f not in f_list:
