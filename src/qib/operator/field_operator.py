@@ -83,7 +83,13 @@ class FieldOperatorTerm:
         """
         List of all fields appearing in the term.
         """
-        return list(set([desc.field for desc in self.opdesc]))
+        if len(self.opdesc) == 0:
+            return []
+        f_list = [self.opdesc[0].field]
+        for desc in self.opdesc:
+            if desc.field not in f_list:
+                f_list.append(desc.field)
+        return f_list
 
 
 class FieldOperator(AbstractOperator):
@@ -97,10 +103,14 @@ class FieldOperator(AbstractOperator):
         """
         List of all fields appearing in the operator.
         """
-        f = set()
-        for term in self.terms:
-            f = f.union(term.fields())
-        return list(f)
+        if len(self.terms) == 0:
+            return []
+        f_list = self.terms[0].fields().copy()
+        for term in self.terms[1:]:
+            for f in term.fields():
+                if f not in f_list:
+                    f_list.append(f)
+        return f_list
 
     def is_unitary(self):
         """
