@@ -34,10 +34,14 @@ class Circuit:
         """
         List of all fields appearing in the circuit.
         """
-        f = set()
-        for g in self.gates:
-            f = f.union(g.fields())
-        return list(f)
+        if len(self.gates) == 0:
+            return []
+        list_f = self.gates[0].fields().copy()
+        for g in self.gates[1:]:
+            for f in g.fields():
+                if f not in list_f:
+                    list_f.append(f)
+        return list_f
 
     def inverse(self):
         """

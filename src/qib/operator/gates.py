@@ -1037,7 +1037,14 @@ class PhaseFactorGate(Gate):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        return list(set([p.field for p in self.prtcl]))
+        if len(self.prtcl) == 0:
+            return []
+        else:
+            f_list = [self.prtcl[0].field]
+            for p in self.prtcl[1:]:
+                if p.field not in f_list:
+                    f_list.append(p.field)
+        return f_list
 
     def inverse(self):
         """
@@ -1136,7 +1143,14 @@ class PrepareGate(Gate):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        return list(set([q.field for q in self.qubits]))
+        if len(self.qubits) == 0:
+            return []
+        else:
+            f_list = [self.qubits[0].field]
+            for q in self.qubits[1:]:
+                if q.field not in f_list:
+                    f_list.append(q.field)
+        return f_list
 
     def inverse(self):
         """
@@ -1239,7 +1253,11 @@ class ControlledGate(Gate):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        return list(set(self.tgate.fields() + [q.field for q in self.control_qubits]))
+        f_list = self.tgate.fields().copy()
+        for q in self.control_qubits:
+            if q.field not in f_list:
+                f_list.append(q.field)
+        return f_list
 
     def target_gate(self):
         """
@@ -1347,7 +1365,11 @@ class MultiplexedGate(Gate):
         assert self.tgates
         for g in self.tgates:
             assert self.tgates[0].fields() == g.fields(), "fields of all target gates must match"
-        return list(set(self.tgates[0].fields() + [q.field for q in self.control_qubits]))
+        f_list = self.tgates[0].fields().copy()
+        for q in self.control_qubits:
+            if q.field not in f_list:
+                f_list.append(q.field)
+        return f_list
 
     def target_gates(self):
         """
@@ -1546,7 +1568,11 @@ class BlockEncodingGate(Gate):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        return list(set(self.h.fields() + [q.field for q in self.auxiliary_qubits]))
+        f_list = self.h.fields().copy()
+        for q in self.auxiliary_qubits:
+            if q.field not in f_list:
+                f_list.append(q.field)
+        return f_list
 
     def encoded_operator(self):
         """
@@ -1677,7 +1703,15 @@ class ProjectorControlledPhaseShift(Gate):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        return list(set([enc.field for enc in self.encoding_qubits] + [aux.field for aux in self.auxiliary_qubits]))
+        assert len(self.encoding_qubits) != 0
+        list_f = [self.encoding_qubits[0].field]
+        for enc_q in self.encoding_qubits[1:]:
+            if enc_q.field not in list_f:
+                list_f.append(enc_q.field)
+        for anc_q in self.auxiliary_qubits:
+            if anc_q.field not in list_f:
+                list_f.append(anc_q)
+        return list_f
 
     def set_theta(self, theta):
         """
@@ -1736,7 +1770,11 @@ class EigenvalueTransformationGate(Gate):
         """
         Return the list of quantum particles the gate acts on.
         """
-        return list(set(self.block_encoding.particles + self.processing_gate.particles))
+        tot_part = self.block_encoding.particles().copy()
+        for p in self.processing_gate.particles():
+            if p not in tot_part:
+                tot_part.append(p)
+        return tot_part
 
     def inverse(self):
         """
@@ -1748,7 +1786,11 @@ class EigenvalueTransformationGate(Gate):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        return list(set(self.block_encoding.fields + self.processing_gate.fields))
+        list_f = self.block_encoding.fields().copy()
+        for f in self.processing_gate.fields():
+            if f not in list_f:
+                list_f.append(f)
+        return list_f
 
     def set_theta_seq(self, theta_seq: Sequence[float]):
         """
@@ -1851,7 +1893,13 @@ class GeneralGate(Gate):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        return list(set([p.field for p in self.prtcl]))
+        if len(self.prtcl) == 0:
+            return 0
+        list_f = self.prtcl[0].field
+        for p in self.prtcl:
+            if p.field not in list_f:
+                list_f.append(p)
+        return list_f
 
     def inverse(self):
         """
