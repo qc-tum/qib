@@ -1710,7 +1710,7 @@ class ProjectorControlledPhaseShift(Gate):
                 list_f.append(enc_q.field)
         for anc_q in self.auxiliary_qubits:
             if anc_q.field not in list_f:
-                list_f.append(anc_q)
+                list_f.append(anc_q.field)
         return list_f
 
     def set_theta(self, theta):
@@ -1895,7 +1895,7 @@ class GeneralGate(Gate):
         """
         if len(self.prtcl) == 0:
             return 0
-        list_f = self.prtcl[0].field
+        list_f = [self.prtcl[0].field]
         for p in self.prtcl:
             if p.field not in list_f:
                 list_f.append(p)
