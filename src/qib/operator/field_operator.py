@@ -83,9 +83,7 @@ class FieldOperatorTerm:
         """
         List of all fields appearing in the term.
         """
-        if len(self.opdesc) == 0:
-            return []
-        f_list = [self.opdesc[0].field]
+        f_list = []
         for desc in self.opdesc:
             if desc.field not in f_list:
                 f_list.append(desc.field)
@@ -103,10 +101,8 @@ class FieldOperator(AbstractOperator):
         """
         List of all fields appearing in the operator.
         """
-        if len(self.terms) == 0:
-            return []
-        f_list = self.terms[0].fields().copy()
-        for term in self.terms[1:]:
+        f_list = []
+        for term in self.terms:
             for f in term.fields():
                 if f not in f_list:
                     f_list.append(f)

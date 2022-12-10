@@ -17,7 +17,7 @@ class EigenvalueTransformation:
     def __init__(self, h, method: BlockEncodingMethod, q_enc: Qubit, q_anc: Qubit, projector: Sequence[float]=[1,0], theta_seq: Sequence[float]=None):
         if len(projector)!=2 or projector[0] != 1 or projector[1] != 0:
             raise ValueError("projector can only be the |0> state --> vector (1, 0)")
-            
+
         self.block_encoding = BlockEncodingGate(h, method)
         self.processing_gate = ProjectorControlledPhaseShift()
         # The block encoding auxiliary qubit and the processing gate "encoding qubit"should be the same
@@ -27,18 +27,18 @@ class EigenvalueTransformation:
 
         if theta_seq is not None:
             self.theta_seq = list(theta_seq)
-        else: 
+        else:
             self.theta_seq = theta_seq
-    
+
     def set_theta_seq(self, theta_seq: Sequence[float]):
         """
         Set the angles theta for the eigenvalue transformation
         """
         if theta_seq is not None:
             self.theta_seq = list(theta_seq)
-        else: 
+        else:
             self.theta_seq = theta_seq
-            
+
     @property
     def num_wires(self):
         """
@@ -54,7 +54,7 @@ class EigenvalueTransformation:
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
         matrix = np.identity(2**self.num_wires)
-        id_for_projector = np.identity(2**self.block_encoding.encoded_operator().num_particles)
+        id_for_projector = np.identity(2**self.block_encoding.encoded_operator().nsites)
         id_for_unitary = np.identity(2**len(self.processing_gate.auxiliary_qubits))
         U_inv_matrix = self.block_encoding.inverse().as_matrix()
         U_matrix = self.block_encoding.as_matrix()
@@ -86,7 +86,7 @@ class EigenvalueTransformation:
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
         circuit = Circuit()
-        
+
         if(len(self.theta_seq)%2==0):
             dim = len(self.theta_seq)//2
             start = 0

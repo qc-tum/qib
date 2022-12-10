@@ -3,8 +3,6 @@ from scipy.linalg import expm, block_diag
 from scipy import sparse
 from scipy.stats import unitary_group
 import unittest
-import sys
-sys.path.append('../src')
 import qib
 
 
