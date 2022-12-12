@@ -54,7 +54,7 @@ class Circuit:
         """
         Generate the sparse matrix representation of the circuit.
         """
-        if not self.gates:
+        if not self.gates or len(self.gates)==0:
             raise RuntimeError("missing gates, hence cannot compute matrix representation of circuit")
         # Warning: do not use the ones saved in self.fields() because the order is not fixed 
         if not fields:

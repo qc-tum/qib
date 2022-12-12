@@ -383,6 +383,7 @@ class TestGates(unittest.TestCase):
         processing = qib.ProjectorControlledPhaseShift(q_enc, q_anc)
         cnot = qib.ControlledGate(qib.PauliXGate(q_anc), 1)
         cnot.set_control(q_enc)
+        cnot_mat = permute_gate_wires(cnot.as_matrix(), [1,0])
         # must return identity
         theta=0.
         processing.set_theta(theta)
@@ -394,11 +395,11 @@ class TestGates(unittest.TestCase):
         # phase rotation is (-1j)*Z
         theta=np.pi/2
         processing.set_theta(theta)
-        mat_ref = np.kron(qib.PauliXGate().as_matrix(), np.identity(2)) \
-                @ cnot.as_matrix() \
-                @ np.kron(np.identity(2), (-1j)*qib.PauliZGate().as_matrix()) \
-                @ cnot.as_matrix() \
-                @ np.kron(qib.PauliXGate().as_matrix(), np.identity(2))
+        mat_ref = np.kron(np.identity(2), qib.PauliXGate().as_matrix()) \
+                @ cnot_mat \
+                @ np.kron((-1j)*qib.PauliZGate().as_matrix(), np.identity(2)) \
+                @ cnot_mat \
+                @ np.kron(np.identity(2), qib.PauliXGate().as_matrix())
         self.assertTrue(np.allclose(processing.as_matrix(), mat_ref))
         # inverse
         theta = np.random.uniform(0,2*np.pi)
@@ -413,6 +414,9 @@ class TestGates(unittest.TestCase):
         self.assertTrue(processing.fields() == [q_enc.field, q_anc.field] or processing.fields() == [q_anc.field, q_enc.field])
         wires_order = [2, 3, 0, 4, 5, 6, 1, 7]
         self.assertTrue(np.allclose(processing._circuit_matrix([field2, field3]).toarray(), permute_gate_wires(np.kron(processing.as_matrix(), np.identity(2**6)), wires_order)))
+        circuit = qib.Circuit()
+        circuit.append_gate(processing)
+        self.assertTrue(np.allclose(circuit.as_matrix([field2, field3]).toarray(), processing._circuit_matrix([field2, field3]).toarray()))
 
     def test_eigenvalue_transformation_gate(self):
         """
@@ -442,11 +446,14 @@ class TestGates(unittest.TestCase):
             eigen_transform = qib.EigenvalueTransformationGate(encoding,processing)
             # if theta==0 I get the encoding hamiltonian
             eigen_transform.set_theta_seq([0])
-            self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.kron(encoding.as_matrix(), np.identity(2))))
+            self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.kron(np.identity(2), encoding.as_matrix())))
             # if theta_1==0 and theta_2==0 I get the identity
             eigen_transform.set_theta_seq([0,0])
             self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.identity(2**eigen_transform.num_wires)))
             #TODO: add more tests
+            circuit = qib.Circuit()
+            circuit.append_gate(eigen_transform)
+            self.assertTrue(np.allclose(eigen_transform._circuit_matrix([field1, field2, field3]).toarray(), circuit.as_matrix([field1, field2, field3]).toarray() ))
 
     def test_general_gate(self):
         """

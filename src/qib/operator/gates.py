@@ -1610,6 +1610,7 @@ class BlockEncodingGate(Gate):
     def as_matrix(self):
         """
         Generate the matrix representation of the block encoding gate.
+        Format: |ancillary> @ |encoded_state>
         """
         # assuming that `h` is Hermitian and that its spectral norm is bounded by 1
         hmat = self.h.as_matrix().toarray()
@@ -1699,16 +1700,19 @@ class ProjectorControlledPhaseShift(Gate):
         """
         Generate the matrix representation of the controlled gate.
         Note: The control state is |0> on the encoding qubit (I have to apply X gates)
+        Format: |ancillary> @ |enc_extra>
         TODO: generalize for more than one auxiliary qubit
         """
         if self.theta is None:
             raise ValueError("the angle theta has not been initialized")
         projector_NOT = ControlledGate(PauliXGate(self.auxiliary_qubits[0]), 1)
+        
         projector_NOT.set_control(self.encoding_qubits[0])
-        cp_matrix = projector_NOT.as_matrix()
-        return np.kron(PauliXGate(self.encoding_qubits[0]).as_matrix(), np.identity(2)) @ cp_matrix \
-               @ np.kron(np.identity(2), RzGate(2*self.theta, self.auxiliary_qubits[0]).as_matrix()) \
-               @ cp_matrix @ np.kron(PauliXGate(self.encoding_qubits[0]).as_matrix(), np.identity(2))
+        #cp_matrix = projector_NOT.as_matrix()
+        cp_matrix = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])
+        return np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix()) @ cp_matrix \
+               @ np.kron(RzGate(2*self.theta, self.auxiliary_qubits[0]).as_matrix(), np.identity(2)) \
+               @ cp_matrix @ np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix())
 
     @property
     def num_wires(self):
@@ -1832,6 +1836,7 @@ class EigenvalueTransformationGate(Gate):
     def as_matrix(self):
         """
         Generate the matrix representation of the eigenvalue transformation
+        Format: |ancillary_Pi> @ |enc_extra> @ |encoded_state>
         """
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
@@ -1846,19 +1851,16 @@ class EigenvalueTransformationGate(Gate):
         else:
             dim = (len(self.theta_seq)-1)//2
             self.processing_gate.set_theta(self.theta_seq[0])
-            matrix = np.kron(U_matrix, id_for_unitary) \
-                   @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
-                   @ matrix
+            matrix = matrix @ np.kron(self.processing_gate.as_matrix(), id_for_projector) \
+                            @ np.kron(id_for_unitary, U_matrix)
             start = 1
         for i in range(start, dim):
             self.processing_gate.set_theta(self.theta_seq[2*i-start])
-            matrix =  np.kron(U_inv_matrix, id_for_unitary) \
-                   @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
-                   @ matrix
+            matrix = matrix @ np.kron(self.processing_gate.as_matrix(), id_for_projector) \
+                            @ np.kron(id_for_unitary, U_inv_matrix)
             self.processing_gate.set_theta(self.theta_seq[2*i+1-start])
-            matrix = np.kron(U_matrix, id_for_unitary) \
-                   @ np.kron(id_for_projector, self.processing_gate.as_matrix()) \
-                   @ matrix 
+            matrix = matrix @ np.kron(self.processing_gate.as_matrix(), id_for_projector) \
+                            @ np.kron(id_for_unitary, U_matrix)
         return matrix
 
     def _circuit_matrix(self, fields: Sequence[Field]):

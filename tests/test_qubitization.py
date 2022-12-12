@@ -1,6 +1,4 @@
 import numpy as np
-from scipy.linalg import expm, block_diag
-from scipy import sparse
 import unittest
 import sys
 sys.path.append('../src')
@@ -14,9 +12,10 @@ class TestQubitization(unittest.TestCase):
         Test the eigenvalue transformation
         """
         # construct a simple Hamiltonian
-        L = 2
+        L = 5
         latt = qib.lattice.IntegerLattice((L,), pbc=True)
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
+        #np.random.seed(0)
         H = qib.operator.HeisenbergHamiltonian(field1, np.random.standard_normal(size=3),
                                                        np.random.standard_normal(size=3))
         # rescale parameters (effectively rescales overall Hamiltonian)
@@ -30,28 +29,53 @@ class TestQubitization(unittest.TestCase):
         q_enc = qib.field.Qubit(field2, 0)
         q_anc = qib.field.Qubit(field2, 1)
         for method in qib.operator.BlockEncodingMethod:
-            gate = qib.BlockEncodingGate(H, method)
-            gate.set_auxiliary_qubits(q_enc)
+            block = qib.BlockEncodingGate(H, method)
+            block.set_auxiliary_qubits(q_enc)
             processing = qib.ProjectorControlledPhaseShift(q_enc, q_anc)
-            #theta = np.random.uniform(0, 2*np.pi)
-            theta = np.pi/4.
+            theta = [0.]
             eigen_transform = qib.algorithms.qubitization.EigenvalueTransformation(h=H, 
                                                                                    method=method, 
                                                                                    q_enc=q_enc,
                                                                                    q_anc=q_anc, 
                                                                                    projector=[1,0], 
-                                                                                   theta_seq=[theta])
-            eigen_transform_gate = qib.EigenvalueTransformationGate(gate, processing, [theta])
-            self.assertTrue(np.allclose(eigen_transform.as_matrix(), eigen_transform_gate.as_matrix()))
-            self.assertTrue(np.allclose(eigen_transform.as_matrix(), eigen_transform_gate._circuit_matrix([field1, field2]).toarray()))
-            # ??????????????????????
-            #print(eigen_transform.as_matrix())
-            #print(eigen_transform.as_circuit().as_matrix([field1, field2]))
-            #print(eigen_transform_gate._circuit_matrix([field1, field2]))
-            self.assertTrue(np.allclose(eigen_transform.as_circuit().as_matrix([field1, field2]).toarray(), eigen_transform_gate._circuit_matrix([field1, field2]).toarray()))
-            mat = eigen_transform.as_matrix()
-            circ = eigen_transform.as_circuit().as_matrix([field1, field2]).toarray()
-            self.assertTrue(np.allclose(mat, circ))
+                                                                                   theta_seq=theta)
+            eigen_transform_gate = qib.EigenvalueTransformationGate(block, processing, theta)
+            # if theta == 0 I only have block unitary
+            self.assertTrue(np.allclose(np.kron(np.identity(2**1), block.as_matrix()), eigen_transform.as_matrix()))
+            theta = [np.random.uniform(0, 2*np.pi) for i in range(10)]
+            #theta = [0,0]
+            for i in range(1,10):
+                eigen_transform.set_theta_seq(theta[:i])
+                eigen_transform_gate.set_theta_seq(theta[:i])
+                mat_class = eigen_transform.as_matrix()
+                mat_gate = eigen_transform_gate.as_matrix()
+                circ_class = eigen_transform.as_circuit().as_matrix([field1,field2]).toarray()
+                circ_gate = eigen_transform_gate._circuit_matrix([field1, field2]).toarray()
+                print(i, theta[:i])
+                self.assertTrue(np.allclose(mat_class, mat_gate))
+                self.assertTrue(np.allclose(mat_class, circ_gate))
+                '''
+                for i in range(7):
+                    for j in range(7):
+                        for k in range(7):
+                            for l in range(7):
+                                for m in range(7):
+                                    for n in range(7):
+                                        for o in range(7):
+                                            perm = [i,j,k,l,m,n,o]
+                                            if len(perm) == len(list(set(perm))):
+                                                if np.allclose(permute_gate_wires(circ_class, perm), mat_class):
+                                                    print(perm)
+                '''
+                self.assertTrue(np.allclose(mat_class, circ_class))
+
+            
+            
+            
+            
+            
+
+
 
             '''
             self.assertEqual(gate.num_wires, L + 1)
