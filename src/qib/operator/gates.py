@@ -6,6 +6,7 @@ from scipy.sparse import csr_matrix
 from typing import Sequence, Union
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
+from qib.util import permute_gate_wires
 
 
 class Gate(AbstractOperator):
@@ -1228,6 +1229,7 @@ class ControlledGate(Gate):
     def as_matrix(self):
         """
         Generate the matrix representation of the controlled gate.
+        Format: |control> @ |target>
         """
         tgmat = self.tgate.as_matrix()
         # target gate corresponds to faster varying indices
@@ -1706,10 +1708,10 @@ class ProjectorControlledPhaseShift(Gate):
         if self.theta is None:
             raise ValueError("the angle theta has not been initialized")
         projector_NOT = ControlledGate(PauliXGate(self.auxiliary_qubits[0]), 1)
-        
         projector_NOT.set_control(self.encoding_qubits[0])
         #cp_matrix = projector_NOT.as_matrix()
-        cp_matrix = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])
+        cp_matrix = permute_gate_wires(projector_NOT.as_matrix(), [1,0])
+        #cp_matrix = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])
         return np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix()) @ cp_matrix \
                @ np.kron(RzGate(2*self.theta, self.auxiliary_qubits[0]).as_matrix(), np.identity(2)) \
                @ cp_matrix @ np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix())
@@ -1758,7 +1760,7 @@ class ProjectorControlledPhaseShift(Gate):
         """
         iawire = [_map_particle_to_wire(fields, anc_q) for anc_q in self.auxiliary_qubits]
         iewire = [_map_particle_to_wire(fields, enc_q) for enc_q in self.encoding_qubits]
-        iwire = iawire + iewire     # target wires come first
+        iwire = iewire + iawire
         """
         iwire = [_map_particle_to_wire(fields, p) for p in self.particles()]
         if any([iw < 0 for iw in iwire]):

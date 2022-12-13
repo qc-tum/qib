@@ -49,7 +49,8 @@ class EigenvalueTransformation:
 
     def as_matrix(self):
         """
-        Generate the matrix representation of the eigenvalue transformation
+        Generate the matrix representation of the eigenvalue transformation.
+        Format: |ancillary_Pi> @ |enc_extra> @ |encoded_state>
         """
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")

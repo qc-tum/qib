@@ -1,1 +1,1 @@
-from qib.util.util import crandn
+from qib.util.util import crandn, permute_gate_wires
