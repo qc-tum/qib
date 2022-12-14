@@ -1,4 +1,5 @@
 from typing import Sequence
+from copy import copy
 from qib.operator import Gate
 from qib.field import Field
 
@@ -16,19 +17,20 @@ class Circuit:
         """
         Append a quantum gate.
         """
-        self.gates.append(gate)
+        self.gates.append(copy(gate))
 
     def append_circuit(self, other):
         """
         Append the gates from another quantum circuit to the current circuit.
         """
-        self.gates += other.gates
+        for g in other.gates:
+            self.gates += copy(g)
 
     def prepend_gate(self, gate: Gate):
         """
         Prepend a quantum gate.
         """
-        self.gates.insert(0, gate)
+        self.gates.insert(0, copy(gate))
 
     def fields(self):
         """

@@ -1,6 +1,7 @@
 import abc
 import numpy as np
 from enum import Enum
+from copy import copy
 from scipy.linalg import expm, sqrtm, block_diag
 from scipy.sparse import csr_matrix
 from typing import Sequence, Union
@@ -57,6 +58,20 @@ class Gate(AbstractOperator):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
+        """
+        pass
+
+    @abc.abstractmethod
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        pass
+
+    @abc.abstractmethod
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
         """
         pass
 
@@ -135,6 +150,20 @@ class PauliXGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return PauliXGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
+
 
 class PauliYGate(Gate):
     """
@@ -209,6 +238,20 @@ class PauliYGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return PauliYGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
 
 
 class PauliZGate(Gate):
@@ -285,6 +328,20 @@ class PauliZGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+            """
+            Create a copy of the gate
+            """
+            return PauliZGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
+
 
 class HadamardGate(Gate):
     """
@@ -359,6 +416,20 @@ class HadamardGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return HadamardGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
 
 
 class RxGate(Gate):
@@ -445,6 +516,20 @@ class RxGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return RxGate(self.theta, self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta:
+            return True
+        return False
+
 
 class RyGate(Gate):
     """
@@ -530,6 +615,20 @@ class RyGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return RyGate(self.theta, self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta:
+            return True
+        return False
+
 
 class RzGate(Gate):
     """
@@ -613,6 +712,20 @@ class RzGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return RzGate(self.theta, self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta:
+            return True
+        return False
 
 
 class RotationGate(Gate):
@@ -698,6 +811,20 @@ class RotationGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return RotationGate(self.ntheta, self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit and np.allclose(other.ntheta, self.ntheta):
+            return True
+        return False
+
 
 class SGate(Gate):
     """
@@ -772,6 +899,20 @@ class SGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return SGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
 
 
 class SAdjGate(Gate):
@@ -848,6 +989,20 @@ class SAdjGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return SAdjGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
+
 
 class TGate(Gate):
     """
@@ -923,6 +1078,20 @@ class TGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return TGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
+
 
 class TAdjGate(Gate):
     """
@@ -997,6 +1166,20 @@ class TAdjGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return TAdjGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
 
 
 class PhaseFactorGate(Gate):
@@ -1082,6 +1265,22 @@ class PhaseFactorGate(Gate):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        gate = PhaseFactorGate(self.phi, self.nwires)
+        gate.on(self.prtcl)
+        return gate
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.prtcl == self.prtcl and other.phi == self.phi and other.nwires == self.nwires:
+            return True
+        return False
 
 
 class PrepareGate(Gate):
@@ -1192,6 +1391,23 @@ class PrepareGate(Gate):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        gate = PrepareGate(self.vec, self.nqubits, self.transpose)
+        gate.on(self.qubits)
+        return gate
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.nqubits == self.nqubits and np.allclose(other.vec, self.vec) \
+        and other.qubits == self.qubits and other.transpose == self.transpose:
+            return True
+        return False
 
 
 class ControlledGate(Gate):
@@ -1307,6 +1523,23 @@ class ControlledGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        gate = ControlledGate(copy(self.tgate), self.ncontrols, self.bitpattern)
+        gate.set_control(self.control_qubits)
+        return gate
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.tgate == self.tgate and other.ncontrols == self.ncontrols \
+        and other.bitpattern == self.bitpattern and other.control_qubits == self.control_qubits:
+            return True
+        return False
+
 
 class MultiplexedGate(Gate):
     """
@@ -1420,6 +1653,23 @@ class MultiplexedGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        gate = MultiplexedGate(copy(self.tgates), self.ncontrols)
+        gate.set_control(self.control_qubits)
+        return gate
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.tgates == self.tgates and other.ncontrols == self.ncontrols \
+        and other.control_qubits == self.control_qubits:
+            return True
+        return False
+
 
 class TimeEvolutionGate(Gate):
     """
@@ -1492,6 +1742,19 @@ class TimeEvolutionGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return TimeEvolutionGate(self.h, self.t)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.h == self.h and other.t == self.t:
+            return True
+        return False
 
 class BlockEncodingMethod(Enum):
     """
@@ -1643,6 +1906,25 @@ class BlockEncodingGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Copy of the gate
+        """
+        block = BlockEncodingGate(self.h, self.method)
+        if self.auxiliary_qubits:
+            block.set_auxiliary_qubits(self.auxiliary_qubits)
+        return block
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        #TODO: define better the equivalence between 2 generic operators...
+        if type(other) == type(self) and other.h == self.h and other.method == self.method \
+        and other.auxiliary_qubits == self.auxiliary_qubits:
+            return True
+        return False
+
 
 class ProjectorControlledPhaseShift(Gate):
     """
@@ -1698,24 +1980,6 @@ class ProjectorControlledPhaseShift(Gate):
         # enable chaining
         return self
 
-    def as_matrix(self):
-        """
-        Generate the matrix representation of the controlled gate.
-        Note: The control state is |0> on the encoding qubit (I have to apply X gates)
-        Format: |ancillary> @ |enc_extra>
-        TODO: generalize for more than one auxiliary qubit
-        """
-        if self.theta is None:
-            raise ValueError("the angle theta has not been initialized")
-        projector_NOT = ControlledGate(PauliXGate(self.auxiliary_qubits[0]), 1)
-        projector_NOT.set_control(self.encoding_qubits[0])
-        #cp_matrix = projector_NOT.as_matrix()
-        cp_matrix = permute_gate_wires(projector_NOT.as_matrix(), [1,0])
-        #cp_matrix = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])
-        return np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix()) @ cp_matrix \
-               @ np.kron(RzGate(2*self.theta, self.auxiliary_qubits[0]).as_matrix(), np.identity(2)) \
-               @ cp_matrix @ np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix())
-
     @property
     def num_wires(self):
         """
@@ -1749,6 +2013,24 @@ class ProjectorControlledPhaseShift(Gate):
         """
         self.theta = theta
 
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the controlled gate.
+        Note: The control state is |0> on the encoding qubit (I have to apply X gates)
+        Format: |ancillary> @ |enc_extra>
+        TODO: generalize for more than one auxiliary qubit
+        """
+        if self.theta is None:
+            raise ValueError("the angle theta has not been initialized")
+        projector_NOT = ControlledGate(PauliXGate(self.auxiliary_qubits[0]), 1)
+        projector_NOT.set_control(self.encoding_qubits[0])
+        #cp_matrix = projector_NOT.as_matrix()
+        cp_matrix = permute_gate_wires(projector_NOT.as_matrix(), [1,0])
+        #cp_matrix = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])
+        return np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix()) @ cp_matrix \
+               @ np.kron(RzGate(2*self.theta, self.auxiliary_qubits[0]).as_matrix(), np.identity(2)) \
+               @ cp_matrix @ np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix())
+
     def _circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
@@ -1767,6 +2049,21 @@ class ProjectorControlledPhaseShift(Gate):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Copy of the gate
+        """
+        return ProjectorControlledPhaseShift(self.encoding_qubits, self.auxiliary_qubits, self.theta)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.encoding_qubits == self.encoding_qubits \
+        and other.auxiliary_qubits == self.auxiliary_qubits and other.theta == self.theta:
+            return True
+        return False
 
 
 class EigenvalueTransformationGate(Gate):
@@ -1881,6 +2178,21 @@ class EigenvalueTransformationGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        return EigenvalueTransformationGate(copy(self.block_encoding), copy(self.processing_gate), self.theta_seq.copy())
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and other.block_encoding == self.block_encoding \
+        and other.processing_gate == self.processing_gate and np.allclose(other.tehta_seq == self.theta_seq):
+            return True
+        return False
+
 
 class GeneralGate(Gate):
     """
@@ -1968,6 +2280,22 @@ class GeneralGate(Gate):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def __copy__(self):
+        """
+        Create a copy of the gate
+        """
+        gate = GeneralGate(self.mat, self.nwires)
+        gate.on(self.prtcl)
+        return gate
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent
+        """
+        if type(other) == type(self) and np.allclose(other.mat, self.mat) and other.nwires == self.nwires and other.prtcl == self.prtcl:
+            return True
+        return False
 
 
 def _map_particle_to_wire(fields: Sequence[Field], p: Particle):

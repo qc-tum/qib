@@ -1,10 +1,9 @@
 import numpy as np
-from scipy.sparse import csr_matrix
 from typing import Sequence
-from qib.field import Field, Particle, Qubit
+from qib.field import Qubit
 from qib.operator import ProjectorControlledPhaseShift, BlockEncodingGate, BlockEncodingMethod
 from qib.circuit import Circuit
-from qib.operator import AbstractOperator
+
 
 
 class EigenvalueTransformation:

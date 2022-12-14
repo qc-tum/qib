@@ -3,8 +3,7 @@ from scipy.linalg import expm, block_diag
 from scipy import sparse
 from scipy.stats import unitary_group
 import unittest
-import sys
-sys.path.append('../src')
+from copy import copy
 import qib
 
 
@@ -32,6 +31,9 @@ class TestGates(unittest.TestCase):
             self.assertTrue(gate.fields() == [field])
             self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
                                            np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
+            g_copy = copy(gate)
+            self.assertTrue(g_copy == gate)
+            self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
 
     def test_rotation_gates(self):
         """
@@ -68,9 +70,16 @@ class TestGates(unittest.TestCase):
                 vθ[i] = θ
                 self.assertTrue(np.allclose(gate.as_matrix(),
                                             qib.RotationGate(vθ).as_matrix()))
-        H = qib.HadamardGate().as_matrix()
-        self.assertTrue(np.allclose(H @ gates[0].as_matrix() @ H,
+            g_copy = copy(gate)
+            self.assertTrue(g_copy == gate)
+            self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
+        H = qib.HadamardGate()
+        H_mat = H.as_matrix()
+        self.assertTrue(np.allclose(H_mat @ gates[0].as_matrix() @ H_mat,
                                         gates[2].as_matrix()))
+        g_copy = copy(H)
+        self.assertTrue(g_copy == H)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), H_mat))
 
     def test_phase_gates(self):
         """
@@ -84,7 +93,7 @@ class TestGates(unittest.TestCase):
         T = qib.operator.TGate(q)
         S_adj = qib.operator.SAdjGate(q)
         T_adj = qib.operator.TAdjGate(q)
-        for gate in [S, T, S_adj, T_adj]:
+        for i, gate in enumerate([S, T, S_adj, T_adj]):
             self.assertTrue(gate.is_unitary())
             self.assertFalse(gate.is_hermitian())
             self.assertEqual(gate.num_wires, 1)
@@ -93,6 +102,9 @@ class TestGates(unittest.TestCase):
                                         np.identity(2)))
             self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
                                            np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
+            g_copy = copy(gate)
+            self.assertTrue(g_copy == gate)
+            self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
         self.assertTrue(np.allclose(S.as_matrix() @ S.as_matrix(),
                                     qib.PauliZGate().as_matrix()))
         self.assertTrue(np.allclose(T.as_matrix() @ T.as_matrix(),
@@ -119,6 +131,9 @@ class TestGates(unittest.TestCase):
         self.assertTrue(gate.fields() == [field])
         self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(np.identity(4), gmat), [0, 3, 2, 1, 4])))
+        g_copy = copy(gate)
+        self.assertTrue(g_copy == gate)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
 
     def test_prepare_gate(self):
         """
@@ -143,6 +158,9 @@ class TestGates(unittest.TestCase):
         self.assertTrue(gate.fields() == [field])
         self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(np.identity(4), gmat), [0, 3, 2, 1, 4])))
+        g_copy = copy(gate)
+        self.assertTrue(g_copy == gate)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
 
     def test_controlled_gate(self):
         """
@@ -172,6 +190,9 @@ class TestGates(unittest.TestCase):
         self.assertTrue(cnot.fields() == [field1, field2] or cnot.fields() == [field2, field1])
         self.assertTrue(np.array_equal(cnot._circuit_matrix([field2, field1]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(np.identity(8), cnot.as_matrix()), [0, 1, 3, 4, 2])))
+        g_copy = copy(cnot)
+        self.assertTrue(g_copy == cnot)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), cnot.as_matrix()))
 
         # construct a Toffoli-like gate, activated by |10>
         toffoli = qib.ControlledGate(qib.PauliXGate(), 2, bitpattern=2)
@@ -184,6 +205,9 @@ class TestGates(unittest.TestCase):
         self.assertTrue(toffoli.fields() == [field1, field2] or toffoli.fields() == [field2, field1])
         self.assertTrue(np.array_equal(toffoli._circuit_matrix([field2, field1]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(np.identity(4), toffoli.as_matrix()), [2, 0, 4, 3, 1])))
+        g_copy = copy(toffoli)
+        self.assertTrue(g_copy == toffoli)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), toffoli.as_matrix()))
 
         # controlled time evolution gate
         # construct a simple Hamiltonian
@@ -214,6 +238,9 @@ class TestGates(unittest.TestCase):
         cexph_inverse.set_control(qc)
         self.assertTrue(np.array_equal(cexph.inverse()._circuit_matrix([field2, field3]).toarray(),
                                        cexph_inverse._circuit_matrix([field2, field3]).toarray()))
+        g_copy = copy(cexph)
+        self.assertTrue(g_copy == cexph)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), cexph.as_matrix()))
 
     def test_multiplexed_gate(self):
         """
@@ -248,6 +275,9 @@ class TestGates(unittest.TestCase):
         self.assertTrue(mplxg.fields() == [field1, field2] or mplxg.fields() == [field2, field1])
         self.assertTrue(np.array_equal(mplxg._circuit_matrix([field1, field2]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(np.identity(16), mplxg.as_matrix()), [4, 1, 2, 5, 0, 6, 3])))
+        g_copy = copy(mplxg)
+        self.assertTrue(g_copy == mplxg)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), mplxg.as_matrix()))
 
         # multiplexed time evolution gate
         # construct a simple Hamiltonian
@@ -277,14 +307,17 @@ class TestGates(unittest.TestCase):
                                        qib.util.permute_gate_wires(np.kron(np.identity(2), mplxg_mat_ref), [2, 3, 4, 5, 6, 1, 0])))
         # inverse
         self.assertTrue(np.allclose(mplxg.inverse().as_matrix() @ mplxg.as_matrix(), np.identity(2**6)))
+        g_copy = copy(mplxg)
+        self.assertTrue(g_copy == mplxg)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), mplxg.as_matrix()))
 
     def test_time_evolution_gate(self):
         """
         Test the quantum time evolution gate.
         """
         # Hamiltonian parameters
-        μ1 =  0.2
-        μ2 = -0.5
+        µ1 =  0.2
+        µ2 = -0.5
         J = 0.76
         # construct a simple Hamiltonian
         latt = qib.lattice.IntegerLattice((2,), pbc=False)
@@ -293,14 +326,14 @@ class TestGates(unittest.TestCase):
         term = qib.operator.FieldOperatorTerm(
             [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
-            np.array([[μ1, J], [J, μ2]]))
+            np.array([[µ1, J], [J, µ2]]))
         self.assertTrue(term.is_hermitian())
         h = qib.FieldOperator([term])
         hmat_ref = np.array(
             [[0, 0,  0,  0      ],
-             [0, μ1, J,  0      ],
-             [0, J,  μ2, 0      ],
-             [0, 0,  0,  μ1 + μ2]])
+             [0, µ1, J,  0      ],
+             [0, J,  µ2, 0      ],
+             [0, 0,  0,  µ1 + µ2]])
         self.assertTrue(np.allclose(h.as_matrix().toarray(), hmat_ref))
         # time
         t = 1.2
@@ -323,6 +356,9 @@ class TestGates(unittest.TestCase):
         exp_h_ref = block_diag(np.identity(1), inner_block, [[np.exp(-1j*t*(μ1 + μ2))]])
         self.assertTrue(np.allclose(gate.as_matrix(), exp_h_ref))
         self.assertTrue(np.allclose(gate._circuit_matrix([field]).toarray(), exp_h_ref))
+        g_copy = copy(gate)
+        self.assertTrue(g_copy == gate)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
 
     def test_block_encoding_gate(self):
         """
@@ -367,6 +403,9 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.allclose(Pa @ (gate._circuit_matrix([field1, field2]) @ ψ),
                                         np.kron(ψa, H.as_matrix() @ ψp)))
             self.assertTrue(np.allclose(gate._circuit_matrix([field1, field2]).toarray(), np.kron(np.identity(2**3), gate.as_matrix())))
+            g_copy = copy(gate)
+            self.assertTrue(g_copy == gate)
+            self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
 
     def test_projector_controlled_phase_shift_gate(self):
         """
@@ -414,9 +453,9 @@ class TestGates(unittest.TestCase):
         self.assertTrue(processing.fields() == [q_enc.field, q_anc.field] or processing.fields() == [q_anc.field, q_enc.field])
         wires_order = [2, 3, 0, 4, 5, 6, 1, 7]
         self.assertTrue(np.allclose(processing._circuit_matrix([field2, field3]).toarray(), qib.util.permute_gate_wires(np.kron(processing.as_matrix(), np.identity(2**6)), wires_order)))
-        circuit = qib.Circuit()
-        circuit.append_gate(processing)
-        self.assertTrue(np.allclose(circuit.as_matrix([field2, field3]).toarray(), processing._circuit_matrix([field2, field3]).toarray()))
+        g_copy = copy(processing)
+        self.assertTrue(g_copy == processing)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), processing.as_matrix()))
 
     def test_eigenvalue_transformation_gate(self):
         """
@@ -451,9 +490,6 @@ class TestGates(unittest.TestCase):
             eigen_transform.set_theta_seq([0,0])
             self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.identity(2**eigen_transform.num_wires)))
             #TODO: add more tests
-            circuit = qib.Circuit()
-            circuit.append_gate(eigen_transform)
-            self.assertTrue(np.allclose(eigen_transform._circuit_matrix([field1, field2, field3]).toarray(), circuit.as_matrix([field1, field2, field3]).toarray() ))
 
     def test_general_gate(self):
         """
@@ -473,7 +509,9 @@ class TestGates(unittest.TestCase):
         self.assertTrue(gate.fields() == [field])
         self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(np.identity(4), gate.as_matrix()), [0, 3, 2, 1, 4])))
-
+        g_copy = copy(gate)
+        self.assertTrue(g_copy == gate)
+        self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
 
 if __name__ == "__main__":
     unittest.main()
