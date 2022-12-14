@@ -35,16 +35,13 @@ class Circuit:
     def fields(self):
         """
         List of all fields appearing in the circuit.
-        Warning: the order of fields may change at every iteration
         """
-        if len(self.gates) == 0:
-            return []
-        list_f = self.gates[0].fields().copy()
-        for g in self.gates[1:]:
+        flist = []
+        for g in self.gates:
             for f in g.fields():
-                if f not in list_f:
-                    list_f.append(f)
-        return list_f
+                if f not in flist:
+                    flist.append(f)
+        return flist
 
     def inverse(self):
         """
@@ -58,7 +55,7 @@ class Circuit:
         """
         if not self.gates or len(self.gates)==0:
             raise RuntimeError("missing gates, hence cannot compute matrix representation of circuit")
-        # Warning: do not use the ones saved in self.fields() because the order is not fixed 
+        # Warning: do not use the ones saved in self.fields() because the order is not fixed
         if not fields:
             raise RuntimeError("missing fields, hence cannot compute matrix representation of circuit")
         mat = self.gates[0]._circuit_matrix(fields)
