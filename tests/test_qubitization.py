@@ -32,11 +32,8 @@ class TestQubitization(unittest.TestCase):
             processing = qib.ProjectorControlledPhaseShift(q_enc, q_anc)
             self.assertTrue(block.auxiliary_qubits == processing.encoding_qubits)
             theta = [0.]
-            eigen_transform = qib.algorithms.qubitization.EigenvalueTransformation(h=H, 
-                                                                                   method=method, 
-                                                                                   q_enc=q_enc,
-                                                                                   q_anc=q_anc, 
-                                                                                   projector=[1,0], 
+            eigen_transform = qib.algorithms.qubitization.EigenvalueTransformation(block,
+                                                                                   processing,
                                                                                    theta_seq=theta)
             eigen_transform_gate = qib.EigenvalueTransformationGate(block, processing, theta)
             # if theta == 0 I only have block unitary

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Sequence
+from typing import Sequence, Union
 from qib.field import Qubit
 from qib.operator import ProjectorControlledPhaseShift, BlockEncodingGate, BlockEncodingMethod
 from qib.circuit import Circuit
@@ -13,16 +13,9 @@ class EigenvalueTransformation:
     TODO: generalize with different projectors
     TODO: generalize with longer arrays of qubits
     """
-    def __init__(self, h, method: BlockEncodingMethod, q_enc: Qubit, q_anc: Qubit, projector: Sequence[float]=[1,0], theta_seq: Sequence[float]=None):
-        if len(projector)!=2 or projector[0] != 1 or projector[1] != 0:
-            raise ValueError("projector can only be the |0> state --> vector (1, 0)")
-
-        self.block_encoding = BlockEncodingGate(h, method)
-        self.processing_gate = ProjectorControlledPhaseShift()
-        # The block encoding auxiliary qubit and the processing gate "encoding qubit"should be the same
-        self.block_encoding.set_auxiliary_qubits([q_enc])
-        self.processing_gate.set_encoding_qubits([q_enc])
-        self.processing_gate.set_auxiliary_qubits([q_anc])
+    def __init__(self, block_encoding, processing_gate, theta_seq: Sequence[float]=None):
+        self.block_encoding = block_encoding
+        self.processing_gate = processing_gate
 
         if theta_seq is not None:
             self.theta_seq = list(theta_seq)
@@ -46,11 +39,26 @@ class EigenvalueTransformation:
         """
         return self.block_encoding.num_wires + 1
 
+    def set_auxiliary_qubits(self, q_anc: Union[Qubit, Sequence[Qubit]]):
+        """
+        Set the auxiliary qubits.
+        """
+        self.processing_gate.set_auxiliary_qubits(q_anc)
+
+    def set_encoding_qubits(self, q_enc: Union[Qubit, Sequence[Qubit]]):
+        """
+        Set the encoding extra qubits
+        """
+        self.processing_gate.set_encoding_qubits(q_enc)
+        self.block_encoding.set_auxiliary_qubits(q_enc)
+
     def as_matrix(self):
         """
         Generate the matrix representation of the eigenvalue transformation.
         Format: |ancillary_Pi> @ |enc_extra> @ |encoded_state>
         """
+        if self.block_encoding.auxiliary_qubits != self.processing_gate.encoding_qubits:
+            raise RuntimeError("The block encoding's auxiliary qubits and processing gate's encoding extra qubits must be the same")
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
         matrix = np.identity(2**self.num_wires)
@@ -81,6 +89,8 @@ class EigenvalueTransformation:
         """
         Generates the qubitization circuit
         """
+        if self.block_encoding.auxiliary_qubits != self.processing_gate.encoding_qubits:
+            raise RuntimeError("The block encoding's auxiliary qubits and processing gate's encoding qubits must be the same")
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
         circuit = Circuit()
