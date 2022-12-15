@@ -1670,7 +1670,7 @@ class TimeEvolutionGate(Gate):
     Quantum time evolution gate, i.e., matrix exponential,
     given a Hamiltonian `h`: :math:`e^{-i h t}`.
     """
-    def __init__(self, h, t: float):
+    def __init__(self, h: AbstractOperator, t: float):
         self.h = h
         self.t = t
 
@@ -1766,7 +1766,7 @@ class BlockEncodingGate(Gate):
     Output state is Hamiltonian applied to principal input state
     if auxiliary qubit(s) is initialized to |0>.
     """
-    def __init__(self, h, method: BlockEncodingMethod):
+    def __init__(self, h: AbstractOperator, method: BlockEncodingMethod):
         self.h = h
         self.method = method
         self.auxiliary_qubits = []

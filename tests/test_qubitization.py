@@ -10,7 +10,7 @@ class TestQubitization(unittest.TestCase):
         Test the eigenvalue transformation
         """
         # construct a simple Hamiltonian
-        L = 2
+        L = 5
         latt = qib.lattice.IntegerLattice((L,), pbc=True)
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
         #np.random.seed(0)

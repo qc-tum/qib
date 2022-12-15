@@ -29,6 +29,7 @@ class PauliString(AbstractOperator):
         if not set(self.x).issubset({ 0, 1 }):
             raise ValueError("only allowed entries in 'x' are 0 or 1")
         self.q = int(q) % 4
+        self.field = None
 
     @classmethod
     def identity(cls, nqubits: int):
@@ -207,6 +208,28 @@ class PauliString(AbstractOperator):
         phase = [1., -1j, -1., 1j][(self.q + np.dot(self.z, self.x)) % 4]
         return phase * op
 
+    def set_field(self, field: Field):
+        """
+        Set a field which the Pauli operator acts on
+        (such that it can be used like a Hamiltonian).
+        """
+        if field.particle_type != ParticleType.QUBIT:
+            raise ValueError(f"expecting a field with qubit particle type, but received {field.particle_type}")
+        if field.lattice.nsites != self.num_qubits:
+            raise ValueError(f"field lattice has {field.lattice.nsites} qubits, but Pauli string acts on {self.num_qubits} qubits")
+        self.field = field
+        # enable chaining
+        return self
+
+    def fields(self):
+        """
+        List of fields the Pauli operator acts on.
+        """
+        if self.field is not None:
+            return [self.field]
+        else:
+            return []
+
     def __str__(self):
         """
         Literal string representation of the Pauli string.
@@ -233,6 +256,7 @@ class WeightedPauliString(AbstractOperator):
     def __init__(self, paulis: PauliString, weight):
         self.paulis = paulis
         self.weight = weight
+        self.field = None
 
     def is_unitary(self):
         """
@@ -258,6 +282,28 @@ class WeightedPauliString(AbstractOperator):
         Generate the sparse matrix representation of the weighted Pauli string.
         """
         return self.weight * self.paulis.as_matrix()
+
+    def set_field(self, field: Field):
+        """
+        Set a field which the Pauli operator acts on
+        (such that it can be used like a Hamiltonian).
+        """
+        if field.particle_type != ParticleType.QUBIT:
+            raise ValueError(f"expecting a field with qubit particle type, but received {field.particle_type}")
+        if field.lattice.nsites != self.num_qubits:
+            raise ValueError(f"field lattice has {field.lattice.nsites} qubits, but Pauli string acts on {self.num_qubits} qubits")
+        self.field = field
+        # enable chaining
+        return self
+
+    def fields(self):
+        """
+        List of fields the Pauli operator acts on.
+        """
+        if self.field is not None:
+            return [self.field]
+        else:
+            return []
 
     def __str__(self):
         """

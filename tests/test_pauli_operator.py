@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import sparse
 import unittest
+import sys
+sys.path.append('../src')
 import qib
 
 
@@ -10,14 +12,19 @@ class TestPauliOperator(unittest.TestCase):
         """
         Test handling of Pauli strings.
         """
+        L = 5
+        latt = qib.lattice.IntegerLattice((L,), pbc=True)
+        field = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
         self.assertEqual(sparse.linalg.norm(qib.PauliString.identity(5).as_matrix()
                                             - sparse.identity(2**5)), 0)
         # construct Pauli string (single paulis and string)
         P = qib.PauliString.from_single_paulis(5, ('Y', 1), ('X', 0), ('Y', 3), ('Z', 4), q=3)
+        P.set_field(field)
         self.assertTrue(P == qib.PauliString.from_string("iXYIYZ"))
         self.assertTrue(P.is_unitary())
         self.assertFalse(P.is_hermitian())
         self.assertEqual(str(P), "iXYIYZ")
+        self.assertTrue(P.fields() == [field])
         # reference values
         z_ref = [0, 1, 0, 1, 1]
         x_ref = [1, 1, 0, 1, 0]
@@ -34,10 +41,12 @@ class TestPauliOperator(unittest.TestCase):
         self.assertTrue(np.array_equal(P.as_matrix().toarray(), Pref))
         # another Pauli string
         P2 = qib.PauliString.from_single_paulis(5, ('Z', 4), ('Y', 0), ('Y', 1), ('X', 2), q=2)
+        P2.set_field(field)
         self.assertTrue(P2 == qib.PauliString.from_string("-YYXIZ"))
         self.assertTrue(P2.is_unitary())
         self.assertTrue(P2.is_hermitian())
         self.assertEqual(str(P2), "-YYXIZ")
+        self.assertTrue(P2.fields() == [field])
         # logical product
         self.assertEqual(sparse.linalg.norm(( P @ P2).as_matrix()
                                             - P.as_matrix() @ P2.as_matrix()), 0)
@@ -56,6 +65,9 @@ class TestPauliOperator(unittest.TestCase):
         """
         Test Pauli operator functionality.
         """
+        L = 5
+        latt = qib.lattice.IntegerLattice((L,), pbc=True)
+        field = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
         # construct Pauli strings
         z = [[0, 1, 0, 1, 1], [1, 0, 1, 1, 1], [1, 1, 0, 1, 0]]
         x = [[1, 1, 0, 1, 0], [0, 1, 1, 0, 0], [1, 0, 0, 0, 1]]
@@ -65,8 +77,10 @@ class TestPauliOperator(unittest.TestCase):
             [qib.WeightedPauliString(
                 qib.PauliString(z[j], x[j], q[j]),
                 weights[j]) for j in range(3)])
+        P.set_field(field)
         self.assertEqual(P.num_qubits, 5)
         self.assertFalse(P.is_hermitian())
+        self.assertTrue(P.fields() == [field])
         # reference calculation
         I = np.identity(2)
         X = np.array([[ 0.,  1.], [ 1.,  0.]])
