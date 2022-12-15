@@ -22,16 +22,16 @@ class qUCC(Ansatz):
     """
     def __init__(self, field: FieldOperator, excitations: str="s", embedding: str="jordan_wigner", spin=False):
         if spin and not isinstance(FieldOperator, LayeredLattice):
-            raise ValueError(f"When 'spin=True', a LayeredLattice is needed.")
+            raise ValueError("When 'spin=True', a LayeredLattice is needed.")
         self.field = field
         if not set(excitations).issubset({"s","d","sd"}):
-            raise ValueError(f"The only options for excitations are single 's', double 'd' or single and double 'sd', while {excitations} was given.")
+            raise ValueError("The only options for excitations are single 's', double 'd' or single and double 'sd', while {excitations} was given.")
         self.excitations = excitations
         if not embedding == "jordan_wigner":
-            raise NotImplementedError(f"Only 'jordan_wigner' encoding is implemented.")
+            raise NotImplementedError("Only 'jordan_wigner' encoding is implemented.")
         self.embedding = embedding
         if spin:
-            raise NotImplementedError(f"spin==True case not implemented yet")
+            raise NotImplementedError("spin==True case not implemented yet")
         self.spin = spin
 
     # TODO: make it more general (different embeddings)
@@ -67,6 +67,12 @@ class qUCC(Ansatz):
         Generally speaking, qUCC is not hermitian.
         """
         return False
+    
+    def fields(self):
+        """
+        List of all fields appearing in the operator.
+        """
+        return self.field
 
     # TODO: distinguish between spin
     def as_matrix(self, params: Sequence[float]):
