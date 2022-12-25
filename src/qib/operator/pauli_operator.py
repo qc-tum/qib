@@ -210,7 +210,7 @@ class PauliString(AbstractOperator):
 
     def set_field(self, field: Field):
         """
-        Set a field which the Pauli operator acts on
+        Set a field which the Pauli string acts on
         (such that it can be used like a Hamiltonian).
         """
         if field.particle_type != ParticleType.QUBIT:
@@ -223,7 +223,7 @@ class PauliString(AbstractOperator):
 
     def fields(self):
         """
-        List of fields the Pauli operator acts on.
+        List of fields the Pauli string acts on.
         """
         if self.field is not None:
             return [self.field]
@@ -256,7 +256,6 @@ class WeightedPauliString(AbstractOperator):
     def __init__(self, paulis: PauliString, weight):
         self.paulis = paulis
         self.weight = weight
-        self.field = None
 
     def is_unitary(self):
         """
@@ -285,25 +284,18 @@ class WeightedPauliString(AbstractOperator):
 
     def set_field(self, field: Field):
         """
-        Set a field which the Pauli operator acts on
+        Set a field which the weighted Pauli string acts on
         (such that it can be used like a Hamiltonian).
         """
-        if field.particle_type != ParticleType.QUBIT:
-            raise ValueError(f"expecting a field with qubit particle type, but received {field.particle_type}")
-        if field.lattice.nsites != self.num_qubits:
-            raise ValueError(f"field lattice has {field.lattice.nsites} qubits, but Pauli string acts on {self.num_qubits} qubits")
-        self.field = field
+        self.paulis.set_field(field)
         # enable chaining
         return self
 
     def fields(self):
         """
-        List of fields the Pauli operator acts on.
+        List of fields the weighted Pauli string acts on.
         """
-        if self.field is not None:
-            return [self.field]
-        else:
-            return []
+        return self.paulis.fields()
 
     def __str__(self):
         """
@@ -326,7 +318,6 @@ class PauliOperator(AbstractOperator):
         if len(set(nqs)) > 1:
             raise ValueError("all Pauli strings must have the same length")
         self.pstrings = list(pstrings)
-        self.field = None
 
     def add_pauli_string(self, ps: WeightedPauliString):
         """
@@ -387,11 +378,8 @@ class PauliOperator(AbstractOperator):
         Set a field which the Pauli operator acts on
         (such that it can be used like a Hamiltonian).
         """
-        if field.particle_type != ParticleType.QUBIT:
-            raise ValueError(f"expecting a field with qubit particle type, but received {field.particle_type}")
-        if field.lattice.nsites != self.num_qubits:
-            raise ValueError(f"field lattice has {field.lattice.nsites} qubits, but Pauli string acts on {self.num_qubits} qubits")
-        self.field = field
+        for pstring in self.pstrings:
+            pstring.set_field(field)
         # enable chaining
         return self
 
@@ -399,8 +387,13 @@ class PauliOperator(AbstractOperator):
         """
         List of fields the Pauli operator acts on.
         """
-        if self.field is not None:
-            return [self.field]
+        if self.pstrings:
+            flist = self.pstrings[0].fields()
+            # consistency check
+            for pstring in self.pstrings:
+                if not flist == pstring.fields():
+                    raise RuntimeError("all weighted Pauli strings must act on the same field.")
+            return flist
         else:
             return []
 

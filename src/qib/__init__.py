@@ -18,6 +18,7 @@ from qib.operator import (
     FieldOperator,
     IsingHamiltonian,
     HeisenbergHamiltonian,
+    FermiHubbardHamiltonian,
     Gate,
     PauliXGate,
     PauliYGate,

@@ -71,7 +71,7 @@ class Gate(AbstractOperator):
     @abc.abstractmethod
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
         pass
 
@@ -158,7 +158,7 @@ class PauliXGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
         if type(other) == type(self) and other.qubit == self.qubit:
             return True
@@ -247,11 +247,9 @@ class PauliYGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit
 
 
 class PauliZGate(Gate):
@@ -329,18 +327,16 @@ class PauliZGate(Gate):
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def __copy__(self):
-            """
-            Create a copy of the gate
-            """
-            return PauliZGate(self.qubit)
+        """
+        Create a copy of the gate
+        """
+        return PauliZGate(self.qubit)
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit
 
 
 class HadamardGate(Gate):
@@ -425,11 +421,9 @@ class HadamardGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit
 
 
 class RxGate(Gate):
@@ -524,11 +518,9 @@ class RxGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta
 
 
 class RyGate(Gate):
@@ -623,11 +615,9 @@ class RyGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta
 
 
 class RzGate(Gate):
@@ -721,11 +711,9 @@ class RzGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit and other.theta == self.theta
 
 
 class RotationGate(Gate):
@@ -819,11 +807,9 @@ class RotationGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit and np.allclose(other.ntheta, self.ntheta):
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit and np.allclose(other.ntheta, self.ntheta)
 
 
 class SGate(Gate):
@@ -908,11 +894,9 @@ class SGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit
 
 
 class SAdjGate(Gate):
@@ -997,11 +981,9 @@ class SAdjGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit
 
 
 class TGate(Gate):
@@ -1086,11 +1068,9 @@ class TGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit
 
 
 class TAdjGate(Gate):
@@ -1175,11 +1155,9 @@ class TAdjGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.qubit == self.qubit:
-            return True
-        return False
+        return type(other) == type(self) and other.qubit == self.qubit
 
 
 class PhaseFactorGate(Gate):
@@ -1273,11 +1251,9 @@ class PhaseFactorGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.prtcl == self.prtcl and other.phi == self.phi and other.nwires == self.nwires:
-            return True
-        return False
+        return type(other) == type(self) and other.prtcl == self.prtcl and other.phi == self.phi and other.nwires == self.nwires
 
 
 class PrepareGate(Gate):
@@ -1396,12 +1372,10 @@ class PrepareGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.nqubits == self.nqubits and np.allclose(other.vec, self.vec) \
-        and other.qubits == self.qubits and other.transpose == self.transpose:
-            return True
-        return False
+        return (type(other) == type(self) and other.nqubits == self.nqubits and np.allclose(other.vec, self.vec)
+                and other.qubits == self.qubits and other.transpose == self.transpose)
 
 
 class ControlledGate(Gate):
@@ -1527,12 +1501,13 @@ class ControlledGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.tgate == self.tgate and other.ncontrols == self.ncontrols \
-        and other.bitpattern == self.bitpattern and other.control_qubits == self.control_qubits:
-            return True
-        return False
+        return (type(other) == type(self)
+                and other.tgate == self.tgate
+                and other.ncontrols == self.ncontrols
+                and other.bitpattern == self.bitpattern
+                and other.control_qubits == self.control_qubits)
 
 
 class MultiplexedGate(Gate):
@@ -1657,12 +1632,12 @@ class MultiplexedGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.tgates == self.tgates and other.ncontrols == self.ncontrols \
-        and other.control_qubits == self.control_qubits:
-            return True
-        return False
+        return (type(other) == type(self)
+                and other.tgates == self.tgates
+                and other.ncontrols == self.ncontrols
+                and other.control_qubits == self.control_qubits)
 
 
 class TimeEvolutionGate(Gate):
@@ -1744,11 +1719,10 @@ class TimeEvolutionGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.h == self.h and other.t == self.t:
-            return True
-        return False
+        return type(other) == type(self) and other.h == self.h and other.t == self.t
+
 
 class BlockEncodingMethod(Enum):
     """
@@ -1911,13 +1885,13 @@ class BlockEncodingGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        #TODO: define better the equivalence between 2 generic operators...
-        if type(other) == type(self) and other.h == self.h and other.method == self.method \
-        and other.auxiliary_qubits == self.auxiliary_qubits:
-            return True
-        return False
+        # TODO: generalize the equivalence test between 2 generic operators...
+        return (type(other) == type(self)
+                and other.h == self.h
+                and other.method == self.method
+                and other.auxiliary_qubits == self.auxiliary_qubits)
 
 
 class ProjectorControlledPhaseShift(Gate):
@@ -2052,12 +2026,12 @@ class ProjectorControlledPhaseShift(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.encoding_qubits == self.encoding_qubits \
-        and other.auxiliary_qubits == self.auxiliary_qubits and other.theta == self.theta:
-            return True
-        return False
+        return (type(other) == type(self)
+                and other.encoding_qubits == self.encoding_qubits
+                and other.auxiliary_qubits == self.auxiliary_qubits
+                and other.theta == self.theta)
 
 
 class EigenvalueTransformationGate(Gate):
@@ -2180,12 +2154,12 @@ class EigenvalueTransformationGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and other.block_encoding == self.block_encoding \
-        and other.processing_gate == self.processing_gate and np.allclose(other.tehta_seq == self.theta_seq):
-            return True
-        return False
+        return (type(other) == type(self)
+                and other.block_encoding == self.block_encoding
+                and other.processing_gate == self.processing_gate
+                and np.allclose(other.tehta_seq == self.theta_seq))
 
 
 class GeneralGate(Gate):
@@ -2283,11 +2257,12 @@ class GeneralGate(Gate):
 
     def __eq__(self, other):
         """
-        Check if gates are equivalent
+        Check if gates are equivalent.
         """
-        if type(other) == type(self) and np.allclose(other.mat, self.mat) and other.nwires == self.nwires and other.prtcl == self.prtcl:
-            return True
-        return False
+        return (type(other) == type(self)
+                and np.allclose(other.mat, self.mat)
+                and other.nwires == self.nwires
+                and other.prtcl == self.prtcl)
 
 
 def _map_particle_to_wire(fields: Sequence[Field], p: Particle):
