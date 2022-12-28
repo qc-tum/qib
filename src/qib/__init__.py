@@ -5,6 +5,7 @@ from qib import (
     circuit,
     transform,
     algorithms,
+    tensor_network,
     util
 )
 
