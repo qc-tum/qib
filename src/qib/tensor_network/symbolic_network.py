@@ -5,7 +5,7 @@ from typing import Sequence
 class SymbolicTensor:
     """
     Symbolic tensor, storing a unique ID, its shape, connected bond IDs
-    (representing open tensor legs or contractions with other tensors)
+    (representing contractions with other tensors)
     and a user-provided reference to the data of the tensor.
     """
     def __init__(self, tid: int, shape: Sequence[int], dataref, bids: Sequence[int]=None):
@@ -29,8 +29,7 @@ class SymbolicTensor:
 
 class SymbolicBond:
     """
-    Symbolic bond in a tensor network, e.g., an edge between two tensors,
-    an open (uncontracted) tensor leg, or a multi-edge.
+    Symbolic bond in a tensor network, e.g., an edge or multi-edge between tensors.
 
     Member variables:
         bid:    bond ID
@@ -40,6 +39,8 @@ class SymbolicBond:
     def __init__(self, bid: int, tids: Sequence[int], axes: Sequence[int]):
         if len(tids) != len(axes):
             raise ValueError("number of tensor IDs must match number of axes")
+        if len(tids) < 2:
+            raise ValueError("bond must reference at least two tensors")
         self.bid = bid
         self.tids = list(tids)
         self.axes = list(axes)
@@ -59,6 +60,7 @@ class SymbolicBond:
 class SymbolicTensorNetwork:
     """
     Symbolic tensor network, storing a list of tensors and bonds.
+    Open (uncontracted) axes in the network are represented by the legs of a dummy tensor with ID -1.
     """
     def __init__(self, tensors: Sequence[SymbolicTensor]=[], bonds: Sequence[SymbolicBond]=[]):
         # dictionary of tensors
@@ -77,7 +79,19 @@ class SymbolicTensorNetwork:
         """
         Number of tensors.
         """
-        return len(self.tensors)
+        if -1 not in self.tensors:
+            raise RuntimeError("network requires a dummy tensor with ID -1 for the open axes")
+        # dummy tensor for open axes does not count towards logical tensors
+        return len(self.tensors) - 1
+
+    @property
+    def num_open_axes(self):
+        """
+        Number of open (uncontracted) axes in the network.
+        """
+        if -1 not in self.tensors:
+            raise RuntimeError("network requires a dummy tensor with ID -1 for the open axes")
+        return self.tensors[-1].ndim
 
     def has_tensor(self, tid: int):
         """
@@ -117,6 +131,25 @@ class SymbolicTensorNetwork:
             bond.sort()
         tensor.tid = tid_new
         self.tensors[tid_new] = tensor
+
+    def merge_tensors(self, tid1: int, tid2: int):
+        """
+        Merge tensors with IDs `tid1` and `tid2`.
+        The resulting tensor inherits ID `tid1`.
+        """
+        if tid1 == tid2:
+            return
+        tensor1 = self.tensors[tid1]
+        tensor2 = self.tensors.pop(tid2)
+        for bid in tensor2.bids:
+            bond = self.bonds[bid]
+            for i in range(len(bond.tids)):
+                if bond.tids[i] == tid2:
+                    bond.tids[i] = tid1
+                    bond.axes[i] += tensor1.ndim
+            bond.sort()
+        tensor1.shape += tensor2.shape
+        tensor1.bids  += tensor2.bids
 
     @property
     def num_bonds(self):
@@ -175,6 +208,28 @@ class SymbolicTensorNetwork:
                 if tbids[i] == bid_cur:
                     tbids[i] = bid_new
 
+    def merge_bonds(self, bid1: int, bid2: int):
+        """
+        Merge bonds with IDs `bid1` and `bid2`.
+        The resulting bond inherits ID `bid1`.
+        """
+        if bid1 == bid2:
+            return
+        bond1 = self.bonds[bid1]
+        bond2 = self.bonds.pop(bid2)
+        for tid, ax in zip(bond2.tids, bond2.axes):
+            bond1.tids.append(tid)
+            bond1.axes.append(ax)
+            # update bond reference in tensor
+            assert self.tensors[tid].bids[ax] == bid2
+            self.tensors[tid].bids[ax] = bid1
+        bond1.sort()
+        # update bond reference in tags
+        for tbids in self.btags.values():
+            for i in range(len(tbids)):
+                if tbids[i] == bid2:
+                    tbids[i] = bid1
+
     def get_tag(self, tkey):
         """
         Get the tagged bonds under key `tkey`.
@@ -193,55 +248,80 @@ class SymbolicTensorNetwork:
                 raise ValueError(f"bond with ID {bid} does not exist")
         self.btags[tkey] = list(tbids)
 
-    def merge(self, other, join_bonds: Sequence[tuple]=[]):
+    def merge(self, other, join_axes: Sequence[tuple]=[]):
         """
         Merge network with another symbolic tensor network,
-        and join bonds specified as [(bid_self, bid_other), ...].
+        and join open axes specified as [(openax_self, openax_other), ...].
         The keys for the bond tags in the two networks must be unique.
         """
+        for joinax in join_axes:
+            if joinax[0] < 0 or joinax[0] >= self.num_open_axes:
+                raise ValueError(f"to-be joined open axis index {joinax[0]} of first network out of range")
+            if joinax[1] < 0 or joinax[1] >= other.num_open_axes:
+                raise ValueError(f"to-be joined open axis index {joinax[1]} of second network out of range")
+        num_open_axes_orig = self.num_open_axes
         # require a deep copy since the IDs in the 'other' network might change
         other = copy.deepcopy(other)
         # ensure that tensor IDs in the two networks are disjoint
         shared_tids = self.tensors.keys() & other.tensors.keys()
-        if shared_tids:
-            next_tid = max(self.tensors.keys() | other.tensors.keys()) + 1
-            for tid in shared_tids:
-                other.rename_tensor(tid, next_tid)
-                next_tid += 1
+        tmp_open_tid = -1
+        next_tid = max(self.tensors.keys() | other.tensors.keys(), default=0) + 1
+        for tid in shared_tids:
+            other.rename_tensor(tid, next_tid)
+            if tid == -1:
+                tmp_open_tid = next_tid
+            next_tid += 1
+        # ensure that bond IDs in the two networks are disjoint
+        shared_bids = self.bonds.keys() & other.bonds.keys()
+        next_bid = max(self.bonds.keys() | other.bonds.keys(), default=0) + 1
+        for bid in shared_bids:
+            other.rename_bond(bid, next_bid)
+            next_bid += 1
         # include tensors from other network
         self.tensors.update(other.tensors)
-        # to-be joined bond IDs in other network
-        join_bids_other = [jb[1] for jb in join_bonds]
-        # ensure that non-joined bond IDs in the two networks are disjoint
-        shared_bids = self.bonds.keys() & other.bonds.keys()
-        if shared_bids:
-            next_bid = max(self.bonds.keys() | other.bonds.keys()) + 1
-            for bid in shared_bids:
-                if bid not in join_bids_other:
-                    other.rename_bond(bid, next_bid)
-                    next_bid += 1
-        # join bonds
-        for jb in join_bonds:
-            bond_dst = self.bonds[jb[0]]
-            bond_src = other.bonds.pop(jb[1])
-            for tid, ax in zip(bond_src.tids, bond_src.axes):
-                bond_dst.tids.append(tid)
-                bond_dst.axes.append(ax)
-                # update bond reference in tensor
-                assert self.tensors[tid].bids[ax] == jb[1]
-                self.tensors[tid].bids[ax] = jb[0]
-            bond_dst.sort()
-            # update bond reference in tags
-            for tbids in other.btags.values():
-                for i in range(len(tbids)):
-                    if tbids[i] == jb[1]:
-                        tbids[i] = jb[0]
-        # include remaining bonds from other network
+        # include bonds from other network
         self.bonds.update(other.bonds)
         # include bond tags from other network
         if self.btags.keys() & other.btags.keys():
             raise ValueError("keys for the bond tags in the two networks must be unique")
         self.btags.update(other.btags)
+        # merge dummy tensors for open axes
+        self.merge_tensors(-1, tmp_open_tid)
+        # join specified open axes
+        tensor_open_axes = self.tensors[-1]
+        axes_map = list(range(tensor_open_axes.ndim))
+        for joinax in join_axes:
+            self.merge_bonds(tensor_open_axes.bids[joinax[0]],
+                             tensor_open_axes.bids[num_open_axes_orig + joinax[1]])
+            # record remaining axes;
+            # same open axis could be joined with several open axes in other network
+            if joinax[0] in axes_map:
+                axes_map.remove(joinax[0])
+            if num_open_axes_orig + joinax[1] in axes_map:
+                axes_map.remove(num_open_axes_orig + joinax[1])
+        # to-be deleted open axes
+        del_axes = [i*num_open_axes_orig + joinax[i] for joinax in join_axes for i in range(2)]
+        # remove to-be deleted open axes references from bonds
+        for delax in del_axes:
+            bid = tensor_open_axes.bids[delax]
+            bond = self.bonds[bid]
+            # remove reference to axis from bond
+            for i in range(len(bond.tids)):
+                if bond.tids[i] == -1 and bond.axes[i] == delax:
+                    bond.tids.pop(i)
+                    bond.axes.pop(i)
+                    break
+            assert len(bond.tids) >= 2
+        # remove to-be joined axes from tensor
+        tensor_open_axes.shape = tuple(tensor_open_axes.shape[i] for i in axes_map)
+        tensor_open_axes.bids  = [tensor_open_axes.bids[i] for i in axes_map]
+        # update axes references in bonds
+        for bid in tensor_open_axes.bids:
+            bond = self.bonds[bid]
+            for i in range(len(bond.tids)):
+                if bond.tids[i] == -1:
+                    bond.axes[i] = axes_map.index(bond.axes[i])
+                    assert tensor_open_axes.bids[bond.axes[i]] == bid
         # enable chaining
         return self
 
@@ -250,6 +330,9 @@ class SymbolicTensorNetwork:
         Perform an internal consistency check,
         e.g., whether the bond ID specified by any tensor actually exist.
         """
+        if -1 not in self.tensors:
+            if verbose: print("Consistency check failed: network requires a dummy tensor with ID -1 for the open bonds.")
+            return False
         for k, tensor in self.tensors.items():
             if k != tensor.tid:
                 if verbose: print(f"Consistency check failed: dictionary key {k} does not match tensor ID {tensor.tid}.")
@@ -267,6 +350,9 @@ class SymbolicTensorNetwork:
         for k, bond in self.bonds.items():
             if k != bond.bid:
                 if verbose: print(f"Consistency check failed: dictionary key {k} does not match bond ID {bond.bid}.")
+                return False
+            if len(bond.tids) < 2:
+                if verbose: print(f"Consistency check failed: bond {bond.bid} references {len(bond.tids)} tensor(s), should reference at least two.")
                 return False
             dims = []
             for tid, ax in zip(bond.tids, bond.axes):
