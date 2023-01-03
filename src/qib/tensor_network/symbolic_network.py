@@ -71,8 +71,6 @@ class SymbolicTensorNetwork:
         self.bonds = {}
         for bond in bonds:
             self.add_bond(bond)
-        # dictionary of tagged bonds
-        self.btags = {}
 
     @property
     def num_tensors(self):
@@ -202,11 +200,6 @@ class SymbolicTensorNetwork:
         for tid, ax in zip(bond.tids, bond.axes):
             assert self.tensors[tid].bids[ax] == bid_cur
             self.tensors[tid].bids[ax] = bid_new
-        # update bond references in tags
-        for tbids in self.btags.values():
-            for i in range(len(tbids)):
-                if tbids[i] == bid_cur:
-                    tbids[i] = bid_new
 
     def merge_bonds(self, bid1: int, bid2: int):
         """
@@ -224,29 +217,6 @@ class SymbolicTensorNetwork:
             assert self.tensors[tid].bids[ax] == bid2
             self.tensors[tid].bids[ax] = bid1
         bond1.sort()
-        # update bond reference in tags
-        for tbids in self.btags.values():
-            for i in range(len(tbids)):
-                if tbids[i] == bid2:
-                    tbids[i] = bid1
-
-    def get_tag(self, tkey):
-        """
-        Get the tagged bonds under key `tkey`.
-        """
-        return self.btags[tkey]
-
-    def add_tag(self, tkey, tbids: Sequence[int]):
-        """
-        Add a tag for a list of existing bond IDs.
-        """
-        if tkey in self.btags:
-            raise ValueError(f"tag {tkey} already exists")
-        # bond IDs must already exist in the network
-        for bid in tbids:
-            if bid not in self.bonds:
-                raise ValueError(f"bond with ID {bid} does not exist")
-        self.btags[tkey] = list(tbids)
 
     def merge(self, other, join_axes: Sequence[tuple]=[]):
         """
@@ -281,10 +251,6 @@ class SymbolicTensorNetwork:
         self.tensors.update(other.tensors)
         # include bonds from other network
         self.bonds.update(other.bonds)
-        # include bond tags from other network
-        if self.btags.keys() & other.btags.keys():
-            raise ValueError("keys for the bond tags in the two networks must be unique")
-        self.btags.update(other.btags)
         # merge dummy tensors for open axes
         self.merge_tensors(-1, tmp_open_tid)
         # join specified open axes
@@ -372,10 +338,5 @@ class SymbolicTensorNetwork:
             if dims:
                 if not all([d == dims[0] for d in dims]):
                     if verbose: print(f"Consistency check failed: axes dimensions of bond {bond.bid} are not all the same.")
-                    return False
-        for k, tbids in self.btags.items():
-            for bid in tbids:
-                if bid not in self.bonds:
-                    if verbose: print(f"Consistency check failed: bond with ID {bid} referenced in tag {k} does not exist.")
                     return False
         return True
