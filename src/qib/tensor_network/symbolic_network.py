@@ -1,5 +1,6 @@
 import copy
 from typing import Sequence
+from qib.tensor_network.contraction_tree import ContractionTreeNode
 
 
 class SymbolicTensor:
@@ -20,7 +21,7 @@ class SymbolicTensor:
         self.dataref = dataref
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         """
         Number of dimensions (degree) of the tensor.
         """
@@ -60,7 +61,7 @@ class SymbolicBond:
 class SymbolicTensorNetwork:
     """
     Symbolic tensor network, storing a list of tensors and bonds.
-    Open (uncontracted) axes in the network are represented by the legs of a dummy tensor with ID -1.
+    Open (uncontracted) axes in the network are represented by the legs of a virtual tensor with ID -1.
     """
     def __init__(self, tensors: Sequence[SymbolicTensor]=[], bonds: Sequence[SymbolicBond]=[]):
         # dictionary of tensors
@@ -73,31 +74,40 @@ class SymbolicTensorNetwork:
             self.add_bond(bond)
 
     @property
-    def num_tensors(self):
+    def num_tensors(self) -> int:
         """
-        Number of tensors.
+        Number of logical tensors.
         """
         if -1 not in self.tensors:
-            raise RuntimeError("network requires a dummy tensor with ID -1 for the open axes")
-        # dummy tensor for open axes does not count towards logical tensors
+            raise RuntimeError("network requires a virtual tensor with ID -1 for the open axes")
+        # virtual tensor for open axes does not count towards logical tensors
         return len(self.tensors) - 1
 
     @property
-    def num_open_axes(self):
+    def num_open_axes(self) -> int:
         """
         Number of open (uncontracted) axes in the network.
         """
         if -1 not in self.tensors:
-            raise RuntimeError("network requires a dummy tensor with ID -1 for the open axes")
+            raise RuntimeError("network requires a virtual tensor with ID -1 for the open axes")
         return self.tensors[-1].ndim
 
-    def has_tensor(self, tid: int):
+    @property
+    def shape(self) -> tuple:
+        """
+        Logical shape of tensor network (after contracting all bonds).
+        """
+        if -1 not in self.tensors:
+            raise RuntimeError("network requires a virtual tensor with ID -1 for the open axes")
+        return self.tensors[-1].shape
+
+    def has_tensor(self, tid: int) -> bool:
         """
         Whether the tensor with ID `tid` exists.
         """
         return tid in self.tensors
 
-    def get_tensor(self, tid: int):
+    def get_tensor(self, tid: int) -> SymbolicTensor:
         """
         Get the tensor with ID `tid`.
         """
@@ -149,20 +159,30 @@ class SymbolicTensorNetwork:
         tensor1.shape += tensor2.shape
         tensor1.bids  += tensor2.bids
 
+    def tensor_ids(self) -> list:
+        """
+        Return the list of tensor IDs in the network (without virtual tensor ID -1).
+        """
+        if -1 not in self.tensors:
+            raise RuntimeError("network requires a virtual tensor with ID -1 for the open axes")
+        tids = sorted(list(self.tensors.keys()))
+        tids.remove(-1)
+        return tids
+
     @property
-    def num_bonds(self):
+    def num_bonds(self) -> int:
         """
         Number of bonds.
         """
         return len(self.bonds)
 
-    def has_bond(self, bid: int):
+    def has_bond(self, bid: int) -> bool:
         """
         Whether the bond with ID `bid` exists.
         """
         return bid in self.bonds
 
-    def get_bond(self, bid: int):
+    def get_bond(self, bid: int) -> SymbolicBond:
         """
         Get the bond with ID `bid`.
         """
@@ -251,7 +271,7 @@ class SymbolicTensorNetwork:
         self.tensors.update(other.tensors)
         # include bonds from other network
         self.bonds.update(other.bonds)
-        # merge dummy tensors for open axes
+        # merge virtual tensors for open axes
         self.merge_tensors(-1, tmp_open_tid)
         # join specified open axes
         tensor_open_axes = self.tensors[-1]
@@ -291,13 +311,152 @@ class SymbolicTensorNetwork:
         # enable chaining
         return self
 
-    def is_consistent(self, verbose=False):
+    def build_contraction_tree(self, scaffold) -> ContractionTreeNode:
+        """
+        Build the contraction tree based on the contraction ordering in `scaffold`,
+        which is a recursively nested list of IDs to specify the tree, e.g.,
+        scaffold = [[ta, tb], [[tc, td], te]].
+        """
+        # search for next available tensor ID
+        max_tid = max(self.tensors.keys(), default=0)
+        return self._build_contraction_tree(scaffold, max_tid + 1)
+
+    def _build_contraction_tree(self, scaffold, next_tid) -> ContractionTreeNode:
+        """
+        Recursively build the contraction tree,
+        starting from `next_tid` for generating intermediate tensor IDs.
+        Returns a ContractionTreeNode as root of the tree.
+        """
+        if isinstance(scaffold, int):   # leaf node
+            if scaffold == -1:
+                raise ValueError("cannot use virtual tensor for open axes in contraction tree")
+            tensor = self.tensors[scaffold]
+            openaxes = [(scaffold, i) for i in range(tensor.ndim)]
+            return ContractionTreeNode(scaffold, None, [], None, [], list(range(tensor.ndim)), openaxes, list(range(tensor.ndim)))
+        assert isinstance(scaffold, Sequence), "invalid `scaffold` argument"
+        assert len(scaffold) == 2, "`scaffold` must specify pairwise contractions"
+        # generate child nodes
+        nL = self._build_contraction_tree(scaffold[0], next_tid)
+        if nL.tid >= next_tid: next_tid = nL.tid + 1
+        nR = self._build_contraction_tree(scaffold[1], next_tid)
+        if nR.tid >= next_tid: next_tid = nR.tid + 1
+        assert not set(nL.openaxes).intersection(set(nR.openaxes)), "open axes of left and right subtrees must be disjoint"
+        # find bonds attached to the left or right subtrees
+        bondlist = []
+        bmaplist = []
+        openaxes = nL.openaxes + nR.openaxes
+        for od in nL.openaxes + nR.openaxes:
+            bid = self.tensors[od[0]].bids[od[1]]
+            bond = self.bonds[bid]
+            # reference to bond can appear multiple times due to multi-edge bonds
+            if bond in bondlist:
+                continue
+            bondlist.append(bond)
+            bmap = len(bond.tids) * [None]
+            for i in range(len(bond.tids)):
+                ta = (bond.tids[i], bond.axes[i])
+                if ta in nL.openaxes:
+                    bmap[i] = ("L", nL.trackaxes[nL.openaxes.index(ta)])
+                elif ta in nR.openaxes:
+                    bmap[i] = ("R", nR.trackaxes[nR.openaxes.index(ta)])
+            bmaplist.append(bmap)
+            # if bond is fully contracted (no upstream connections)
+            if all(bmap):
+                for ta in zip(bond.tids, bond.axes):
+                    openaxes.remove(ta)
+        # tensor degrees
+        deg = [len(nL.idxout), len(nR.idxout)]
+        # contraction indices
+        idxL = list(range(deg[0]))
+        idxR = list(range(deg[0], deg[0] + deg[1]))
+        idxout = idxL + idxR
+        for bmap in bmaplist:
+            # whether corresponding bond is fully contracted (no upstream connections)
+            fully_contracted = all(bmap)
+            # shared np.einsum index
+            j = -1
+            for bm in bmap:
+                if bm is None:
+                    continue
+                if bm[0] == "L":
+                    k = bm[1]
+                    if j != -1:
+                        if idxL[k] in idxout and idxL[k] != j:
+                            idxout.remove(idxL[k])
+                        idxL[k] = j
+                    else:
+                        if fully_contracted:
+                            idxout.remove(idxL[k])
+                        j = idxL[k]
+                elif bm[0] == "R":
+                    k = bm[1]
+                    if j != -1:
+                        if idxR[k] in idxout and idxR[k] != j:
+                            idxout.remove(idxR[k])
+                        idxR[k] = j
+                    else:
+                        if fully_contracted:
+                            idxout.remove(idxR[k])
+                        j = idxR[k]
+        # construct `trackaxes`
+        trackaxes = len(openaxes) * [None]
+        for i, ta in enumerate(openaxes):
+            if ta in nL.openaxes:
+                k = nL.trackaxes[nL.openaxes.index(ta)]
+                trackaxes[i] = idxout.index(idxL[k])
+            elif ta in nR.openaxes:
+                k = nR.trackaxes[nR.openaxes.index(ta)]
+                trackaxes[i] = idxout.index(idxR[k])
+            else:
+                assert False
+        return ContractionTreeNode(next_tid, nL, idxL, nR, idxR, idxout, openaxes, trackaxes)
+
+    def as_einsum(self) -> tuple:
+        """
+        Convert the contractions in the network to an `numpy.einsum` argument list,
+        for a single call of `numpy.einsum`. The ordering of the output axes
+        follows the virtual tensor for the open axes.
+
+        Returns:
+            tids, tidx, idxout: tensor IDs and index argument list for `numpy.einsum`
+        """
+        # tensor IDs; ensuring that ID -1 (for virtual open axes tensor) is the last entry
+        max_tid = max(self.tensors.keys(), default=0)
+        tids = sorted(list(self.tensors.keys()), key=lambda tid: max_tid+1 if tid==-1 else tid)
+        assert tids[-1] == -1
+        # generate continuous indices for all tensors
+        tidx = []
+        maxidx = 0
+        for tid in tids:
+            ndim = self.tensors[tid].ndim
+            tidx.append(list(range(maxidx, maxidx + ndim)))
+            maxidx += ndim
+        # identify to-be contracted indices (or shared indices for output)
+        for bond in self.bonds.values():
+            it = [tids.index(tid) for tid in bond.tids]
+            imin = min([tidx[i][ax] for i, ax in zip(it, bond.axes)], default=0)
+            for i, ax in zip(it, bond.axes):
+                tidx[i][ax] = imin
+        # condense indices
+        idxmap = maxidx * [-1]
+        c = 0
+        for i in range(len(tidx)):
+            for j in range(len(tidx[i])):
+                if idxmap[tidx[i][j]] == -1:
+                    # use next available index
+                    idxmap[tidx[i][j]] = c
+                    c += 1
+                tidx[i][j] = idxmap[tidx[i][j]]
+        # indices for tensor -1 are the output indices
+        return tids[:-1], tidx[:-1], tidx[-1]
+
+    def is_consistent(self, verbose=False) -> bool:
         """
         Perform an internal consistency check,
         e.g., whether the bond ID specified by any tensor actually exist.
         """
         if -1 not in self.tensors:
-            if verbose: print("Consistency check failed: network requires a dummy tensor with ID -1 for the open bonds.")
+            if verbose: print("Consistency check failed: network requires a virtual tensor with ID -1 for the open bonds.")
             return False
         for k, tensor in self.tensors.items():
             if k != tensor.tid:

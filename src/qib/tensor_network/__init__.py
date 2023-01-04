@@ -1,1 +1,2 @@
 from qib.tensor_network.symbolic_network import SymbolicTensor, SymbolicBond, SymbolicTensorNetwork
+from qib.tensor_network.contraction_tree import ContractionTreeNode, perform_tree_contraction
