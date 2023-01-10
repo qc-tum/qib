@@ -242,7 +242,6 @@ class SymbolicTensorNetwork:
         """
         Merge network with another symbolic tensor network,
         and join open axes specified as [(openax_self, openax_other), ...].
-        The keys for the bond tags in the two networks must be unique.
         """
         for joinax in join_axes:
             if joinax[0] < 0 or joinax[0] >= self.num_open_axes:
@@ -302,7 +301,7 @@ class SymbolicTensorNetwork:
         tensor_open_axes.shape = tuple(tensor_open_axes.shape[i] for i in axes_map)
         tensor_open_axes.bids  = [tensor_open_axes.bids[i] for i in axes_map]
         # update axes references in bonds
-        for bid in tensor_open_axes.bids:
+        for bid in set(tensor_open_axes.bids):
             bond = self.bonds[bid]
             for i in range(len(bond.tids)):
                 if bond.tids[i] == -1:
@@ -418,7 +417,9 @@ class SymbolicTensorNetwork:
         follows the virtual tensor for the open axes.
 
         Returns:
-            tids, tidx, idxout: tensor IDs and index argument list for `numpy.einsum`
+            tids, tidx, idxout, axes_map: tensor IDs and index argument list for `numpy.einsum`,
+                and map from logical open axes to axes of output tensor of `numpy.einsum`
+                (einsum does not support an output index appearing multiple times)
         """
         # tensor IDs; ensuring that ID -1 (for virtual open axes tensor) is the last entry
         max_tid = max(self.tensors.keys(), default=0)
@@ -448,7 +449,15 @@ class SymbolicTensorNetwork:
                     c += 1
                 tidx[i][j] = idxmap[tidx[i][j]]
         # indices for tensor -1 are the output indices
-        return tids[:-1], tidx[:-1], tidx[-1]
+        idxout = tidx[-1]
+        tids = tids[:-1]
+        tidx = tidx[:-1]
+        # einsum does not support an output index appearing multiple times
+        # record first occurrence of each index
+        axes_map = [idxout.index(i) for i in idxout]
+        # keep only first occurrence
+        idxout = [i for k, i in enumerate(idxout) if i not in idxout[:k]]
+        return tids, tidx, idxout, axes_map
 
     def is_consistent(self, verbose=False) -> bool:
         """
