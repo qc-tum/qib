@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Sequence
-from qib.tensor_network.symbolic_network import SymbolicTensorNetwork
+from qib.tensor_network.symbolic_network import SymbolicTensor, SymbolicBond, SymbolicTensorNetwork
 from qib.tensor_network.contraction_tree import perform_tree_contraction
 
 
@@ -13,6 +13,21 @@ class TensorNetwork:
     def __init__(self, net: SymbolicTensorNetwork, data: dict):
         self.net = net
         self.data = data
+
+    @classmethod
+    def wrap(cls, a: np.ndarray, dataref):
+        """
+        Wrap a single tensor, i.e.,
+        construct a tensor network representation of the tensor.
+        """
+        stn = SymbolicTensorNetwork()
+        stn.add_tensor(SymbolicTensor( 0, a.shape, dataref))
+        # virtual tensor for open axes
+        stn.add_tensor(SymbolicTensor(-1, a.shape, None))
+        # mark tensor axes as open axes
+        for i in range(len(a.shape)):
+            stn.add_bond(SymbolicBond(i, (-1, 0), (i, i)))
+        return cls(stn, { dataref: a })
 
     @property
     def num_tensors(self) -> int:

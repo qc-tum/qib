@@ -100,6 +100,15 @@ class TestTensorNetwork(unittest.TestCase):
         self.assertEqual(net1.net.get_tensor(bond.tids[2]).dataref, "h")
         self.assertEqual(net1.num_open_axes, 4)
 
+        # tensor network representation of a single tensor
+        a = rng.normal(size=(5, 1, 2, 3))
+        net3 = qib.tensor_network.TensorNetwork.wrap(a, "a")
+        self.assertTrue(net3.is_consistent())
+        self.assertEqual(net3.num_tensors, 1)
+        self.assertEqual(net3.shape, a.shape)
+        self.assertTrue(np.array_equal(net3.contract_einsum()[0], a))
+        self.assertTrue(np.array_equal(net3.contract_tree(0)[0], a))
+
 
 if __name__ == "__main__":
     unittest.main()
