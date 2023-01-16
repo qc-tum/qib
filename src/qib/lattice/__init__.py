@@ -6,3 +6,5 @@ from qib.lattice.shifted_lattice_convention     import ShiftedLatticeConvention
 from qib.lattice.brick_lattice                  import BrickLattice
 from qib.lattice.layered_lattice                import LayeredLattice
 from qib.lattice.odd_face_centered_lattice      import OddFaceCenteredLattice
+from qib.lattice.fully_connected_lattice        import FullyConnectedLattice
+from qib.lattice.customized_lattice             import CustomizedLattice
