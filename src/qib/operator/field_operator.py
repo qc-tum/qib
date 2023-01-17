@@ -145,11 +145,11 @@ class FieldOperator(AbstractOperator):
             c = sparse.identity(1)
             for j in range(L):
                 if j < i:
-                    c = sparse.kron(Z, c)
+                    c = sparse.kron(c, I)
                 elif j == i:
-                    c = sparse.kron(U, c)
+                    c = sparse.kron(c, U)
                 else:
-                    c = sparse.kron(I, c)
+                    c = sparse.kron(c, Z)
             clist.append(c)
         # corresponding annihilation operators
         alist = [c.conj().T for c in clist]

@@ -3,6 +3,7 @@ import math
 import unittest
 import qib
 
+
 class TestCustomizedLattice(unittest.TestCase):
 
     def test_lattice_adjacency(self):
@@ -21,8 +22,8 @@ class TestCustomizedLattice(unittest.TestCase):
             self.assertEqual(latt.ndim, 1)
             self.assertEqual(latt.nsites, nsites)
             adj = latt.adjacency_matrix()
-            self.assertTrue(np.array_equal(adj, np.array(adj_ref, dtype='bool')))
-            
+            self.assertTrue(np.array_equal(adj, np.array(adj_ref, dtype=bool)))
+
             shape = (n,n)
             nsites = math.prod(shape)
             adj_ref = np.random.randint(-10, 10, (nsites, nsites))
@@ -33,7 +34,7 @@ class TestCustomizedLattice(unittest.TestCase):
             self.assertEqual(latt.ndim, 2)
             self.assertEqual(latt.nsites, nsites)
             adj = latt.adjacency_matrix()
-            self.assertTrue(np.array_equal(adj, np.array(adj_ref, dtype='bool')))
+            self.assertTrue(np.array_equal(adj, np.array(adj_ref, dtype=bool)))
 
             shape = (n, 2, 3)
             nsites = math.prod(shape)
@@ -45,7 +46,7 @@ class TestCustomizedLattice(unittest.TestCase):
             self.assertEqual(latt.ndim, 3)
             self.assertEqual(latt.nsites, nsites)
             adj = latt.adjacency_matrix()
-            self.assertTrue(np.array_equal(adj, np.array(adj_ref, dtype='bool')))
+            self.assertTrue(np.array_equal(adj, np.array(adj_ref, dtype=bool)))
 
     def test_lattice_coords(self):
         """

@@ -9,6 +9,7 @@ def crandn(size):
     return (np.random.standard_normal(size)
        + 1j*np.random.standard_normal(size)) / np.sqrt(2)
 
+
 def permute_gate_wires(u: np.ndarray, perm):
     """
     Transpose (permute) the wires of a quantum gate stored as NumPy array.

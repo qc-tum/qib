@@ -56,7 +56,7 @@ class HeisenbergHamiltonian(AbstractOperator):
                     if adj[i, j] == 0:
                         continue
                     # interaction term
-                    # site 0 corresponds to fastest varying index
+                    # site 0 corresponds to slowest varying index
                     op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, i), (gate, j)), self.J[k]))
                 # field term
                 op.add_pauli_string(WeightedPauliString(PauliString.from_single_paulis(L, (gate, i)), self.h[k]))

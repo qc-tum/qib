@@ -7,7 +7,6 @@ from scipy.sparse import csr_matrix
 from typing import Sequence, Union
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
-from qib.util import permute_gate_wires
 
 
 class Gate(AbstractOperator):
@@ -64,7 +63,7 @@ class Gate(AbstractOperator):
     @abc.abstractmethod
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         pass
 
@@ -152,7 +151,7 @@ class PauliXGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return PauliXGate(self.qubit)
 
@@ -241,7 +240,7 @@ class PauliYGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return PauliYGate(self.qubit)
 
@@ -328,7 +327,7 @@ class PauliZGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return PauliZGate(self.qubit)
 
@@ -415,7 +414,7 @@ class HadamardGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return HadamardGate(self.qubit)
 
@@ -512,7 +511,7 @@ class RxGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return RxGate(self.theta, self.qubit)
 
@@ -609,7 +608,7 @@ class RyGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return RyGate(self.theta, self.qubit)
 
@@ -705,7 +704,7 @@ class RzGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return RzGate(self.theta, self.qubit)
 
@@ -801,7 +800,7 @@ class RotationGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return RotationGate(self.ntheta, self.qubit)
 
@@ -888,7 +887,7 @@ class SGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return SGate(self.qubit)
 
@@ -975,7 +974,7 @@ class SAdjGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return SAdjGate(self.qubit)
 
@@ -1062,7 +1061,7 @@ class TGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return TGate(self.qubit)
 
@@ -1149,7 +1148,7 @@ class TAdjGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return TAdjGate(self.qubit)
 
@@ -1243,7 +1242,7 @@ class PhaseFactorGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         gate = PhaseFactorGate(self.phi, self.nwires)
         gate.on(self.prtcl)
@@ -1364,7 +1363,7 @@ class PrepareGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         gate = PrepareGate(self.vec, self.nqubits, self.transpose)
         gate.on(self.qubits)
@@ -1384,16 +1383,19 @@ class ControlledGate(Gate):
     The control qubits have to be set explicitly.
     The target qubits (or particles) are specified via the target gate.
     """
-    def __init__(self, tgate: Gate, ncontrols: int, bitpattern: int=-1):
+    def __init__(self, tgate: Gate, ncontrols: int, ctrl_state: Sequence[int]=None):
         self.tgate = tgate
         self.ncontrols = ncontrols
         self.control_qubits = []
         # standard case: control is active if all control qubits are in |1> state
-        if bitpattern < 0:
-            bitpattern = 2**ncontrols - 1
-        if bitpattern >= 2**ncontrols:
-            raise ValueError(f"integer in `bitpattern` must be smaller than 2**ncontrols = {2**ncontrols}")
-        self.bitpattern = bitpattern
+        if ctrl_state is None:
+            ctrl_state = ncontrols * [1]
+        if len(ctrl_state) != ncontrols:
+            raise ValueError(f"length of `ctrl_state` must be equal to number of control qubits, {ncontrols}")
+        for i in ctrl_state:
+            if not (i == 0 or i == 1):
+                raise ValueError(f"`ctrl_state` can only contain 0 or 1 bits, received {i}")
+        self.ctrl_state = list(ctrl_state)
 
     def is_hermitian(self):
         """
@@ -1405,7 +1407,7 @@ class ControlledGate(Gate):
         """
         Return the inverse operator.
         """
-        invgate = ControlledGate(self.tgate.inverse(), self.ncontrols, self.bitpattern)
+        invgate = ControlledGate(self.tgate.inverse(), self.ncontrols, self.ctrl_state)
         if self.control_qubits:
             invgate.set_control(self.control_qubits)
         return invgate
@@ -1413,12 +1415,18 @@ class ControlledGate(Gate):
     def as_matrix(self):
         """
         Generate the matrix representation of the controlled gate.
-        Format: |control> @ |target>
+        Format: |control> x |target>
         """
         tgmat = self.tgate.as_matrix()
         # target gate corresponds to faster varying indices
+        assert self.ncontrols == len(self.ctrl_state)
         cidx = np.zeros(2**self.ncontrols)
-        cidx[self.bitpattern] = 1
+        ic = 0
+        for j in range(self.ncontrols):
+            if self.ctrl_state[j] == 1:
+                # first digit is the most significant bit
+                ic += 1 << (self.ncontrols - 1 - j)
+        cidx[ic] = 1
         return (  np.kron(np.diag(1 - cidx), np.identity(tgmat.shape[0]))
                 + np.kron(np.diag(cidx), tgmat))
 
@@ -1433,16 +1441,19 @@ class ControlledGate(Gate):
         """
         Return the list of quantum particles the gate acts on.
         """
-        return self.tgate.particles() + self.control_qubits
+        return self.control_qubits + self.tgate.particles()
 
     def fields(self):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        flist = [f for f in self.tgate.fields()]
+        flist = []
         for q in self.control_qubits:
             if q.field not in flist:
                 flist.append(q.field)
+        for f in self.tgate.fields():
+            if f not in flist:
+                flist.append(f)
         return flist
 
     def target_gate(self):
@@ -1493,9 +1504,9 @@ class ControlledGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
-        gate = ControlledGate(copy(self.tgate), self.ncontrols, self.bitpattern)
+        gate = ControlledGate(copy(self.tgate), self.ncontrols, self.ctrl_state)
         gate.set_control(self.control_qubits)
         return gate
 
@@ -1506,7 +1517,7 @@ class ControlledGate(Gate):
         return (type(other) == type(self)
                 and other.tgate == self.tgate
                 and other.ncontrols == self.ncontrols
-                and other.bitpattern == self.bitpattern
+                and other.ctrl_state == self.ctrl_state
                 and other.control_qubits == self.control_qubits)
 
 
@@ -1560,19 +1571,22 @@ class MultiplexedGate(Gate):
         tprtcl = self.tgates[0].particles()
         for g in self.tgates:
             assert tprtcl == g.particles(), "particles of all target gates must match"
-        return tprtcl + self.control_qubits
+        return self.control_qubits + tprtcl
 
     def fields(self):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        assert self.tgates
-        for g in self.tgates:
-            assert self.tgates[0].fields() == g.fields(), "fields of all target gates must match"
-        flist = [f for f in self.tgates[0].fields()]
+        flist = []
         for q in self.control_qubits:
             if q.field not in flist:
                 flist.append(q.field)
+        assert self.tgates
+        for g in self.tgates:
+            assert self.tgates[0].fields() == g.fields(), "fields of all target gates must match"
+        for f in self.tgates[0].fields():
+            if f not in flist:
+                flist.append(f)
         return flist
 
     def target_gates(self):
@@ -1624,7 +1638,7 @@ class MultiplexedGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         gate = MultiplexedGate(copy(self.tgates), self.ncontrols)
         gate.set_control(self.control_qubits)
@@ -1713,7 +1727,7 @@ class TimeEvolutionGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return TimeEvolutionGate(self.h, self.t)
 
@@ -1772,11 +1786,10 @@ class BlockEncodingGate(Gate):
         """
         if len(self.auxiliary_qubits) != self.num_aux_qubits:
             raise RuntimeError(f"require {self.num_aux_qubits} auxiliary qubits, but have {len(self.auxiliary_qubits)}")
-        prtcl = []
+        prtcl = [q for q in self.auxiliary_qubits]  # copy of list
         fields = self.h.fields()
         for f in fields:
             prtcl += [Particle(f, i) for i in range(f.lattice.nsites)]
-        prtcl += self.auxiliary_qubits
         return prtcl
 
     def inverse(self):
@@ -1801,10 +1814,13 @@ class BlockEncodingGate(Gate):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        flist = [f for f in self.h.fields()]
+        flist = []
         for q in self.auxiliary_qubits:
             if q.field not in flist:
                 flist.append(q.field)
+        for f in self.h.fields():
+            if f not in flist:
+                flist.append(f)
         return flist
 
     def encoded_operator(self):
@@ -1901,7 +1917,10 @@ class ProjectorControlledPhaseShift(Gate):
     Projector is state |0> on the encoding (auxiliary) qubit
     TODO: generalize for different states
     """
-    def __init__(self, encoding_qubits: Union[Qubit,Sequence[Qubit]]=None, auxiliary_qubits: Union[Qubit,Sequence[Qubit]]=None, theta: float=None):
+    def __init__(self, theta: float,
+                 encoding_qubits:  Union[Qubit, Sequence[Qubit]]=None,
+                 auxiliary_qubits: Union[Qubit, Sequence[Qubit]]=None):
+        self.theta = theta
         if type(auxiliary_qubits) == Qubit:
             self.auxiliary_qubits = [auxiliary_qubits]
         elif auxiliary_qubits is not None:
@@ -1910,7 +1929,6 @@ class ProjectorControlledPhaseShift(Gate):
             self.encoding_qubits = [encoding_qubits]
         elif auxiliary_qubits is not None:
             self.encoding_qubits = list(encoding_qubits)
-        self.theta = theta
 
     def is_hermitian(self):
         """
@@ -1922,7 +1940,7 @@ class ProjectorControlledPhaseShift(Gate):
         """
         Return the inverse operator.
         """
-        return ProjectorControlledPhaseShift(self.encoding_qubits, self.auxiliary_qubits, -self.theta)
+        return ProjectorControlledPhaseShift(-self.theta, self.encoding_qubits, self.auxiliary_qubits)
 
     def set_encoding_qubits(self, *args):
         """
@@ -1959,7 +1977,7 @@ class ProjectorControlledPhaseShift(Gate):
         """
         Return the list of quantum particles the gate acts on.
         """
-        return self.encoding_qubits + self.auxiliary_qubits
+        return self.auxiliary_qubits + self.encoding_qubits
 
     def fields(self):
         """
@@ -1967,12 +1985,12 @@ class ProjectorControlledPhaseShift(Gate):
         """
         assert len(self.encoding_qubits) != 0
         flist = []
-        for eq in self.encoding_qubits:
-            if eq.field not in flist:
-                flist.append(eq.field)
         for aq in self.auxiliary_qubits:
             if aq.field not in flist:
                 flist.append(aq.field)
+        for eq in self.encoding_qubits:
+            if eq.field not in flist:
+                flist.append(eq.field)
         return flist
 
     def set_theta(self, theta):
@@ -1984,20 +2002,16 @@ class ProjectorControlledPhaseShift(Gate):
     def as_matrix(self):
         """
         Generate the matrix representation of the controlled gate.
-        Note: The control state is |0> on the encoding qubit (I have to apply X gates)
-        Format: |ancillary> @ |enc_extra>
+        Note: The control state is |0> on the encoding qubit (requires applying X gates)
+        Format: |auxiliary> x |encoding>
         TODO: generalize for more than one auxiliary qubit
         """
-        if self.theta is None:
-            raise ValueError("the angle theta has not been initialized")
-        projector_NOT = ControlledGate(PauliXGate(self.auxiliary_qubits[0]), 1)
-        projector_NOT.set_control(self.encoding_qubits[0])
-        #cp_matrix = projector_NOT.as_matrix()
-        cp_matrix = permute_gate_wires(projector_NOT.as_matrix(), [1,0])
-        #cp_matrix = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])
-        return np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix()) @ cp_matrix \
-               @ np.kron(RzGate(2*self.theta, self.auxiliary_qubits[0]).as_matrix(), np.identity(2)) \
-               @ cp_matrix @ np.kron(np.identity(2), PauliXGate(self.encoding_qubits[0]).as_matrix())
+        cp_matrix = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]], dtype=float)
+        return (  np.kron(np.identity(2), PauliXGate().as_matrix())
+                @ cp_matrix
+                @ np.kron(RzGate(2*self.theta).as_matrix(), np.identity(2))
+                @ cp_matrix
+                @ np.kron(np.identity(2), PauliXGate().as_matrix()))
 
     def _circuit_matrix(self, fields: Sequence[Field]):
         """
@@ -2022,7 +2036,7 @@ class ProjectorControlledPhaseShift(Gate):
         """
         Copy of the gate
         """
-        return ProjectorControlledPhaseShift(self.encoding_qubits, self.auxiliary_qubits, self.theta)
+        return ProjectorControlledPhaseShift(self.theta, self.encoding_qubits, self.auxiliary_qubits)
 
     def __eq__(self, other):
         """
@@ -2040,7 +2054,9 @@ class EigenvalueTransformationGate(Gate):
     It requires the unitary gate that gets processed, the projector-controlled phase shift and the list of angles for the processing.
     ***** DEPRECATED: Use EigenvalueTransformation in qib/qubitization *****
     """
-    def __init__(self, block_encoding: BlockEncodingGate, processing_gate: ProjectorControlledPhaseShift, theta_seq: Sequence[float]=None):
+    def __init__(self, block_encoding: BlockEncodingGate,
+                 processing_gate: ProjectorControlledPhaseShift,
+                 theta_seq: Sequence[float]=None):
         assert block_encoding.is_unitary()
         # Check that the encoding auxiliary gate is only one and is the same for both gates
         assert len(processing_gate.encoding_qubits)==1 and len(block_encoding.auxiliary_qubits)==1
@@ -2103,7 +2119,7 @@ class EigenvalueTransformationGate(Gate):
     def as_matrix(self):
         """
         Generate the matrix representation of the eigenvalue transformation
-        Format: |ancillary_Pi> @ |enc_extra> @ |encoded_state>
+        Format: |enc_extra> x |auxiliary> x |encoded_state>
         """
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized")
@@ -2148,7 +2164,7 @@ class EigenvalueTransformationGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         return EigenvalueTransformationGate(copy(self.block_encoding), copy(self.processing_gate), self.theta_seq.copy())
 
@@ -2249,7 +2265,7 @@ class GeneralGate(Gate):
 
     def __copy__(self):
         """
-        Create a copy of the gate
+        Create a copy of the gate.
         """
         gate = GeneralGate(self.mat, self.nwires)
         gate.on(self.prtcl)
@@ -2298,6 +2314,10 @@ def _distribute_to_wires(nwires: int, iwire, gmat: csr_matrix):
     values = np.zeros(2**(nwires - m) * gmat.nnz, dtype=gmat.dtype)
     rowind = np.zeros_like(values, dtype=int)
     colind = np.zeros_like(values, dtype=int)
+
+    # reverse ordering, due to convention that wire 0 corresponds to slowest varying index
+    iwire   = [(nwires - 1 - iwire[m - 1 - b]) for b in range(m)]
+    iwcompl = [(nwires - 1 - iwcompl[nwires - m - 1 - b]) for b in range(nwires - m)]
 
     for j in range(2**m):
         r = 0

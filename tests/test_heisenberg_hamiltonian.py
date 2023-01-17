@@ -28,7 +28,7 @@ class TestHeisenbergHamiltonian(unittest.TestCase):
         Y = np.array([[ 0., -1j], [ 1j,  0.]])
         Z = np.array([[ 1.,  0.], [ 0., -1.]])
         Href = 0j
-        for k, gate in enumerate([X,Y,Z]):
+        for k, gate in enumerate([X, Y, Z]):
             for i in range(L-1):
                 Href += J[k] * np.kron(np.identity(2**i), np.kron(np.kron(gate, gate), np.identity(2**(L-i-2))))
             for i in range(L):

@@ -55,9 +55,6 @@ class Circuit:
         """
         if not self.gates or len(self.gates)==0:
             raise RuntimeError("missing gates, hence cannot compute matrix representation of circuit")
-        # Warning: do not use the ones saved in self.fields() because the order is not fixed
-        if not fields:
-            raise RuntimeError("missing fields, hence cannot compute matrix representation of circuit")
         mat = self.gates[0]._circuit_matrix(fields)
         for g in self.gates[1:]:
             mat = g._circuit_matrix(fields) @ mat

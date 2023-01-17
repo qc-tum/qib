@@ -35,7 +35,7 @@ class TestPauliOperator(unittest.TestCase):
         X = np.array([[ 0.,  1.], [ 1.,  0.]])
         Y = np.array([[ 0., -1j], [ 1j,  0.]])
         Z = np.array([[ 1.,  0.], [ 0., -1.]])
-        Pref = (-1j)**q_ref * np.kron(Z, np.kron(Y, np.kron(I, np.kron(Y, X))))
+        Pref = (-1j)**q_ref * np.kron(np.kron(np.kron(np.kron(X, Y), I), Y), Z)
         self.assertTrue(np.array_equal(P.as_matrix().toarray(), Pref))
         # another Pauli string
         P2 = qib.PauliString.from_single_paulis(5, ('Z', 4), ('Y', 0), ('Y', 1), ('X', 2), q=2)
@@ -85,9 +85,9 @@ class TestPauliOperator(unittest.TestCase):
         Y = np.array([[ 0., -1j], [ 1j,  0.]])
         Z = np.array([[ 1.,  0.], [ 0., -1.]])
         Pref = (
-              weights[0] * (-1j)**q[0] * np.kron(Z, np.kron(Y, np.kron(I, np.kron(Y, X))))
-            + weights[1] * (-1j)**q[1] * np.kron(Z, np.kron(Z, np.kron(Y, np.kron(X, Z))))
-            + weights[2] * (-1j)**q[2] * np.kron(X, np.kron(Z, np.kron(I, np.kron(Z, Y)))))
+              weights[0] * (-1j)**q[0] * np.kron(np.kron(np.kron(np.kron(X, Y), I), Y), Z)
+            + weights[1] * (-1j)**q[1] * np.kron(np.kron(np.kron(np.kron(Z, X), Y), Z), Z)
+            + weights[2] * (-1j)**q[2] * np.kron(np.kron(np.kron(np.kron(Y, Z), I), Z), X))
         # compare
         self.assertTrue(np.allclose(P.as_matrix().toarray(), Pref))
 

@@ -15,7 +15,7 @@ class PauliString(AbstractOperator):
 
     .. math:: (-i)^q \otimes_{k=0}^{n-1} (-i)^{z_k x_k} Z^{z_k} X^{x_k}
 
-    Using convention that Pauli matrix at site 0 corresponds to fastest varying index.
+    Using convention that Pauli matrix at site 0 corresponds to slowest varying index.
     """
     def __init__(self, z, x, q):
         self.z = np.array(z, copy=False, dtype=int)
@@ -201,8 +201,8 @@ class PauliString(AbstractOperator):
         Z = sparse.csr_matrix([[ 1.,  0.], [ 0., -1.]])
         op = sparse.identity(1)
         for i in range(self.num_qubits):
-            # using convention that Pauli matrix at site 0 corresponds to fastest varying index
-            op = sparse.csr_matrix(sparse.kron(Z**self.z[i] @ X**self.x[i], op))
+            # using convention that Pauli matrix at site 0 corresponds to slowest varying index
+            op = sparse.csr_matrix(sparse.kron(op, Z**self.z[i] @ X**self.x[i]))
             op.eliminate_zeros()
         # only use complex type when necessary
         phase = [1., -1j, -1., 1j][(self.q + np.dot(self.z, self.x)) % 4]

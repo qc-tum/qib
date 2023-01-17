@@ -149,13 +149,13 @@ def construct_tight_binding_hamiltonian(μ: np.ndarray, t: np.ndarray, Δ: np.nd
     # onsite term
     for x in range(lattsize[0]):
         for y in range(lattsize[1]):
-            i = x*lattsize[1] + y
+            i = nmodes - (x*lattsize[1] + y) - 1
             H -= μ[x, y] * fermi_number_op(nmodes, 1 << i)
     for x in range(lattsize[0] if pbc else lattsize[0] - 1):
         x_next = (x + 1) % lattsize[0]
         for y in range(lattsize[1]):
-            i = x     *lattsize[1] + y
-            j = x_next*lattsize[1] + y
+            i = nmodes - (x     *lattsize[1] + y) - 1
+            j = nmodes - (x_next*lattsize[1] + y) - 1
             # kinetic hopping in x-direction
             H -= t[x, y, 0] * (fermi_create_op(nmodes, 1 << j) @ fermi_annihil_op(nmodes, 1 << i) +
                                fermi_create_op(nmodes, 1 << i) @ fermi_annihil_op(nmodes, 1 << j))
@@ -165,8 +165,8 @@ def construct_tight_binding_hamiltonian(μ: np.ndarray, t: np.ndarray, Δ: np.nd
     for x in range(lattsize[0]):
         for y in range(lattsize[1] if pbc else lattsize[1] - 1):
             y_next = (y + 1) % lattsize[1]
-            i = x*lattsize[1] + y
-            j = x*lattsize[1] + y_next
+            i = nmodes - (x*lattsize[1] + y     ) - 1
+            j = nmodes - (x*lattsize[1] + y_next) - 1
             # kinetic hopping in y-direction
             H -= t[x, y, 1] * (fermi_create_op(nmodes, 1 << j) @ fermi_annihil_op(nmodes, 1 << i) +
                                fermi_create_op(nmodes, 1 << i) @ fermi_annihil_op(nmodes, 1 << j))

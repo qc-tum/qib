@@ -19,8 +19,8 @@ def jordan_wigner_encode_field_operator(fieldop: FieldOperator) -> PauliOperator
     clist = []
     alist = []
     for i in range(L):
-        za = i*[1] + [0] + (L-i-1)*[0]
-        zb = i*[1] + [1] + (L-i-1)*[0]
+        za = i*[0] + [0] + (L-i-1)*[1]
+        zb = i*[0] + [1] + (L-i-1)*[1]
         x  = i*[0] + [1] + (L-i-1)*[0]
         # require two Pauli strings per fermionic operator
         clist.append([PauliString(za, x, 0), PauliString(zb, x, 1)])

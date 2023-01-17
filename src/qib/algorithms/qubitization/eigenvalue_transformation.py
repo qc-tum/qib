@@ -55,7 +55,7 @@ class EigenvalueTransformation:
     def as_matrix(self):
         """
         Generate the matrix representation of the eigenvalue transformation.
-        Format: |ancillary_Pi> @ |enc_extra> @ |encoded_state>
+        Format: |auxiliary> x |enc_extra> x |encoded_state>
         """
         if self.block_encoding.auxiliary_qubits != self.processing_gate.encoding_qubits:
             raise RuntimeError("The block encoding's auxiliary qubits and processing gate's encoding extra qubits must be the same")
@@ -67,11 +67,11 @@ class EigenvalueTransformation:
         id_for_unitary = np.identity(2**len(self.processing_gate.auxiliary_qubits))
         U_inv_matrix = self.block_encoding.inverse().as_matrix()
         U_matrix = self.block_encoding.as_matrix()
-        if(len(self.theta_seq)%2==0):
-            dim = len(self.theta_seq)//2
+        if len(self.theta_seq) % 2 == 0:
+            dim = len(self.theta_seq) // 2
             start = 0
         else:
-            dim = (len(self.theta_seq)-1)//2
+            dim = (len(self.theta_seq)-1) // 2
             self.processing_gate.set_theta(self.theta_seq[0])
             matrix = matrix @ np.kron(self.processing_gate.as_matrix(), id_for_projector) \
                             @ np.kron(id_for_unitary, U_matrix)
@@ -79,7 +79,7 @@ class EigenvalueTransformation:
         for i in range(start, dim):
             self.processing_gate.set_theta(self.theta_seq[2*i-start])
             matrix = matrix @ np.kron(self.processing_gate.as_matrix(), id_for_projector) \
-                            @ np.kron(id_for_unitary, U_inv_matrix) 
+                            @ np.kron(id_for_unitary, U_inv_matrix)
             self.processing_gate.set_theta(self.theta_seq[2*i+1-start])
             matrix = matrix @ np.kron(self.processing_gate.as_matrix(), id_for_projector) \
                             @ np.kron(id_for_unitary, U_matrix)
@@ -95,8 +95,8 @@ class EigenvalueTransformation:
             raise ValueError("the angles 'theta' have not been initialized")
         circuit = Circuit()
 
-        if(len(self.theta_seq)%2==0):
-            dim = len(self.theta_seq)//2
+        if len(self.theta_seq) % 2 == 0:
+            dim = len(self.theta_seq) // 2
             start = 0
         else:
             dim = (len(self.theta_seq)-1)//2
@@ -112,4 +112,3 @@ class EigenvalueTransformation:
             circuit.prepend_gate(self.processing_gate)
             circuit.prepend_gate(self.block_encoding)
         return circuit
-

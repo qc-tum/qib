@@ -21,26 +21,13 @@ class TestCircuit(unittest.TestCase):
         circuit = qib.Circuit()
         circuit.append_gate(hadamard)
         circuit.append_gate(cnot)
-        self.assertTrue(circuit.fields() == [field1, field2] or circuit.fields() == [field2, field1])
+        self.assertTrue(circuit.fields() == [field1, field2])
         h_cnot = cnot.as_matrix() @ np.kron(hadamard.as_matrix(), np.identity(2))
         self.assertTrue(np.array_equal(circuit.as_matrix([field1, field2]).toarray(),
-                                       permute_gate_wires(np.kron(np.identity(8), h_cnot), [4, 0, 1, 3, 2])))
+                                       qib.util.permute_gate_wires(np.kron(h_cnot, np.identity(8)), [2, 0, 3, 4, 1])))
         self.assertTrue(np.allclose(circuit.as_matrix([field1, field2]).toarray()
             @ circuit.inverse().as_matrix([field1, field2]).toarray(),
             np.identity(2**5)))
-
-
-def permute_gate_wires(u: np.ndarray, perm):
-    """
-    Transpose (permute) the wires of a quantum gate stored as NumPy array.
-    """
-    nwires = len(perm)
-    assert u.shape == (2**nwires, 2**nwires)
-    perm = list(perm)
-    u = np.reshape(u, (2*nwires) * (2,))
-    u = np.transpose(u, perm + [nwires + p for p in perm])
-    u = np.reshape(u, (2**nwires, 2**nwires))
-    return u
 
 
 if __name__ == "__main__":
