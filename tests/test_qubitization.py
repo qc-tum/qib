@@ -34,7 +34,6 @@ class TestQubitization(unittest.TestCase):
             eigen_transform = qib.algorithms.qubitization.EigenvalueTransformation(block,
                                                                                    processing,
                                                                                    theta_seq=theta)
-            eigen_transform_gate = qib.EigenvalueTransformationGate(block, processing, theta)
             # obtain block unitary for theta = 0
             self.assertTrue(np.allclose(np.kron(np.identity(2**1), block.as_matrix()),
                                         eigen_transform.as_circuit().as_matrix([field2, field1]).toarray()))
