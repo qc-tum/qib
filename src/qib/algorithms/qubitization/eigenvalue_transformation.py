@@ -1,7 +1,6 @@
 import numpy as np
 from typing import Sequence, Union
 from qib.field import Qubit
-from qib.operator import ProjectorControlledPhaseShift, BlockEncodingGate, BlockEncodingMethod
 from qib.circuit import Circuit
 
 

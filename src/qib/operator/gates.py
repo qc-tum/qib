@@ -2088,7 +2088,7 @@ class EigenvalueTransformationGate(Gate):
         plist = [p for p in self.block_encoding.particles()]
         for p in self.processing_gate.particles():
             if p not in plist:
-                plist.append(p)
+                plist.insert(0,p)
         return plist
 
     def inverse(self):
