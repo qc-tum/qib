@@ -452,40 +452,6 @@ class TestGates(unittest.TestCase):
         self.assertTrue(g_copy == processing)
         self.assertTrue(np.allclose(g_copy.as_matrix(), processing.as_matrix()))
 
-    def test_eigenvalue_transformation_gate(self):
-        """
-        Test the eigenvalue transformation gate
-        """
-        # construct a simple Hamiltonian
-        L = 5
-        latt = qib.lattice.IntegerLattice((L,), pbc=True)
-        field1 = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
-        H = qib.operator.HeisenbergHamiltonian(field1, np.random.standard_normal(size=3),
-                                                       np.random.standard_normal(size=3))
-        # rescale parameters (effectively rescales overall Hamiltonian)
-        scale = 1.25 * np.linalg.norm(H.as_matrix().toarray(), ord=2)
-        H.J /= scale
-        H.h /= scale
-        # auxiliary qubit
-        field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                 qib.lattice.IntegerLattice((4,), pbc=False))
-        q_enc = qib.field.Qubit(field2, 1)
-        field3 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                 qib.lattice.IntegerLattice((4,), pbc=False))
-        q_aux = qib.field.Qubit(field3, 1)
-        for method in qib.operator.BlockEncodingMethod:
-            encoding = qib.BlockEncodingGate(H, method)
-            encoding.set_auxiliary_qubits([q_enc])
-            processing = qib.ProjectorControlledPhaseShift(0., q_enc, q_aux)
-            eigen_transform = qib.EigenvalueTransformationGate(encoding, processing)
-            # obtain encoding hamiltonian for theta == 0
-            eigen_transform.set_theta_seq([0])
-            self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.kron(np.identity(2), encoding.as_matrix())))
-            # obtain the identity if theta_1 = 0 and theta_2 = 0
-            eigen_transform.set_theta_seq([0,0])
-            self.assertTrue(np.allclose(eigen_transform.as_matrix(), np.identity(2**eigen_transform.num_wires)))
-            #TODO: add more tests
-
     def test_general_gate(self):
         """
         Test implementation of a general (user-defined) quantum gate.

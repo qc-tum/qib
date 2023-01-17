@@ -1,7 +1,7 @@
 import numpy as np
 import unittest
 import qib
-import itertools
+
 
 
 class TestQubitization(unittest.TestCase):
@@ -47,20 +47,10 @@ class TestQubitization(unittest.TestCase):
             theta = [np.random.uniform(0, 2*np.pi) for i in range(5)]
             for i in range(1, 5):
                 eigen_transform.set_theta_seq(theta[:i])
-                eigen_transform_gate.set_theta_seq(theta[:i])
                 mat_class = eigen_transform.as_matrix()
-                mat_gate  = eigen_transform_gate.as_matrix()
                 circ_class = eigen_transform.as_circuit().as_matrix([field2, field1]).toarray()
-                circ_gate  = eigen_transform_gate._circuit_matrix([field2, field1]).toarray()
-                self.assertTrue(np.allclose(mat_class, mat_gate))
                 self.assertTrue(np.allclose(mat_class, circ_class))
-                # TODO: need to fix this test
-                self.assertTrue(np.allclose(mat_class, circ_gate))
-                '''
-                for perm in list(itertools.permutations(np.arange(0,latt.nsites + field2.lattice.nsites))):
-                    if np.allclose(qib.util.permute_gate_wires(circ_gate, perm), mat_class):
-                        print(perm)
-                '''
+
             # TODO: add more tests
 
 
