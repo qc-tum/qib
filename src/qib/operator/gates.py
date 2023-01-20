@@ -7,6 +7,7 @@ from scipy.sparse import csr_matrix
 from typing import Sequence, Union
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
+from qib.util import permute_gate_wires
 
 
 class Gate(AbstractOperator):
@@ -1914,21 +1915,33 @@ class ProjectorControlledPhaseShift(Gate):
     """
     Projector-controlled phase shift gate.
     Building block for Qubitization.
-    Projector is state |0> on the encoding (auxiliary) qubit
-    TODO: generalize for different states
+    2 possible methods: "auxiliary" or "c-phase".
+    Projector is state |0>, |00>... on the encoding (auxiliary) qubitS.
     """
     def __init__(self, theta: float,
+                 projection_state: Sequence[int]=[0],
                  encoding_qubits:  Union[Qubit, Sequence[Qubit]]=None,
-                 auxiliary_qubits: Union[Qubit, Sequence[Qubit]]=None):
+                 auxiliary_qubits: Union[Qubit, Sequence[Qubit]]=None,
+                 method = "auxiliary"):
         self.theta = theta
-        if type(auxiliary_qubits) == Qubit:
-            self.auxiliary_qubits = [auxiliary_qubits]
-        elif auxiliary_qubits is not None:
-            self.auxiliary_qubits = list(auxiliary_qubits)
+        if not set(projection_state).issubset({0,1}):
+            raise ValueError("The projection state can only have entries 1 or 0.")
+        self.projection_state = list(projection_state)
+        # I check the compaitibility between the sizes of the state and the encoding qubits' list in the 'as_matrix()' method
         if type(encoding_qubits) == Qubit:
             self.encoding_qubits = [encoding_qubits]
-        elif auxiliary_qubits is not None:
+        elif encoding_qubits is not None:
             self.encoding_qubits = list(encoding_qubits)
+        if method == "auxiliary":
+            if type(auxiliary_qubits) == Qubit:
+                self.auxiliary_qubits = [auxiliary_qubits]
+            elif auxiliary_qubits is not None:
+                self.auxiliary_qubits = list(auxiliary_qubits)
+        else:
+            self.auxiliary_qubits = []
+        if method not in ["auxiliary", "c-phase"]:
+            raise RuntimeError("The method {method} is not valid. Only use 'auxiliary' or 'c-phase'.")
+        self.method = method
 
     def is_hermitian(self):
         """
@@ -1940,7 +1953,23 @@ class ProjectorControlledPhaseShift(Gate):
         """
         Return the inverse operator.
         """
-        return ProjectorControlledPhaseShift(-self.theta, self.encoding_qubits, self.auxiliary_qubits)
+        return ProjectorControlledPhaseShift(-self.theta, self.projection_state, self.encoding_qubits, self.auxiliary_qubits, self.method)
+
+    def set_projection_state(self, projection_state: Sequence[int] = [1,0]):
+        """
+        Set the projection state.
+        """
+        if set(projection_state) != set([0,1]):
+            raise ValueError("The projection state can only have entries 1 or 0.")
+        self.projection_state = list(projection_state)
+
+    def set_method(self, method = "auxiliary"):
+        """
+        Set the method.
+        """
+        if method not in ["auxiliary", "c-phase"]:
+            raise RuntimeError("The method {method} is not valid. Only use 'auxiliary' or 'c-phase'.")
+        self.method = method
 
     def set_encoding_qubits(self, *args):
         """
@@ -1957,7 +1986,10 @@ class ProjectorControlledPhaseShift(Gate):
     def set_auxiliary_qubits(self, *args):
         """
         Set the auxiliary qubits.
+        Only works if the method is set to auxiliary
         """
+        if self.method != "auxiliary":
+            return self
         if len(args) == 1 and isinstance(args[0], Sequence):
             auxiliary_qubits = list(args[0])
         else:
@@ -1971,13 +2003,19 @@ class ProjectorControlledPhaseShift(Gate):
         """
         The number of "wires" (or quantum particles) this gate acts on.
         """
-        return len(self.auxiliary_qubits) + len(self.encoding_qubits)
+        if self.method == "auxiliary":
+            return len(self.auxiliary_qubits) + len(self.encoding_qubits)
+        else:
+            return len(self.encoding_qubits)
 
     def particles(self):
         """
         Return the list of quantum particles the gate acts on.
         """
-        return self.auxiliary_qubits + self.encoding_qubits
+        if self.method == "auxiliary":
+            return self.auxiliary_qubits + self.encoding_qubits
+        else:
+            return self.encoding_qubits
 
     def fields(self):
         """
@@ -2002,16 +2040,27 @@ class ProjectorControlledPhaseShift(Gate):
     def as_matrix(self):
         """
         Generate the matrix representation of the controlled gate.
-        Note: The control state is |0> on the encoding qubit (requires applying X gates)
+        For 'auxiliary' method there is an extra wire.
         Format: |auxiliary> x |encoding>
-        TODO: generalize for more than one auxiliary qubit
         """
-        cp_matrix = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]], dtype=float)
-        return (  np.kron(np.identity(2), PauliXGate().as_matrix())
-                @ cp_matrix
-                @ np.kron(RzGate(2*self.theta).as_matrix(), np.identity(2))
-                @ cp_matrix
-                @ np.kron(np.identity(2), PauliXGate().as_matrix()))
+        size_enc = len(self.encoding_qubits)
+        if len(self.projection_state) != size_enc:
+            raise RuntimeError("The size of the projection state must be {2**(len(self.encoding_qubits))} while {len(self.projection_state)} entries were given.")
+        if any(s != 0 for s in self.projection_state):
+            raise RuntimeError("The projection state can only have entries equal to 0.")
+        if self.method == "auxiliary":
+            cp_matrix = ControlledGate(PauliXGate(), size_enc, self.projection_state).as_matrix()
+            cp_matrix = permute_gate_wires(cp_matrix, np.flip(np.arange(0,size_enc + 1)))
+            return cp_matrix @ np.kron(RzGate(2*self.theta).as_matrix(), np.identity(2**size_enc)) @ cp_matrix
+        else:
+            max_den = size_enc-1
+            proj_circ = np.kron(RzGate(-2*self.theta/(2**max_den)).as_matrix(), np.identity(2**max_den))
+            for i in range(1, size_enc):
+                proj_circ = proj_circ @ np.kron(ControlledGate(RzGate(-2*self.theta/(2**(max_den-i))), i, self.projection_state[:i]).as_matrix(), 
+                                                np.identity(2**(max_den-i)))
+            # get rid of global phase
+            proj_circ *= np.exp((1-2**max_den)*self.theta*1j/2**max_den)
+            return proj_circ
 
     def _circuit_matrix(self, fields: Sequence[Field]):
         """
@@ -2036,15 +2085,17 @@ class ProjectorControlledPhaseShift(Gate):
         """
         Copy of the gate
         """
-        return ProjectorControlledPhaseShift(self.theta, self.encoding_qubits, self.auxiliary_qubits)
+        return ProjectorControlledPhaseShift(self.theta, self.projection_state, self.encoding_qubits, self.auxiliary_qubits, self.method)
 
     def __eq__(self, other):
         """
         Check if gates are equivalent.
         """
         return (type(other) == type(self)
+                and other.projection_state == self.projection_state
                 and other.encoding_qubits == self.encoding_qubits
                 and other.auxiliary_qubits == self.auxiliary_qubits
+                and other.method == self.method
                 and other.theta == self.theta)
 
 

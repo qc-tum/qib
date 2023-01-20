@@ -9,8 +9,6 @@ class EigenvalueTransformation:
     """
     Eigenvalue transformation for a given unitary (encoding).
     It requires the unitary gate that gets processed, the projector-controlled phase shift and the list of angles for the processing.
-    TODO: generalize with different projectors
-    TODO: generalize with longer arrays of qubits
     """
     def __init__(self, block_encoding, processing_gate, theta_seq: Sequence[float]=None):
         self.block_encoding = block_encoding
@@ -34,9 +32,8 @@ class EigenvalueTransformation:
     def num_wires(self):
         """
         The number of "wires" (or quantum particles) this gate acts on.
-        TODO: generalize when using a larger state as projector
         """
-        return self.block_encoding.num_wires + 1
+        return self.block_encoding.num_wires + len(self.processing_gate.auxiliary_qubits)
 
     def set_auxiliary_qubits(self, q_anc: Union[Qubit, Sequence[Qubit]]):
         """
@@ -63,7 +60,9 @@ class EigenvalueTransformation:
         matrix = np.identity(2**self.num_wires)
         num_particles = self.block_encoding.num_wires - self.block_encoding.num_aux_qubits
         id_for_projector = np.identity(2**num_particles)
-        id_for_unitary = np.identity(2**len(self.processing_gate.auxiliary_qubits))
+        id_for_unitary = 1
+        if self.processing_gate.method == "auxiliary":
+            id_for_unitary = np.identity(2**len(self.processing_gate.auxiliary_qubits))
         U_inv_matrix = self.block_encoding.inverse().as_matrix()
         U_matrix = self.block_encoding.as_matrix()
         if len(self.theta_seq) % 2 == 0:
