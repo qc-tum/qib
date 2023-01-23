@@ -30,7 +30,8 @@ class TestGates(unittest.TestCase):
             gate.on(q)
             self.assertTrue(gate.fields() == [field])
             self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
-                                           np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
+                                            np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
+            self.assertTrue(np.array_equal(gate.as_tensornet().contract_einsum()[0], gate.as_matrix()))
             g_copy = copy(gate)
             self.assertTrue(g_copy == gate)
             self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
@@ -46,13 +47,13 @@ class TestGates(unittest.TestCase):
         θ = np.random.uniform(0, 2*np.pi)
         nθ = np.random.standard_normal(size=3)
         gates = [qib.RxGate(θ, q),
-                 qib.RyGate(θ, q),
-                 qib.RzGate(θ, q),
-                 qib.RotationGate(nθ, q)]
+                  qib.RyGate(θ, q),
+                  qib.RzGate(θ, q),
+                  qib.RotationGate(nθ, q)]
         gates2ang = [qib.RxGate(2*θ, q),
-                     qib.RyGate(2*θ, q),
-                     qib.RzGate(2*θ, q),
-                     qib.RotationGate(2*nθ, q)]
+                      qib.RyGate(2*θ, q),
+                      qib.RzGate(2*θ, q),
+                      qib.RotationGate(2*nθ, q)]
         for i in range(4):
             gate = gates[i]
             self.assertTrue(gate.is_unitary())
@@ -62,9 +63,10 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
                                         np.identity(2)))
             self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
-                                           np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
+                                            np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
             self.assertTrue(np.allclose(gate.as_matrix() @ gate.as_matrix(),
                                         gates2ang[i].as_matrix()))
+            self.assertTrue(np.array_equal(gate.as_tensornet().contract_einsum()[0], gate.as_matrix()))
             if i < 3:
                 vθ = np.zeros(3)
                 vθ[i] = θ
@@ -101,7 +103,8 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.allclose(gate.inverse().as_matrix() @ gate.as_matrix(),
                                         np.identity(2)))
             self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
-                                           np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
+                                            np.kron(np.kron(np.identity(8), gate.as_matrix()), np.identity(2))))
+            self.assertTrue(np.array_equal(gate.as_tensornet().contract_einsum()[0], gate.as_matrix()))
             g_copy = copy(gate)
             self.assertTrue(g_copy == gate)
             self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
@@ -130,7 +133,8 @@ class TestGates(unittest.TestCase):
         gate.on((qa, qb, qc))
         self.assertTrue(gate.fields() == [field])
         self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
-                                       qib.util.permute_gate_wires(np.kron(np.identity(4), gmat), [0, 3, 2, 1, 4])))
+                                        qib.util.permute_gate_wires(np.kron(np.identity(4), gmat), [0, 3, 2, 1, 4])))
+        self.assertTrue(np.allclose(np.reshape(gate.as_tensornet().contract_einsum()[0], (8, 8)), gmat))
         g_copy = copy(gate)
         self.assertTrue(g_copy == gate)
         self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
@@ -157,7 +161,7 @@ class TestGates(unittest.TestCase):
         gate.on((qa, qb, qc))
         self.assertTrue(gate.fields() == [field])
         self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
-                                       qib.util.permute_gate_wires(np.kron(gmat, np.identity(4)), [0, 3, 2, 1, 4])))
+                                        qib.util.permute_gate_wires(np.kron(gmat, np.identity(4)), [0, 3, 2, 1, 4])))
         g_copy = copy(gate)
         self.assertTrue(g_copy == gate)
         self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
@@ -166,33 +170,38 @@ class TestGates(unittest.TestCase):
         """
         Test implementation of controlled quantum gates.
         """
-        # construct the CNOT gate
-        cnot = qib.ControlledGate(qib.PauliXGate(), 1)
-        self.assertEqual(cnot.num_wires, 2)
-        self.assertEqual(cnot.num_controls, 1)
-        self.assertTrue(np.array_equal(cnot.as_matrix(), np.identity(4)[[0, 1, 3, 2]]))
-        field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                qib.lattice.IntegerLattice((3,), pbc=False))
-        qa = qib.field.Qubit(field1, 0)
-        qb = qib.field.Qubit(field1, 2)
-        cnot.set_control(qb)
-        cnot.target_gate().on(qa)
-        self.assertTrue(cnot.fields() == [field1])
-        self.assertTrue(np.array_equal(cnot._circuit_matrix([field1]).toarray(),
-                                       qib.util.permute_gate_wires(np.kron(cnot.as_matrix(), np.identity(2)), [1, 2, 0])))
-        # additional field
-        field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                 qib.lattice.IntegerLattice((2,), pbc=False))
-        qc = qib.field.Qubit(field2, 1)
-        cnot.target_gate().on(qc)
-        cnot.set_control(qa)
-        self.assertEqual(cnot.num_wires, 2)
-        self.assertTrue(cnot.fields() == [field1, field2])
-        self.assertTrue(np.array_equal(cnot._circuit_matrix([field2, field1]).toarray(),
-                                       qib.util.permute_gate_wires(np.kron(cnot.as_matrix(), np.identity(8)), [2, 1, 0, 3, 4])))
-        g_copy = copy(cnot)
-        self.assertTrue(g_copy == cnot)
-        self.assertTrue(np.allclose(g_copy.as_matrix(), cnot.as_matrix()))
+        for cs in [0, 1]:
+            # construct the CNOT gate
+            cnot = qib.ControlledGate(qib.PauliXGate(), 1, ctrl_state=[cs])
+            self.assertEqual(cnot.num_wires, 2)
+            self.assertEqual(cnot.num_controls, 1)
+            self.assertTrue(np.array_equal(cnot.as_matrix(), np.identity(4)[[0, 1, 3, 2]] if cs == 1 else np.identity(4)[[1, 0, 2, 3]]))
+            field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                    qib.lattice.IntegerLattice((3,), pbc=False))
+            qa = qib.field.Qubit(field1, 0)
+            qb = qib.field.Qubit(field1, 2)
+            cnot.set_control(qb)
+            cnot.target_gate().on(qa)
+            self.assertTrue(cnot.fields() == [field1])
+            self.assertTrue(np.array_equal(cnot._circuit_matrix([field1]).toarray(),
+                                           qib.util.permute_gate_wires(np.kron(cnot.as_matrix(), np.identity(2)), [1, 2, 0])))
+            # additional field
+            field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                     qib.lattice.IntegerLattice((2,), pbc=False))
+            qc = qib.field.Qubit(field2, 1)
+            cnot.target_gate().on(qc)
+            cnot.set_control(qa)
+            self.assertEqual(cnot.num_wires, 2)
+            self.assertTrue(cnot.fields() == [field1, field2])
+            self.assertTrue(np.array_equal(cnot._circuit_matrix([field2, field1]).toarray(),
+                                           qib.util.permute_gate_wires(np.kron(cnot.as_matrix(), np.identity(8)), [2, 1, 0, 3, 4])))
+            cnot_tensor, axes_map = cnot.as_tensornet().contract_einsum()
+            # control axes are identical; form full matrix for comparison
+            cnot_tensor = qib.tensor_network.tensor_network.to_full_tensor(cnot_tensor, axes_map)
+            self.assertTrue(np.allclose(np.reshape(cnot_tensor, (4, 4)), cnot.as_matrix()))
+            g_copy = copy(cnot)
+            self.assertTrue(g_copy == cnot)
+            self.assertTrue(np.allclose(g_copy.as_matrix(), cnot.as_matrix()))
 
         # construct a Toffoli-like gate, activated by |10>
         toffoli = qib.ControlledGate(qib.PauliXGate(), 2, ctrl_state=[1, 0])
@@ -205,9 +214,23 @@ class TestGates(unittest.TestCase):
         self.assertTrue(toffoli.fields() == [field2, field1])
         self.assertTrue(np.array_equal(toffoli._circuit_matrix([field2, field1]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(toffoli.as_matrix(), np.identity(4)), [3, 0, 2, 4, 1])))
+        toffoli_tensor, axes_map = toffoli.as_tensornet().contract_einsum()
+        # some control axes are identical; form full matrix for comparison
+        toffoli_tensor = qib.tensor_network.tensor_network.to_full_tensor(toffoli_tensor, axes_map)
+        self.assertTrue(np.array_equal(np.reshape(toffoli_tensor, (8, 8)), toffoli.as_matrix()))
         g_copy = copy(toffoli)
         self.assertTrue(g_copy == toffoli)
         self.assertTrue(np.allclose(g_copy.as_matrix(), toffoli.as_matrix()))
+
+        # controlled Toffoli gate
+        for cs in [0, 1]:
+            ctoffoli = qib.ControlledGate(toffoli, 1, ctrl_state=[cs])
+            self.assertEqual(ctoffoli.num_wires, 4)
+            self.assertEqual(ctoffoli.num_controls, 1)
+            ctoffoli_tensor, axes_map = ctoffoli.as_tensornet().contract_einsum()
+            # some control axes are identical; form full matrix for comparison
+            ctoffoli_tensor = qib.tensor_network.tensor_network.to_full_tensor(ctoffoli_tensor, axes_map)
+            self.assertTrue(np.array_equal(np.reshape(ctoffoli_tensor, (16, 16)), ctoffoli.as_matrix()))
 
         # controlled time evolution gate
         # construct a simple Hamiltonian
@@ -238,6 +261,10 @@ class TestGates(unittest.TestCase):
         cexph_inverse.set_control(qc)
         self.assertTrue(np.array_equal(cexph.inverse()._circuit_matrix([field2, field3]).toarray(),
                                        cexph_inverse._circuit_matrix([field2, field3]).toarray()))
+        cexph_tensor, axes_map = cexph.as_tensornet().contract_einsum()
+        # some control axes are identical; form full matrix for comparison
+        cexph_tensor = qib.tensor_network.tensor_network.to_full_tensor(cexph_tensor, axes_map)
+        self.assertTrue(np.allclose(np.reshape(cexph_tensor, (2**6, 2**6)), cexph.as_matrix()))
         g_copy = copy(cexph)
         self.assertTrue(g_copy == cexph)
         self.assertTrue(np.allclose(g_copy.as_matrix(), cexph.as_matrix()))
@@ -247,7 +274,7 @@ class TestGates(unittest.TestCase):
         Test implementation of multiplexed quantum gates.
         """
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                 qib.lattice.IntegerLattice((5,), pbc=False))
+                                  qib.lattice.IntegerLattice((5,), pbc=False))
         qt = qib.field.Qubit(field1, 1)
         tgates = [qib.PauliXGate(qt),
                   qib.RotationGate(np.random.standard_normal(size=3), qt),
@@ -263,16 +290,16 @@ class TestGates(unittest.TestCase):
         mplxg.set_control([qa, qb])
         self.assertTrue(mplxg.fields() == [field1])
         self.assertTrue(np.array_equal(mplxg._circuit_matrix([field1]).toarray(),
-                                       qib.util.permute_gate_wires(np.kron(mplxg.as_matrix(), np.identity(4)), [0, 2, 3, 1, 4])))
+                                        qib.util.permute_gate_wires(np.kron(mplxg.as_matrix(), np.identity(4)), [0, 2, 3, 1, 4])))
         # additional field
         field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                 qib.lattice.IntegerLattice((2,), pbc=False))
+                                  qib.lattice.IntegerLattice((2,), pbc=False))
         qc = qib.field.Qubit(field2, 1)
         mplxg.set_control([qb, qc])
         self.assertEqual(mplxg.num_wires, 3)
         self.assertTrue(mplxg.fields() == [field1, field2])
         self.assertTrue(np.array_equal(mplxg._circuit_matrix([field1, field2]).toarray(),
-                                       qib.util.permute_gate_wires(np.kron(mplxg.as_matrix(), np.identity(16)), [3, 2, 4, 0, 5, 6, 1])))
+                                        qib.util.permute_gate_wires(np.kron(mplxg.as_matrix(), np.identity(16)), [3, 2, 4, 0, 5, 6, 1])))
         g_copy = copy(mplxg)
         self.assertTrue(g_copy == mplxg)
         self.assertTrue(np.allclose(g_copy.as_matrix(), mplxg.as_matrix()))
@@ -288,7 +315,7 @@ class TestGates(unittest.TestCase):
             coeffs = 0.5 * (coeffs + coeffs.conj().T)
             term = qib.operator.FieldOperatorTerm(
                 [qib.operator.IFODesc(field3, qib.operator.IFOType.FERMI_CREATE),
-                 qib.operator.IFODesc(field3, qib.operator.IFOType.FERMI_ANNIHIL)],
+                  qib.operator.IFODesc(field3, qib.operator.IFOType.FERMI_ANNIHIL)],
                 coeffs)
             self.assertTrue(term.is_hermitian())
             h[i] = qib.FieldOperator([term])
@@ -302,7 +329,7 @@ class TestGates(unittest.TestCase):
         mplxg.set_control(qc)
         self.assertTrue(mplxg.fields() == [field2, field3])
         self.assertTrue(np.array_equal(mplxg._circuit_matrix([field2, field3]).toarray(),
-                                       qib.util.permute_gate_wires(np.kron(mplxg_mat_ref, np.identity(2)), [6, 0, 1, 2, 3, 4, 5])))
+                                        qib.util.permute_gate_wires(np.kron(mplxg_mat_ref, np.identity(2)), [6, 0, 1, 2, 3, 4, 5])))
         # inverse
         self.assertTrue(np.allclose(mplxg.inverse().as_matrix() @ mplxg.as_matrix(), np.identity(2**6)))
         g_copy = copy(mplxg)
@@ -323,15 +350,15 @@ class TestGates(unittest.TestCase):
         # field operator term
         term = qib.operator.FieldOperatorTerm(
             [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
-             qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
+              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
             np.array([[µ1, J], [J, µ2]]))
         self.assertTrue(term.is_hermitian())
         h = qib.FieldOperator([term])
         hmat_ref = np.array(
             [[0, 0,  0,  0      ],
-             [0, µ2, J,  0      ],
-             [0, J,  µ1, 0      ],
-             [0, 0,  0,  µ1 + µ2]])
+              [0, µ2, J,  0      ],
+              [0, J,  µ1, 0      ],
+              [0, 0,  0,  µ1 + µ2]])
         self.assertTrue(np.allclose(h.as_matrix().toarray(), hmat_ref))
         # time
         t = 1.2
@@ -367,14 +394,14 @@ class TestGates(unittest.TestCase):
         latt = qib.lattice.IntegerLattice((L,), pbc=True)
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
         H = qib.operator.HeisenbergHamiltonian(field1, np.random.standard_normal(size=3),
-                                                       np.random.standard_normal(size=3))
+                                                        np.random.standard_normal(size=3))
         # rescale parameters (effectively rescales overall Hamiltonian)
         scale = 1.25 * np.linalg.norm(H.as_matrix().toarray(), ord=2)
         H.J /= scale
         H.h /= scale
         # auxiliary qubit
         field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                 qib.lattice.IntegerLattice((4,), pbc=False))
+                                  qib.lattice.IntegerLattice((4,), pbc=False))
         q = qib.field.Qubit(field2, 3)
         for method in qib.operator.BlockEncodingMethod:
             gate = qib.BlockEncodingGate(H, method)
@@ -422,10 +449,12 @@ class TestGates(unittest.TestCase):
         gate.on((qa, qb, qc))
         self.assertTrue(gate.fields() == [field])
         self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
-                                       qib.util.permute_gate_wires(np.kron(gate.as_matrix(), np.identity(4)), [0, 3, 2, 1, 4])))
+                                        qib.util.permute_gate_wires(np.kron(gate.as_matrix(), np.identity(4)), [0, 3, 2, 1, 4])))
+        self.assertTrue(np.array_equal(np.reshape(gate.as_tensornet().contract_einsum()[0], (8, 8)), gate.as_matrix()))
         g_copy = copy(gate)
         self.assertTrue(g_copy == gate)
         self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
+
 
 if __name__ == "__main__":
     unittest.main()

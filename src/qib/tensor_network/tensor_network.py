@@ -144,3 +144,25 @@ class TensorNetwork:
                 if verbose: print(f"Consistency check failed: shape of dataref {tensor.dataref} does not match shape of symbolic tensor {tensor.tid}.")
                 return False
         return True
+
+
+def to_full_tensor(tensor: np.ndarray, axes_map):
+    """
+    Utility function for generating the full (dense) tensor
+    from the compressed tensor and `axes_map` returned by `contract_einsum` and `contract_tree`.
+    """
+    ft = np.zeros(shape=[tensor.shape[i] for i in axes_map], dtype=tensor.dtype)
+    it = np.nditer(ft, flags=['multi_index'], op_flags=["writeonly"])
+    while not it.finished:
+        i = it.multi_index
+        idx = tensor.ndim * [-1]
+        valid = True
+        for j in range(len(axes_map)):
+            if idx[axes_map[j]] == -1:
+                idx[axes_map[j]] = i[j]
+            elif idx[axes_map[j]] != i[j]:
+                valid = False
+        if valid:
+            ft[i] = tensor[tuple(idx)]
+        it.iternext()
+    return ft

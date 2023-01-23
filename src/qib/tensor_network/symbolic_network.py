@@ -453,10 +453,11 @@ class SymbolicTensorNetwork:
         tids = tids[:-1]
         tidx = tidx[:-1]
         # einsum does not support an output index appearing multiple times
-        # record first occurrence of each index
-        axes_map = [idxout.index(i) for i in idxout]
+        idxout_logical = idxout.copy()
         # keep only first occurrence
         idxout = [i for k, i in enumerate(idxout) if i not in idxout[:k]]
+        # record first occurrence of each index
+        axes_map = [idxout.index(i) for i in idxout_logical]
         return tids, tidx, idxout, axes_map
 
     def is_consistent(self, verbose=False) -> bool:

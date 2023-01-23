@@ -8,6 +8,7 @@ from typing import Sequence, Union
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
 from qib.util import permute_gate_wires
+from qib.tensor_network import SymbolicTensor, SymbolicBond, SymbolicTensorNetwork, TensorNetwork
 
 
 class Gate(AbstractOperator):
@@ -58,6 +59,14 @@ class Gate(AbstractOperator):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
+        """
+        pass
+
+    @abc.abstractmethod
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate,
+        using an individual tensor axis for each wire.
         """
         pass
 
@@ -150,6 +159,12 @@ class PauliXGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "PauliX")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -239,6 +254,12 @@ class PauliYGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "PauliY")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -326,6 +347,12 @@ class PauliZGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "PauliZ")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -412,6 +439,12 @@ class HadamardGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "Hadamard")
 
     def __copy__(self):
         """
@@ -510,6 +543,13 @@ class RxGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        # require a unique name for each rotation angle
+        return TensorNetwork.wrap(self.as_matrix(), f"Rx({self.theta})")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -607,6 +647,13 @@ class RyGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        # require a unique name for each rotation angle
+        return TensorNetwork.wrap(self.as_matrix(), f"Ry({self.theta})")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -702,6 +749,13 @@ class RzGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        # require a unique name for each rotation angle
+        return TensorNetwork.wrap(self.as_matrix(), f"Rz({self.theta})")
 
     def __copy__(self):
         """
@@ -799,6 +853,13 @@ class RotationGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        # require a unique name for each rotation angle
+        return TensorNetwork.wrap(self.as_matrix(), f"Rn({self.ntheta})")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -885,6 +946,12 @@ class SGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "S")
 
     def __copy__(self):
         """
@@ -973,6 +1040,12 @@ class SAdjGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "Sadj")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -1060,6 +1133,12 @@ class TGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "T")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -1146,6 +1225,12 @@ class TAdjGate(Gate):
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "Tadj")
 
     def __copy__(self):
         """
@@ -1240,6 +1325,22 @@ class PhaseFactorGate(Gate):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        stn = SymbolicTensorNetwork()
+        dataref = f"Phase({self.phi / self.nwires})"
+        for i in range(self.nwires):
+            stn.add_tensor(SymbolicTensor(i, (2, 2), dataref))
+        # virtual tensor for open axes
+        stn.add_tensor(SymbolicTensor(-1, 2*self.nwires * (2,), None))
+        for i in range(self.nwires):
+            stn.add_bond(SymbolicBond(2*i,     (-1, i), (i, 0)))
+            stn.add_bond(SymbolicBond(2*i + 1, (-1, i), (self.nwires + i, 1)))
+        assert stn.is_consistent()
+        return TensorNetwork(stn, { dataref: np.exp(1j*self.phi / self.nwires) * np.identity(2) })
 
     def __copy__(self):
         """
@@ -1361,6 +1462,12 @@ class PrepareGate(Gate):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        raise NotImplementedError("as_tensornet not yet implemented for this gate")
 
     def __copy__(self):
         """
@@ -1503,6 +1610,100 @@ class ControlledGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        if isinstance(self.tgate, ControlledGate):
+            # in case target gate is also a controlled gate...
+            return ControlledGate(self.tgate.tgate, self.ncontrols + self.tgate.ncontrols,
+                                  self.ctrl_state + self.tgate.ctrl_state).as_tensornet()
+        else:
+            # use matrix representation of target gate in tensor network, for simplicity
+            ntargets = self.tgate.num_wires
+            ctgmat = np.reshape(self.tgate.as_matrix(), 2*ntargets * (2,))
+            # elevate target gate tensor to a controlled tensor
+            ctgmat = np.stack((np.reshape(np.identity(2**ntargets), 2*ntargets * (2,)),
+                               ctgmat), axis=0)
+            stn = SymbolicTensorNetwork()
+            ctgten = SymbolicTensor(0, ctgmat.shape, "ctrl_" + str(hash(ctgmat.data.tobytes())))
+            stn.add_tensor(ctgten)
+            data = { ctgten.dataref: ctgmat }
+            # virtual tensor for open axes
+            stn.add_tensor(SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), None))
+            # next available bond ID
+            bid_next = 0
+            # add bonds to specify open target gate axes
+            for i in range(ntargets):
+                stn.add_bond(SymbolicBond(bid_next, (-1, 0), (self.ncontrols + i, 1 + i)))
+                bid_next += 1
+            for i in range(ntargets):
+                stn.add_bond(SymbolicBond(bid_next, (-1, 0), (2*self.ncontrols + ntargets + i, 1 + ntargets + i)))
+                bid_next += 1
+            # "wire crossing" tensors:
+            # axis ordering: physical output wire, physical input wire, upward axis, downward axis
+            # control remains active if in |1> state
+            ctrl_cross_pos = np.zeros(shape=(2, 2, 2, 2))
+            ctrl_cross_pos[0, 0, 0, 0] = 1
+            ctrl_cross_pos[1, 1, 1, 1] = 1
+            ctrl_cross_pos[0, 0, 1, 0] = 1
+            ctrl_cross_pos[1, 1, 0, 0] = 1
+            # control remains active if in |0> state
+            ctrl_cross_neg = np.zeros(shape=(2, 2, 2, 2))
+            ctrl_cross_neg[1, 1, 0, 0] = 1
+            ctrl_cross_neg[0, 0, 1, 1] = 1
+            ctrl_cross_neg[1, 1, 1, 0] = 1
+            ctrl_cross_neg[0, 0, 0, 0] = 1
+            ctrl_cross = [ctrl_cross_neg, ctrl_cross_pos]
+            cc_dataref = ["ctrl_cross_neg", "ctrl_cross_pos"]
+            if self.ctrl_state[0] == 0:
+                # insert Pauli-X gates for negated control
+                tid = self.ncontrols
+                stn.add_tensor(SymbolicTensor(tid, (2, 2), "PauliX"))
+                stn.add_bond(SymbolicBond(bid_next, (-1, tid), (0, 0)))
+                bid_next += 1
+                tid = self.ncontrols + 1
+                stn.add_tensor(SymbolicTensor(tid, (2, 2), "PauliX"))
+                stn.add_bond(SymbolicBond(bid_next, (-1, tid), (self.ncontrols + ntargets, 1)))
+                bid_next += 1
+                data["PauliX"] = np.array([[ 0.,  1.], [ 1.,  0.]])
+            for i in range(1, self.ncontrols):
+                j = self.ctrl_state[i]
+                stn.add_tensor(SymbolicTensor(i, ctrl_cross[j].shape, cc_dataref[j]))
+                stn.add_bond(SymbolicBond(bid_next, (-1, i), (i, 0)))
+                bid_next += 1
+                stn.add_bond(SymbolicBond(bid_next, (-1, i), (self.ncontrols + ntargets + i, 1)))
+                bid_next += 1
+                if i == 1:
+                    if self.ctrl_state[0] == 1:
+                        stn.add_bond(SymbolicBond(bid_next, (-1, -1, i),
+                                                  (0, self.ncontrols + ntargets, 2)))
+                        bid_next += 1
+                    else:
+                        # connect to Pauli-X gates
+                        stn.add_bond(SymbolicBond(bid_next, (self.ncontrols, self.ncontrols + 1, i), (1, 0, 2)))
+                        bid_next += 1
+                else:
+                    # vertical control bond connection
+                    stn.add_bond(SymbolicBond(bid_next, (i - 1, i), (3, 2)))
+                    bid_next += 1
+                if cc_dataref[j] not in data:
+                    data[cc_dataref[j]] = ctrl_cross[j]
+            # control bond connected to target gate tensor
+            if self.ncontrols == 1:
+                if self.ctrl_state[0] == 1:
+                    stn.add_bond(SymbolicBond(bid_next, (0, -1, -1), (0, 0, self.ncontrols + ntargets)))
+                    bid_next += 1
+                else:
+                    # connect to Pauli-X gates
+                    stn.add_bond(SymbolicBond(bid_next, (0, 1, 2), (0, 1, 0)))
+                    bid_next += 1
+            else:   # self.ncontrols > 1
+                stn.add_bond(SymbolicBond(bid_next, (0, self.ncontrols - 1), (0, 3)))
+                bid_next += 1
+            assert stn.is_consistent()
+            return TensorNetwork(stn, data)
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -1637,6 +1838,12 @@ class MultiplexedGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        raise NotImplementedError("as_tensornet not yet implemented for this gate")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -1725,6 +1932,12 @@ class TimeEvolutionGate(Gate):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        raise NotImplementedError("as_tensornet not yet implemented for this gate")
 
     def __copy__(self):
         """
@@ -1891,6 +2104,12 @@ class BlockEncodingGate(Gate):
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        raise NotImplementedError("as_tensornet not yet implemented for this gate")
+
     def __copy__(self):
         """
         Copy of the gate
@@ -1995,6 +2214,12 @@ class GeneralGate(Gate):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(np.reshape(self.as_matrix(), 2*self.nwires * (2,)), str(hash(self.mat.data.tobytes())))
 
     def __copy__(self):
         """
