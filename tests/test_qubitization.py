@@ -22,8 +22,7 @@ class TestQubitization(unittest.TestCase):
             for state in [[0], [0,0], [0,0,0], [0,0,0,0]]:
                 # len(state) == number of encoding qubits
                 q_enc = [qib.field.Qubit(field1, i) for i in range(len(state))]
-                processing = qib.algorithms.qubitization.ProjectorControlledPhaseShift_Circuit(0., state, q_enc, q_aux, method)
-                old_proc = qib.ProjectorControlledPhaseShift(0., state, q_enc, q_aux, method)
+                processing = qib.algorithms.qubitization.ProjectorControlledPhaseShift(0., state, q_enc, q_aux, method)
                 # must return identity
                 processing.set_theta(0.)
                 self.assertTrue(np.allclose(processing.as_matrix(), np.identity(2**(len(state)))))
@@ -33,7 +32,6 @@ class TestQubitization(unittest.TestCase):
                 # random angle, comparison with definition
                 theta = np.random.uniform(0, 2*np.pi)
                 processing.set_theta(theta)
-                old_proc.set_theta(theta)
                 binary_index = int(''.join(map(str,state)), 2)
                 basis_state = np.zeros((2**len(state)))
                 basis_state[binary_index] = 1
@@ -43,7 +41,6 @@ class TestQubitization(unittest.TestCase):
                 # only upper left block of the auxiliary case can be compared
                 self.assertTrue(np.allclose(processing.as_circuit().as_matrix([field2, field1]).toarray()[:2**(5-i), :2**(5-i)],
                                             np.kron(np.kron(np.identity(2**(1-i)), mat_proc), np.identity(2**(4-len(state))))))
-                self.assertTrue(np.allclose(old_proc.as_matrix()[:2**(len(state)), :2**len(state)], mat_proc))
                 self.assertTrue(np.allclose(mat_proc, mat_ref))
                 # check particles, wires and fields
                 self.assertTrue(processing.num_wires==len(state)+i)   
@@ -71,15 +68,15 @@ class TestQubitization(unittest.TestCase):
         for method_enc in qib.operator.BlockEncodingMethod:
             block = qib.BlockEncodingGate(H, method_enc)
             block.set_auxiliary_qubits(q_enc)
-            for j, method_proc in enumerate(["auxiliary", "c-phase"]):
-                processing = qib.ProjectorControlledPhaseShift(0., [0], q_enc, q_anc, method_proc)
+            for j, method_proc in enumerate(["c-phase", "auxiliary"]):
+                processing = qib.algorithms.qubitization.ProjectorControlledPhaseShift(0., [0], q_enc, q_anc, method_proc)
                 self.assertTrue(block.auxiliary_qubits == processing.encoding_qubits)
                 theta = [0.]
                 eigen_transform = qib.algorithms.qubitization.EigenvalueTransformation(block,
                                                                                        processing,
                                                                                        theta_seq=theta)
                 # obtain block unitary for theta = 0
-                self.assertTrue(np.allclose(np.kron(np.identity(2**1), block.as_matrix()),
+                self.assertTrue(np.allclose(np.kron(np.identity(2), block.as_matrix()),
                                             eigen_transform.as_circuit().as_matrix([field2, field1]).toarray()))
                 # obtain identity for theta == [0, 0]
                 theta = [0, 0]
@@ -91,11 +88,11 @@ class TestQubitization(unittest.TestCase):
                 for i in range(1, 5):
                     eigen_transform.set_theta_seq(theta[:i])
                     mat_class = eigen_transform.as_matrix()
-                    circ_class = eigen_transform.as_circuit().as_matrix([field2, field1]).toarray()
-                    self.assertTrue(np.allclose(np.kron(np.identity(2**(j)), mat_class), circ_class))
+                    circ_class = eigen_transform.as_circuit().as_matrix([field2, field1]).toarray()[:2**6, :2**6]
+                    self.assertTrue(np.allclose(mat_class, circ_class))
     
                 # TODO: add more tests
-
+                #print("method encoding: ", method_enc, "method processing: ", method_proc, "/ state: ", [0], "\t...OK!")
 
 if __name__ == "__main__":
      unittest.main()

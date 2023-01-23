@@ -6,7 +6,7 @@ from qib.operator import ControlledGate, PauliXGate, RzGate, PhaseFactorGate
 from qib.circuit import Circuit
 
 
-class ProjectorControlledPhaseShift_Circuit:
+class ProjectorControlledPhaseShift:
     """
     Projector-controlled phase shift circuit.
     Building block for Qubitization.
@@ -53,6 +53,8 @@ class ProjectorControlledPhaseShift_Circuit:
         if method not in ["auxiliary", "c-phase"]:
             raise RuntimeError("The method {method} is not valid. Only use 'auxiliary' or 'c-phase'.")
         self.method = method
+        if method != "auxiliary":
+            self.auxiliary_qubits = []
 
     def set_encoding_qubits(self, *args):
         """

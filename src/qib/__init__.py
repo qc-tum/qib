@@ -35,7 +35,6 @@ from qib.operator import (
     MultiplexedGate,
     TimeEvolutionGate,
     BlockEncodingGate,
-    ProjectorControlledPhaseShift,
     GeneralGate
 )
 

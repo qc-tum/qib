@@ -405,64 +405,6 @@ class TestGates(unittest.TestCase):
             self.assertTrue(g_copy == gate)
             self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
 
-    def test_projector_controlled_phase_shift_gate(self):
-        """
-        Test the projector controlled phase shift gate
-        """
-        # encoding qubits' field
-        field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                 qib.lattice.IntegerLattice((4,), pbc=False))
-        # auxiliary qubit
-        field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                 qib.lattice.IntegerLattice((1,), pbc=False))
-        q_aux = [qib.field.Qubit(field2, 0)]
-        for i, method in enumerate(["c-phase", "auxiliary"]):
-            for state in [[0], [0,0], [0,0,0], [0,0,0,0]]:
-                # len(state) == number of encoding qubits
-                q_enc = [qib.field.Qubit(field1, i) for i in range(len(state))]
-                processing = qib.ProjectorControlledPhaseShift(0., state, q_enc, q_aux, method)
-                # must return identity
-                processing.set_theta(0.)
-                self.assertTrue(np.allclose(processing.as_matrix(), np.identity(2**(len(state)+i))))
-                # must return -identity
-                processing.set_theta(np.pi)
-                self.assertTrue(np.allclose(processing.as_matrix(), -np.identity(2**(len(state)+i))))
-                # random angle, comparison with definition
-                theta = np.random.uniform(0, 2*np.pi)
-                processing.set_theta(theta)
-                binary_index = int(''.join(map(str,state)), 2)
-                basis_state = np.zeros((2**len(state)))
-                basis_state[binary_index] = 1
-                matrix = np.outer(basis_state, basis_state)
-                mat_ref = expm(1j*theta*(2*matrix - np.identity(2**len(state))))
-                mat_proc = processing.as_matrix()
-                self.assertTrue(np.allclose(processing._circuit_matrix([field2, field1]).toarray(),
-                                            np.kron(np.kron(np.identity(2**(1-i)), mat_proc), np.identity(2**(4-len(state))))))
-                # only upper left block of the auxiliary case can be compared
-                if method == "auxiliary":
-                    upp_block_size = int(mat_proc.shape[0]/2)
-                    mat_proc = mat_proc[:upp_block_size, :upp_block_size]
-                self.assertTrue(np.allclose(mat_proc, mat_ref))
-                # inverse
-                inv_mat = processing.inverse().as_matrix()
-                processing.set_theta(-theta)
-                mat_dir = processing.as_matrix()
-                self.assertTrue(np.allclose(mat_dir, inv_mat))
-                # check particles, wires and fields
-                self.assertTrue(processing.num_wires==len(state)+i)
-                prtcl_list = q_enc
-                field_list = [field1]
-                if method == "auxiliary":
-                    prtcl_list = q_aux + prtcl_list
-                    field_list = [field2] + field_list
-                self.assertTrue(processing.particles() == prtcl_list)
-                self.assertTrue(processing.fields() == field_list)
-                
-                g_copy = copy(processing)
-                self.assertTrue(g_copy == processing)
-                self.assertTrue(np.allclose(g_copy.as_matrix(), processing.as_matrix()))
-                #print("method: ", method, "/ state: ", state, "\t...OK!")
-
     def test_general_gate(self):
         """
         Test implementation of a general (user-defined) quantum gate.

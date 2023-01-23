@@ -31,6 +31,13 @@ class Circuit:
         Prepend a quantum gate.
         """
         self.gates.insert(0, copy(gate))
+    
+    def prepend_circuit(self, other):
+        """
+        Prepend the gates from another quantum circuit to the current circuit.
+        """
+        for g in other.gates[::-1]:
+            self.gates = [copy(g)] + self.gates
 
     def fields(self):
         """
