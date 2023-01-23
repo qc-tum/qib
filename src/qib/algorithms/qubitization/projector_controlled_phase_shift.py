@@ -49,6 +49,7 @@ class ProjectorControlledPhaseShift:
     def set_method(self, method = "auxiliary"):
         """
         Set the method.
+        If method == 'auxiliary' the auxiliary qubits' list gets erased.
         """
         if method not in ["auxiliary", "c-phase"]:
             raise RuntimeError("The method {method} is not valid. Only use 'auxiliary' or 'c-phase'.")
@@ -71,7 +72,7 @@ class ProjectorControlledPhaseShift:
     def set_auxiliary_qubits(self, *args):
         """
         Set the auxiliary qubits.
-        Only works if the method is set to auxiliary
+        Only works if the method is set to auxiliary.
         """
         if self.method != "auxiliary":
             return self
@@ -87,6 +88,7 @@ class ProjectorControlledPhaseShift:
     def num_wires(self):
         """
         The number of "wires" (or quantum particles) this gate acts on.
+        One extra wire with method 'auxiliary'.
         """
         if self.method == "auxiliary":
             return len(self.auxiliary_qubits) + len(self.encoding_qubits)
@@ -94,18 +96,15 @@ class ProjectorControlledPhaseShift:
             return len(self.encoding_qubits)
 
     def set_theta(self, theta):
-        """g_copy = copy(processing)
-                self.assertTrue(g_copy == processing)
-                self.assertTrue(np.allclose(g_copy.as_matrix(), processing.as_matrix()))
-        Set the angle theta
+        """
+        Set the angle theta.
         """
         self.theta = theta
 
     def as_matrix(self):
         """
         Generate the matrix representation of the controlled gate.
-        For 'auxiliary' method there is an extra wire.
-        Format: |auxiliary> x |encoding>
+        The extra wire from 'auxiliary' method is not taken into account.
         """
         size_enc = len(self.encoding_qubits)
         if len(self.projection_state) != size_enc:
@@ -122,7 +121,8 @@ class ProjectorControlledPhaseShift:
     def as_circuit(self):
         """
         Generates the circuit.
-        NB: with 'auxiliary' method I have an extra wire
+        *** with 'auxiliary' method I have an extra wire.
+        *** In order to compare it to as_matrix() you need to compare only the half upper-left block.
         """
         size_enc = len(self.encoding_qubits)
         if len(self.projection_state) != size_enc:

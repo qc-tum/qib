@@ -9,7 +9,7 @@ class TestQubitization(unittest.TestCase):
     
     def test_projector_controlled_phase_shift(self):
         """
-        Test the projector controlled phase shift
+        Test the projector controlled phase shift.
         """
         # encoding qubits' field
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
@@ -48,7 +48,7 @@ class TestQubitization(unittest.TestCase):
 
     def test_eigenvalue_transformation(self):
         """
-        Test the eigenvalue transformation
+        Test the eigenvalue transformation.
         """
         # construct a simple Hamiltonian
         latt = qib.lattice.IntegerLattice((5,), pbc=True)

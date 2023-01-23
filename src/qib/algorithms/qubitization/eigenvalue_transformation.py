@@ -22,7 +22,7 @@ class EigenvalueTransformation:
 
     def set_theta_seq(self, theta_seq: Sequence[float]):
         """
-        Set the angles theta for the eigenvalue transformation
+        Set the angles theta for the eigenvalue transformation.
         """
         if theta_seq is not None:
             self.theta_seq = list(theta_seq)
@@ -56,7 +56,7 @@ class EigenvalueTransformation:
 
     def set_encoding_qubits(self, q_enc: Union[Qubit, Sequence[Qubit]]):
         """
-        Set the encoding extra qubits
+        Set the encoding extra qubits.
         """
         self.processing.set_encoding_qubits(q_enc)
         self.block_encoding.set_auxiliary_qubits(q_enc)
@@ -64,12 +64,13 @@ class EigenvalueTransformation:
     def as_matrix(self):
         """
         Generate the matrix representation of the eigenvalue transformation.
-        Format: |auxiliary> x |enc_extra> x |encoded_state>
+        Format: |enc_extra> x |encoded_state>
+        Auxiliary wire from 'auxiliary' method is not taken into account.
         """
         if self.block_encoding.auxiliary_qubits != self.processing.encoding_qubits:
-            raise RuntimeError("The block encoding's auxiliary qubits and processing gate's encoding extra qubits must be the same")
+            raise RuntimeError("The block encoding's auxiliary qubits and processing gate's encoding extra qubits must be the same.")
         if not self.theta_seq:
-            raise ValueError("the angles 'theta' have not been initialized")
+            raise ValueError("the angles 'theta' have not been initialized.")
         matrix = np.identity(2**self.block_encoding.num_wires)
         num_particles = self.block_encoding.num_wires - self.block_encoding.num_aux_qubits
         id_for_projector = np.identity(2**num_particles)
@@ -95,12 +96,14 @@ class EigenvalueTransformation:
 
     def as_circuit(self):
         """
-        Generates the qubitization circuit
+        Generates the qubitization circuit.
+        *** with 'auxiliary' method I have an extra wire.
+        *** In order to compare it to as_matrix() you need to compare only the half upper-left block.
         """
         if self.block_encoding.auxiliary_qubits != self.processing.encoding_qubits:
-            raise RuntimeError("The block encoding's auxiliary qubits and processing gate's encoding qubits must be the same")
+            raise RuntimeError("The block encoding's auxiliary qubits and processing gate's encoding qubits must be the same.")
         if not self.theta_seq:
-            raise ValueError("the angles 'theta' have not been initialized")
+            raise ValueError("the angles 'theta' have not been initialized.")
         circuit = Circuit()
 
         if len(self.theta_seq) % 2 == 0:
