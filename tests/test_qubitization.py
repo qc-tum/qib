@@ -1,10 +1,53 @@
 import numpy as np
+from scipy.linalg import expm
 import unittest
 import qib
 
 
 
 class TestQubitization(unittest.TestCase):
+    
+    def test_projector_controlled_phase_shift(self):
+        """
+        Test the projector controlled phase shift
+        """
+        # encoding qubits' field
+        field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((4,), pbc=False))
+        # auxiliary qubit
+        field2 = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                 qib.lattice.IntegerLattice((1,), pbc=False))
+        q_aux = [qib.field.Qubit(field2, 0)]
+        for i, method in enumerate(["c-phase", "auxiliary"]):
+            for state in [[0], [0,0], [0,0,0], [0,0,0,0]]:
+                # len(state) == number of encoding qubits
+                q_enc = [qib.field.Qubit(field1, i) for i in range(len(state))]
+                processing = qib.algorithms.qubitization.ProjectorControlledPhaseShift_Circuit(0., state, q_enc, q_aux, method)
+                old_proc = qib.ProjectorControlledPhaseShift(0., state, q_enc, q_aux, method)
+                # must return identity
+                processing.set_theta(0.)
+                self.assertTrue(np.allclose(processing.as_matrix(), np.identity(2**(len(state)))))
+                # must return -identity
+                processing.set_theta(np.pi)
+                self.assertTrue(np.allclose(processing.as_matrix(), -np.identity(2**(len(state)))))
+                # random angle, comparison with definition
+                theta = np.random.uniform(0, 2*np.pi)
+                processing.set_theta(theta)
+                old_proc.set_theta(theta)
+                binary_index = int(''.join(map(str,state)), 2)
+                basis_state = np.zeros((2**len(state)))
+                basis_state[binary_index] = 1
+                matrix = np.outer(basis_state, basis_state)
+                mat_ref = expm(1j*theta*(2*matrix - np.identity(2**len(state))))
+                mat_proc = processing.as_matrix()
+                # only upper left block of the auxiliary case can be compared
+                self.assertTrue(np.allclose(processing.as_circuit().as_matrix([field2, field1]).toarray()[:2**(5-i), :2**(5-i)],
+                                            np.kron(np.kron(np.identity(2**(1-i)), mat_proc), np.identity(2**(4-len(state))))))
+                self.assertTrue(np.allclose(old_proc.as_matrix()[:2**(len(state)), :2**len(state)], mat_proc))
+                self.assertTrue(np.allclose(mat_proc, mat_ref))
+                # check particles, wires and fields
+                self.assertTrue(processing.num_wires==len(state)+i)   
+                #print("method: ", method, "/ state: ", state, "\t...OK!")
 
     def test_eigenvalue_transformation(self):
         """

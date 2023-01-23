@@ -4,7 +4,6 @@ from qib.field import Qubit
 from qib.circuit import Circuit
 
 
-
 class EigenvalueTransformation:
     """
     Eigenvalue transformation for a given unitary (encoding).

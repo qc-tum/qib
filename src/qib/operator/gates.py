@@ -1917,6 +1917,8 @@ class ProjectorControlledPhaseShift(Gate):
     Building block for Qubitization.
     2 possible methods: "auxiliary" or "c-phase".
     Projector is state |0>, |00>... on the encoding (auxiliary) qubitS.
+    *** SOON DEPRECATED *** 
+    *** use ProjectorControlledPhaseShift_Circuit instead ***
     """
     def __init__(self, theta: float,
                  projection_state: Sequence[int]=[0],
