@@ -300,6 +300,10 @@ class TestGates(unittest.TestCase):
         self.assertTrue(mplxg.fields() == [field1, field2])
         self.assertTrue(np.array_equal(mplxg._circuit_matrix([field1, field2]).toarray(),
                                         qib.util.permute_gate_wires(np.kron(mplxg.as_matrix(), np.identity(16)), [3, 2, 4, 0, 5, 6, 1])))
+        mplxg_tensor, axes_map = mplxg.as_tensornet().contract_einsum()
+        # some control axes are identical; form full matrix for comparison
+        mplxg_tensor = qib.tensor_network.tensor_network.to_full_tensor(mplxg_tensor, axes_map)
+        self.assertTrue(np.array_equal(np.reshape(mplxg_tensor, (8, 8)), mplxg.as_matrix()))
         g_copy = copy(mplxg)
         self.assertTrue(g_copy == mplxg)
         self.assertTrue(np.allclose(g_copy.as_matrix(), mplxg.as_matrix()))
@@ -332,6 +336,10 @@ class TestGates(unittest.TestCase):
                                         qib.util.permute_gate_wires(np.kron(mplxg_mat_ref, np.identity(2)), [6, 0, 1, 2, 3, 4, 5])))
         # inverse
         self.assertTrue(np.allclose(mplxg.inverse().as_matrix() @ mplxg.as_matrix(), np.identity(2**6)))
+        mplxg_tensor, axes_map = mplxg.as_tensornet().contract_einsum()
+        # some control axes are identical; form full matrix for comparison
+        mplxg_tensor = qib.tensor_network.tensor_network.to_full_tensor(mplxg_tensor, axes_map)
+        self.assertTrue(np.array_equal(np.reshape(mplxg_tensor, (2**6, 2**6)), mplxg.as_matrix()))
         g_copy = copy(mplxg)
         self.assertTrue(g_copy == mplxg)
         self.assertTrue(np.allclose(g_copy.as_matrix(), mplxg.as_matrix()))

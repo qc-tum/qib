@@ -1842,7 +1842,28 @@ class MultiplexedGate(Gate):
         """
         Generate a tensor network representation of the gate.
         """
-        raise NotImplementedError("as_tensornet not yet implemented for this gate")
+        ntargets = self.tgates[0].num_wires
+        # use matrix representation of target gates in tensor network, for simplicity
+        mtgmat = np.reshape(np.stack([g.as_matrix() for g in self.tgates], axis=0), self.ncontrols * (2,) + 2*ntargets * (2,))
+        stn = SymbolicTensorNetwork()
+        ctgten = SymbolicTensor(0, mtgmat.shape, str(hash(mtgmat.data.tobytes())))
+        stn.add_tensor(ctgten)
+        # virtual tensor for open axes
+        stn.add_tensor(SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), None))
+        # next available bond ID
+        bid_next = 0
+        # add bonds to specify open target gate axes
+        for i in range(ntargets):
+            stn.add_bond(SymbolicBond(bid_next, (-1, 0), (self.ncontrols + i, self.ncontrols + i)))
+            bid_next += 1
+        for i in range(ntargets):
+            stn.add_bond(SymbolicBond(bid_next, (-1, 0), (2*self.ncontrols + ntargets + i, self.ncontrols + ntargets + i)))
+            bid_next += 1
+        for i in range(self.ncontrols):
+            stn.add_bond(SymbolicBond(bid_next, (-1, -1, 0), (i, self.ncontrols + ntargets + i, i)))
+            bid_next += 1
+        assert stn.is_consistent()
+        return TensorNetwork(stn, { ctgten.dataref: mtgmat })
 
     def __copy__(self):
         """
