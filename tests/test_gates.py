@@ -143,28 +143,34 @@ class TestGates(unittest.TestCase):
         """
         Test implementation of the "prepare" gate.
         """
-        gate = qib.PrepareGate(np.random.standard_normal(size=8), 3)
-        # must be normalized
-        self.assertTrue(np.allclose(np.linalg.norm(gate.vec, ord=1), 1))
-        self.assertTrue(gate.is_unitary())
-        self.assertFalse(gate.is_hermitian())
-        self.assertEqual(gate.num_wires, 3)
-        self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
-                                    np.identity(8)))
-        gmat = gate.as_matrix()
-        self.assertTrue(np.allclose(gmat[:, 0], np.sign(gate.vec) * np.sqrt(np.abs(gate.vec))))
-        field = qib.field.Field(qib.field.ParticleType.QUBIT,
-                                qib.lattice.IntegerLattice((5,), pbc=False))
-        qa = qib.field.Qubit(field, 0)
-        qb = qib.field.Qubit(field, 3)
-        qc = qib.field.Qubit(field, 2)
-        gate.on((qa, qb, qc))
-        self.assertTrue(gate.fields() == [field])
-        self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
-                                        qib.util.permute_gate_wires(np.kron(gmat, np.identity(4)), [0, 3, 2, 1, 4])))
-        g_copy = copy(gate)
-        self.assertTrue(g_copy == gate)
-        self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
+        for tp in [False, True]:
+            gate = qib.PrepareGate(np.random.standard_normal(size=8), 3, transpose=tp)
+            # must be normalized
+            self.assertTrue(np.allclose(np.linalg.norm(gate.vec, ord=1), 1))
+            self.assertTrue(gate.is_unitary())
+            self.assertFalse(gate.is_hermitian())
+            self.assertEqual(gate.num_wires, 3)
+            self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
+                                        np.identity(8)))
+            gmat = gate.as_matrix()
+            self.assertTrue(np.allclose(gmat[:, 0] if not tp else gmat[0, :], np.sign(gate.vec) * np.sqrt(np.abs(gate.vec))))
+            field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                    qib.lattice.IntegerLattice((5,), pbc=False))
+            qa = qib.field.Qubit(field, 0)
+            qb = qib.field.Qubit(field, 3)
+            qc = qib.field.Qubit(field, 2)
+            gate.on((qa, qb, qc))
+            self.assertTrue(gate.fields() == [field])
+            self.assertTrue(np.array_equal(gate._circuit_matrix([field]).toarray(),
+                                            qib.util.permute_gate_wires(np.kron(gmat, np.identity(4)), [0, 3, 2, 1, 4])))
+            e1 = np.zeros(8)
+            e1[0] = 1
+            x = np.sign(gate.vec) * np.sqrt(np.abs(gate.vec))
+            self.assertTrue(np.allclose(np.reshape(gate.as_tensornet().contract_einsum()[0], (8, 8)),
+                                        np.outer(x, e1) if not tp else np.outer(e1, x)))
+            g_copy = copy(gate)
+            self.assertTrue(g_copy == gate)
+            self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
 
     def test_controlled_gate(self):
         """
@@ -376,7 +382,7 @@ class TestGates(unittest.TestCase):
         self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
                                     np.identity(2**gate.num_wires)))
         self.assertTrue(np.allclose(gate.as_matrix() @ gate.as_matrix(),
-                                    qib.operator.TimeEvolutionGate(h, 2*t).as_matrix()))
+                                    qib.TimeEvolutionGate(h, 2*t).as_matrix()))
         # reference calculation
         r = np.array([J, 0, 0.5*(μ2 - μ1)])
         ω = np.linalg.norm(r)
@@ -389,6 +395,7 @@ class TestGates(unittest.TestCase):
         exp_h_ref = block_diag(np.identity(1), inner_block, [[np.exp(-1j*t*(μ1 + μ2))]])
         self.assertTrue(np.allclose(gate.as_matrix(), exp_h_ref))
         self.assertTrue(np.allclose(gate._circuit_matrix([field]).toarray(), exp_h_ref))
+        self.assertTrue(np.allclose(np.reshape(gate.as_tensornet().contract_einsum()[0], (4, 4)), gate.as_matrix()))
         g_copy = copy(gate)
         self.assertTrue(g_copy == gate)
         self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))

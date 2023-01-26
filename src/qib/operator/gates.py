@@ -1467,7 +1467,22 @@ class PrepareGate(Gate):
         """
         Generate a tensor network representation of the gate.
         """
-        raise NotImplementedError("as_tensornet not yet implemented for this gate")
+        # construct tensor network corresponding to |vec/norm(vec)> <0|...<0|
+        x = np.reshape(np.sign(self.vec) * np.sqrt(np.abs(self.vec)), self.nqubits * (2,))
+        stn = SymbolicTensorNetwork()
+        xten = SymbolicTensor(0, x.shape, str(hash(x.data.tobytes())))
+        stn.add_tensor(xten)
+        for i in range(self.nqubits):
+            stn.add_tensor(SymbolicTensor(1 + i, (2,), "|0>"))
+        # virtual tensor for open axes
+        stn.add_tensor(SymbolicTensor(-1, 2*self.nqubits * (2,), None))
+        # add bonds to specify open axes
+        for i in range(self.nqubits):
+            stn.add_bond(SymbolicBond(i, (-1, 0), (i if not self.transpose else self.nqubits + i, i)))
+        for i in range(self.nqubits):
+            stn.add_bond(SymbolicBond(self.nqubits + i, (-1, 1 + i), (self.nqubits + i if not self.transpose else i, 0)))
+        assert stn.is_consistent()
+        return TensorNetwork(stn, { xten.dataref: x, "|0>": np.array([ 1., 0.]) })
 
     def __copy__(self):
         """
@@ -1958,7 +1973,10 @@ class TimeEvolutionGate(Gate):
         """
         Generate a tensor network representation of the gate.
         """
-        raise NotImplementedError("as_tensornet not yet implemented for this gate")
+        # local dimensions of all particles
+        dims = [p.field.local_dim for p in self.particles()]
+        umat = self.as_matrix()
+        return TensorNetwork.wrap(np.reshape(umat, dims + dims), str(hash(umat.data.tobytes())))
 
     def __copy__(self):
         """
