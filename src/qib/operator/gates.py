@@ -2007,7 +2007,7 @@ class BlockEncodingGate(Gate):
     Output state is Hamiltonian applied to principal input state
     if auxiliary qubit(s) is initialized to |0>.
     """
-    def __init__(self, h: AbstractOperator, method: BlockEncodingMethod):
+    def __init__(self, h: AbstractOperator, method: BlockEncodingMethod = BlockEncodingMethod.Wx):
         self.h = h
         self.method = method
         self.auxiliary_qubits = []

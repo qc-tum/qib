@@ -67,12 +67,11 @@ class EigenvalueTransformation:
         Format: |enc_extra> x |encoded_state>
         Auxiliary wire from 'auxiliary' method is not taken into account.
         """
-        if self.block_encoding.auxiliary_qubits != self.processing.encoding_qubits:
-            raise RuntimeError("The block encoding's auxiliary qubits and processing gate's encoding extra qubits must be the same.")
         if not self.theta_seq:
             raise ValueError("the angles 'theta' have not been initialized.")
         matrix = np.identity(2**self.block_encoding.num_wires)
         num_particles = self.block_encoding.num_wires - self.block_encoding.num_aux_qubits
+        print(self.block_encoding.num_wires, self.block_encoding.num_aux_qubits)
         id_for_projector = np.identity(2**num_particles)
         U_inv_matrix = self.block_encoding.inverse().as_matrix()
         U_matrix = self.block_encoding.as_matrix()

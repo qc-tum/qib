@@ -13,7 +13,7 @@ class ProjectorControlledPhaseShift:
     2 possible methods: "auxiliary" or "c-phase".
     Projector is state |0>, |00>... on the encoding (auxiliary) qubitS.
     """
-    def __init__(self, theta: float,
+    def __init__(self, theta: float=0,
                  projection_state: Sequence[int]=[0],
                  encoding_qubits:  Union[Qubit, Sequence[Qubit]]=None,
                  auxiliary_qubits: Union[Qubit, Sequence[Qubit]]=None,
@@ -106,9 +106,7 @@ class ProjectorControlledPhaseShift:
         Generate the matrix representation of the controlled gate.
         The extra wire from 'auxiliary' method is not taken into account.
         """
-        size_enc = len(self.encoding_qubits)
-        if len(self.projection_state) != size_enc:
-            raise RuntimeError("The size of the projection state must be {2**(len(self.encoding_qubits))} while {len(self.projection_state)} entries were given.")
+        size_enc = len(self.projection_state)
         if any(s != 0 for s in self.projection_state):
             raise RuntimeError("The projection state can only have entries equal to 0.")
         binary_index = int(''.join(map(str,self.projection_state)), 2)
