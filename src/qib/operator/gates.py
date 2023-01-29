@@ -4,10 +4,9 @@ from enum import Enum
 from copy import copy
 from scipy.linalg import expm, sqrtm, block_diag
 from scipy.sparse import csr_matrix
-from typing import Sequence, Union
+from typing import Sequence
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
-from qib.util import permute_gate_wires
 from qib.tensor_network import SymbolicTensor, SymbolicBond, SymbolicTensorNetwork, TensorNetwork
 
 
@@ -1333,12 +1332,14 @@ class PhaseFactorGate(Gate):
         stn = SymbolicTensorNetwork()
         dataref = f"Phase({self.phi / self.nwires})"
         for i in range(self.nwires):
-            stn.add_tensor(SymbolicTensor(i, (2, 2), dataref))
+            stn.add_tensor(SymbolicTensor(i, (2, 2), (2*i, 2*i + 1), dataref))
         # virtual tensor for open axes
-        stn.add_tensor(SymbolicTensor(-1, 2*self.nwires * (2,), None))
+        stn.add_tensor(SymbolicTensor(-1, 2*self.nwires * (2,),
+                                        list(range(0, 2*self.nwires, 2))
+                                      + list(range(1, 2*self.nwires, 2)), None))
         for i in range(self.nwires):
-            stn.add_bond(SymbolicBond(2*i,     (-1, i), (i, 0)))
-            stn.add_bond(SymbolicBond(2*i + 1, (-1, i), (self.nwires + i, 1)))
+            stn.add_bond(SymbolicBond(2*i,     (-1, i)))
+            stn.add_bond(SymbolicBond(2*i + 1, (-1, i)))
         assert stn.is_consistent()
         return TensorNetwork(stn, { dataref: np.exp(1j*self.phi / self.nwires) * np.identity(2) })
 
@@ -1470,17 +1471,19 @@ class PrepareGate(Gate):
         # construct tensor network corresponding to |vec/norm(vec)> <0|...<0|
         x = np.reshape(np.sign(self.vec) * np.sqrt(np.abs(self.vec)), self.nqubits * (2,))
         stn = SymbolicTensorNetwork()
-        xten = SymbolicTensor(0, x.shape, str(hash(x.data.tobytes())))
+        xten = SymbolicTensor(0, x.shape, range(self.nqubits), str(hash(x.data.tobytes())))
         stn.add_tensor(xten)
         for i in range(self.nqubits):
-            stn.add_tensor(SymbolicTensor(1 + i, (2,), "|0>"))
+            stn.add_tensor(SymbolicTensor(1 + i, (2,), (self.nqubits + i,), "|0>"))
         # virtual tensor for open axes
-        stn.add_tensor(SymbolicTensor(-1, 2*self.nqubits * (2,), None))
+        stn.add_tensor(SymbolicTensor(-1, 2*self.nqubits * (2,),
+                                      range(2*self.nqubits) if not self.transpose else
+                                      list(range(self.nqubits, 2*self.nqubits)) + list(range(self.nqubits)), None))
         # add bonds to specify open axes
         for i in range(self.nqubits):
-            stn.add_bond(SymbolicBond(i, (-1, 0), (i if not self.transpose else self.nqubits + i, i)))
+            stn.add_bond(SymbolicBond(i, (-1, 0)))
         for i in range(self.nqubits):
-            stn.add_bond(SymbolicBond(self.nqubits + i, (-1, 1 + i), (self.nqubits + i if not self.transpose else i, 0)))
+            stn.add_bond(SymbolicBond(self.nqubits + i, (-1, 1 + i)))
         assert stn.is_consistent()
         return TensorNetwork(stn, { xten.dataref: x, "|0>": np.array([ 1., 0.]) })
 
@@ -1641,19 +1644,25 @@ class ControlledGate(Gate):
             ctgmat = np.stack((np.reshape(np.identity(2**ntargets), 2*ntargets * (2,)),
                                ctgmat), axis=0)
             stn = SymbolicTensorNetwork()
-            ctgten = SymbolicTensor(0, ctgmat.shape, "ctrl_" + str(hash(ctgmat.data.tobytes())))
+            # dummy bond IDs will be set later
+            ctgten = SymbolicTensor(0, ctgmat.shape, ctgmat.ndim * [-1], "ctrl_" + str(hash(ctgmat.data.tobytes())))
             stn.add_tensor(ctgten)
             data = { ctgten.dataref: ctgmat }
             # virtual tensor for open axes
-            stn.add_tensor(SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), None))
+            oaxten = SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), 2*(self.ncontrols + ntargets) * [-1], None)
+            stn.add_tensor(oaxten)
             # next available bond ID
             bid_next = 0
             # add bonds to specify open target gate axes
             for i in range(ntargets):
-                stn.add_bond(SymbolicBond(bid_next, (-1, 0), (self.ncontrols + i, 1 + i)))
+                stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
+                ctgten.bids[1 + i] = bid_next
+                oaxten.bids[self.ncontrols + i] = bid_next
                 bid_next += 1
             for i in range(ntargets):
-                stn.add_bond(SymbolicBond(bid_next, (-1, 0), (2*self.ncontrols + ntargets + i, 1 + ntargets + i)))
+                stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
+                ctgten.bids[1 + ntargets + i] = bid_next
+                oaxten.bids[2*self.ncontrols + ntargets + i] = bid_next
                 bid_next += 1
             # "wire crossing" tensors:
             # axis ordering: physical output wire, physical input wire, upward axis, downward axis
@@ -1673,48 +1682,68 @@ class ControlledGate(Gate):
             cc_dataref = ["ctrl_cross_neg", "ctrl_cross_pos"]
             if self.ctrl_state[0] == 0:
                 # insert Pauli-X gates for negated control
-                tid = self.ncontrols
-                stn.add_tensor(SymbolicTensor(tid, (2, 2), "PauliX"))
-                stn.add_bond(SymbolicBond(bid_next, (-1, tid), (0, 0)))
+                x_ten1 = SymbolicTensor(self.ncontrols, (2, 2), [bid_next, -1], "PauliX")
+                stn.add_tensor(x_ten1)
+                stn.add_bond(SymbolicBond(bid_next, (-1, x_ten1.tid)))
+                oaxten.bids[0] = bid_next
                 bid_next += 1
-                tid = self.ncontrols + 1
-                stn.add_tensor(SymbolicTensor(tid, (2, 2), "PauliX"))
-                stn.add_bond(SymbolicBond(bid_next, (-1, tid), (self.ncontrols + ntargets, 1)))
+                x_ten2 = SymbolicTensor(self.ncontrols + 1, (2, 2), [-1, bid_next], "PauliX")
+                stn.add_tensor(x_ten2)
+                stn.add_bond(SymbolicBond(bid_next, (-1, x_ten2.tid)))
+                oaxten.bids[self.ncontrols + ntargets] = bid_next
                 bid_next += 1
                 data["PauliX"] = np.array([[ 0.,  1.], [ 1.,  0.]])
             for i in range(1, self.ncontrols):
                 j = self.ctrl_state[i]
-                stn.add_tensor(SymbolicTensor(i, ctrl_cross[j].shape, cc_dataref[j]))
-                stn.add_bond(SymbolicBond(bid_next, (-1, i), (i, 0)))
+                ccrten = SymbolicTensor(i, ctrl_cross[j].shape, [bid_next, bid_next + 1, -1, -1], cc_dataref[j])
+                stn.add_tensor(ccrten)
+                stn.add_bond(SymbolicBond(bid_next, (-1, i)))
+                oaxten.bids[i] = bid_next
                 bid_next += 1
-                stn.add_bond(SymbolicBond(bid_next, (-1, i), (self.ncontrols + ntargets + i, 1)))
+                stn.add_bond(SymbolicBond(bid_next, (-1, i)))
+                oaxten.bids[self.ncontrols + ntargets + i] = bid_next
                 bid_next += 1
                 if i == 1:
                     if self.ctrl_state[0] == 1:
-                        stn.add_bond(SymbolicBond(bid_next, (-1, -1, i),
-                                                  (0, self.ncontrols + ntargets, 2)))
+                        stn.add_bond(SymbolicBond(bid_next, (-1, -1, i)))
+                        oaxten.bids[0] = bid_next
+                        oaxten.bids[self.ncontrols + ntargets] = bid_next
+                        ccrten.bids[2] = bid_next
                         bid_next += 1
                     else:
                         # connect to Pauli-X gates
-                        stn.add_bond(SymbolicBond(bid_next, (self.ncontrols, self.ncontrols + 1, i), (1, 0, 2)))
+                        stn.add_bond(SymbolicBond(bid_next, (self.ncontrols, self.ncontrols + 1, i)))
+                        x_ten1.bids[1] = bid_next
+                        x_ten2.bids[0] = bid_next
+                        ccrten.bids[2] = bid_next
                         bid_next += 1
                 else:
                     # vertical control bond connection
-                    stn.add_bond(SymbolicBond(bid_next, (i - 1, i), (3, 2)))
+                    stn.add_bond(SymbolicBond(bid_next, (i - 1, i)))
+                    stn.get_tensor(i - 1).bids[3] = bid_next
+                    ccrten.bids[2] = bid_next
                     bid_next += 1
                 if cc_dataref[j] not in data:
                     data[cc_dataref[j]] = ctrl_cross[j]
             # control bond connected to target gate tensor
             if self.ncontrols == 1:
                 if self.ctrl_state[0] == 1:
-                    stn.add_bond(SymbolicBond(bid_next, (0, -1, -1), (0, 0, self.ncontrols + ntargets)))
+                    stn.add_bond(SymbolicBond(bid_next, (0, -1, -1)))
+                    ctgten.bids[0] = bid_next
+                    oaxten.bids[0] = bid_next
+                    oaxten.bids[self.ncontrols + ntargets] = bid_next
                     bid_next += 1
                 else:
                     # connect to Pauli-X gates
-                    stn.add_bond(SymbolicBond(bid_next, (0, 1, 2), (0, 1, 0)))
+                    stn.add_bond(SymbolicBond(bid_next, (0, 1, 2)))
+                    ctgten.bids[0] = bid_next
+                    x_ten1.bids[1] = bid_next
+                    x_ten2.bids[0] = bid_next
                     bid_next += 1
             else:   # self.ncontrols > 1
-                stn.add_bond(SymbolicBond(bid_next, (0, self.ncontrols - 1), (0, 3)))
+                stn.add_bond(SymbolicBond(bid_next, (0, self.ncontrols - 1)))
+                ctgten.bids[0] = bid_next
+                stn.get_tensor(self.ncontrols - 1).bids[3] = bid_next
                 bid_next += 1
             assert stn.is_consistent()
             return TensorNetwork(stn, data)
@@ -1861,21 +1890,29 @@ class MultiplexedGate(Gate):
         # use matrix representation of target gates in tensor network, for simplicity
         mtgmat = np.reshape(np.stack([g.as_matrix() for g in self.tgates], axis=0), self.ncontrols * (2,) + 2*ntargets * (2,))
         stn = SymbolicTensorNetwork()
-        ctgten = SymbolicTensor(0, mtgmat.shape, str(hash(mtgmat.data.tobytes())))
+        ctgten = SymbolicTensor(0, mtgmat.shape, mtgmat.ndim * [-1], str(hash(mtgmat.data.tobytes())))
         stn.add_tensor(ctgten)
         # virtual tensor for open axes
-        stn.add_tensor(SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), None))
+        oaxten = SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), 2*(self.ncontrols + ntargets) * [-1], None)
+        stn.add_tensor(oaxten)
         # next available bond ID
         bid_next = 0
         # add bonds to specify open target gate axes
         for i in range(ntargets):
-            stn.add_bond(SymbolicBond(bid_next, (-1, 0), (self.ncontrols + i, self.ncontrols + i)))
+            stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
+            oaxten.bids[self.ncontrols + i] = bid_next
+            ctgten.bids[self.ncontrols + i] = bid_next
             bid_next += 1
         for i in range(ntargets):
-            stn.add_bond(SymbolicBond(bid_next, (-1, 0), (2*self.ncontrols + ntargets + i, self.ncontrols + ntargets + i)))
+            stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
+            oaxten.bids[2*self.ncontrols + ntargets + i] = bid_next
+            ctgten.bids[self.ncontrols + ntargets + i]   = bid_next
             bid_next += 1
         for i in range(self.ncontrols):
-            stn.add_bond(SymbolicBond(bid_next, (-1, -1, 0), (i, self.ncontrols + ntargets + i, i)))
+            stn.add_bond(SymbolicBond(bid_next, (-1, -1, 0)))
+            oaxten.bids[i]                             = bid_next
+            oaxten.bids[self.ncontrols + ntargets + i] = bid_next
+            ctgten.bids[i]                             = bid_next
             bid_next += 1
         assert stn.is_consistent()
         return TensorNetwork(stn, { ctgten.dataref: mtgmat })

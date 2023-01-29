@@ -9,10 +9,7 @@ class SymbolicTensor:
     (representing contractions with other tensors)
     and a user-provided reference to the data of the tensor.
     """
-    def __init__(self, tid: int, shape: Sequence[int], dataref, bids: Sequence[int]=None):
-        if bids is None:
-            # dummy bond IDs
-            bids = len(shape) * [-1]
+    def __init__(self, tid: int, shape: Sequence[int], bids: Sequence[int], dataref):
         if len(shape) != len(bids):
             raise ValueError("number of dimensions must be equal to number of connected bond IDs")
         self.tid     = tid
@@ -31,31 +28,20 @@ class SymbolicTensor:
 class SymbolicBond:
     """
     Symbolic bond in a tensor network, e.g., an edge or multi-edge between tensors.
+    The corresponding axes of the respective tensor can be inferred from the
+    bond ID index stored in the tensor.
+    A bond can be connected to several axes of the same tensor;
+    in this case, the same tensor ID is referenced multiple times by the bond.
 
     Member variables:
-        bid:    bond ID
-        tids:   tensor IDs
-        axes:   corresponding axes of the respective tensors
+        bid:  bond ID
+        tids: tensor IDs
     """
-    def __init__(self, bid: int, tids: Sequence[int], axes: Sequence[int]):
-        if len(tids) != len(axes):
-            raise ValueError("number of tensor IDs must match number of axes")
+    def __init__(self, bid: int, tids: Sequence[int]):
         if len(tids) < 2:
             raise ValueError("bond must reference at least two tensors")
         self.bid = bid
-        self.tids = list(tids)
-        self.axes = list(axes)
-        self.sort()
-
-    def sort(self):
-        """
-        Sort tensor and axes indices. (Logically the same bond.)
-        """
-        s = sorted(zip(self.tids, self.axes))
-        self.tids = [x[0] for x in s]
-        self.axes = [x[1] for x in s]
-        # enable chaining
-        return self
+        self.tids = sorted(list(tids))
 
 
 class SymbolicTensorNetwork:
@@ -136,7 +122,7 @@ class SymbolicTensorNetwork:
             for i in range(len(bond.tids)):
                 if bond.tids[i] == tid_cur:
                     bond.tids[i] = tid_new
-            bond.sort()
+            bond.tids.sort()
         tensor.tid = tid_new
         self.tensors[tid_new] = tensor
 
@@ -154,8 +140,7 @@ class SymbolicTensorNetwork:
             for i in range(len(bond.tids)):
                 if bond.tids[i] == tid2:
                     bond.tids[i] = tid1
-                    bond.axes[i] += tensor1.ndim
-            bond.sort()
+            bond.tids.sort()
         tensor1.shape += tensor2.shape
         tensor1.bids  += tensor2.bids
 
@@ -195,14 +180,6 @@ class SymbolicTensorNetwork:
         if bond.bid in self.bonds:
             raise ValueError(f"bond with ID {bond.bid} already exists")
         self.bonds[bond.bid] = bond
-        # create bond references in tensors
-        for tid, ax in zip(bond.tids, bond.axes):
-            if tid not in self.tensors:
-                raise ValueError(f"tensor {tid} referenced by bond {bond.bid} does not exist")
-            tensor = self.tensors[tid]
-            if len(tensor.bids) <= ax:
-                raise ValueError(f"tensor {tensor.tid} does not have a {ax}-th axis.")
-            tensor.bids[ax] = bond.bid
 
     def rename_bond(self, bid_cur: int, bid_new: int):
         """
@@ -217,9 +194,11 @@ class SymbolicTensorNetwork:
         bond.bid = bid_new
         self.bonds[bid_new] = bond
         # update bond references in tensors
-        for tid, ax in zip(bond.tids, bond.axes):
-            assert self.tensors[tid].bids[ax] == bid_cur
-            self.tensors[tid].bids[ax] = bid_new
+        for tid in bond.tids:
+            tensor = self.tensors[tid]
+            for ax in range(len(tensor.bids)):
+                if tensor.bids[ax] == bid_cur:
+                    tensor.bids[ax] = bid_new
 
     def merge_bonds(self, bid1: int, bid2: int):
         """
@@ -230,13 +209,35 @@ class SymbolicTensorNetwork:
             return
         bond1 = self.bonds[bid1]
         bond2 = self.bonds.pop(bid2)
-        for tid, ax in zip(bond2.tids, bond2.axes):
+        for tid in bond2.tids:
             bond1.tids.append(tid)
-            bond1.axes.append(ax)
             # update bond reference in tensor
-            assert self.tensors[tid].bids[ax] == bid2
-            self.tensors[tid].bids[ax] = bid1
-        bond1.sort()
+            tensor = self.tensors[tid]
+            for ax in range(len(tensor.bids)):
+                if tensor.bids[ax] == bid2:
+                    tensor.bids[ax] = bid1
+        bond1.tids.sort()
+
+    def get_bond_axes(self, bid: int):
+        """
+        Get the axes corresponding to the ordered tensor IDs referenced by the bond.
+        """
+        bond = self.bonds[bid]
+        assert bond.bid == bid
+        axes = len(bond.tids) * [-1]
+        for i in range(len(bond.tids)):
+            # j-th occurrence of current tensor ID
+            j = bond.tids[:i].count(bond.tids[i])
+            tensor = self.tensors[bond.tids[i]]
+            for ax in range(len(tensor.bids)):
+                if tensor.bids[ax] == bid:
+                    if j == 0:
+                        axes[i] = ax
+                        break
+                    else:
+                        j -= 1
+        assert all([ax >= 0 for ax in axes])
+        return axes
 
     def merge(self, other, join_axes: Sequence[tuple]=[]):
         """
@@ -291,22 +292,13 @@ class SymbolicTensorNetwork:
             bid = tensor_open_axes.bids[delax]
             bond = self.bonds[bid]
             # remove reference to axis from bond
-            for i in range(len(bond.tids)):
-                if bond.tids[i] == -1 and bond.axes[i] == delax:
-                    bond.tids.pop(i)
-                    bond.axes.pop(i)
-                    break
+            if -1 in bond.tids:
+                # note: removing only one occurrence of -1 from bonds.tids
+                bond.tids.remove(-1)
             assert len(bond.tids) >= 2
         # remove to-be joined axes from tensor
         tensor_open_axes.shape = tuple(tensor_open_axes.shape[i] for i in axes_map)
         tensor_open_axes.bids  = [tensor_open_axes.bids[i] for i in axes_map]
-        # update axes references in bonds
-        for bid in set(tensor_open_axes.bids):
-            bond = self.bonds[bid]
-            for i in range(len(bond.tids)):
-                if bond.tids[i] == -1:
-                    bond.axes[i] = axes_map.index(bond.axes[i])
-                    assert tensor_open_axes.bids[bond.axes[i]] == bid
         # enable chaining
         return self
 
@@ -341,19 +333,20 @@ class SymbolicTensorNetwork:
         if nR.tid >= next_tid: next_tid = nR.tid + 1
         assert not set(nL.openaxes).intersection(set(nR.openaxes)), "open axes of left and right subtrees must be disjoint"
         # find bonds attached to the left or right subtrees
-        bondlist = []
+        bidlist = []
         bmaplist = []
         openaxes = nL.openaxes + nR.openaxes
         for od in nL.openaxes + nR.openaxes:
             bid = self.tensors[od[0]].bids[od[1]]
-            bond = self.bonds[bid]
             # reference to bond can appear multiple times due to multi-edge bonds
-            if bond in bondlist:
+            if bid in bidlist:
                 continue
-            bondlist.append(bond)
+            bidlist.append(bid)
+            bond = self.bonds[bid]
+            bond_axes = self.get_bond_axes(bid)
             bmap = len(bond.tids) * [None]
             for i in range(len(bond.tids)):
-                ta = (bond.tids[i], bond.axes[i])
+                ta = (bond.tids[i], bond_axes[i])
                 if ta in nL.openaxes:
                     bmap[i] = ("L", nL.trackaxes[nL.openaxes.index(ta)])
                 elif ta in nR.openaxes:
@@ -361,7 +354,7 @@ class SymbolicTensorNetwork:
             bmaplist.append(bmap)
             # if bond is fully contracted (no upstream connections)
             if all(bmap):
-                for ta in zip(bond.tids, bond.axes):
+                for ta in zip(bond.tids, bond_axes):
                     openaxes.remove(ta)
         # tensor degrees
         deg = [len(nL.idxout), len(nR.idxout)]
@@ -435,8 +428,9 @@ class SymbolicTensorNetwork:
         # identify to-be contracted indices (or shared indices for output)
         for bond in self.bonds.values():
             it = [tids.index(tid) for tid in bond.tids]
-            imin = min([tidx[i][ax] for i, ax in zip(it, bond.axes)], default=0)
-            for i, ax in zip(it, bond.axes):
+            bond_axes = self.get_bond_axes(bond.bid)
+            imin = min([tidx[i][ax] for i, ax in zip(it, bond_axes)], default=0)
+            for i, ax in zip(it, bond_axes):
                 tidx[i][ax] = imin
         # condense indices
         idxmap = maxidx * [-1]
@@ -472,15 +466,15 @@ class SymbolicTensorNetwork:
             if k != tensor.tid:
                 if verbose: print(f"Consistency check failed: dictionary key {k} does not match tensor ID {tensor.tid}.")
                 return False
-            for ax, bid in enumerate(tensor.bids):
+            for bid in tensor.bids:
                 # bond with ID 'bid' must exist
                 if bid not in self.bonds:
                     if verbose: print(f"Consistency check failed: bond with ID {bid} referenced by tensor {k} does not exist.")
                     return False
                 # bond must refer back to tensor and corresponding axis
                 bond = self.bonds[bid]
-                if (tensor.tid, ax) not in zip(bond.tids, bond.axes):
-                    if verbose: print(f"Consistency check failed: bond with ID {bid} does not refer to axis {ax} of tensor {tensor.tid}.")
+                if tensor.tid not in bond.tids:
+                    if verbose: print(f"Consistency check failed: bond with ID {bid} does not refer to tensor {tensor.tid}.")
                     return False
         for k, bond in self.bonds.items():
             if k != bond.bid:
@@ -490,7 +484,12 @@ class SymbolicTensorNetwork:
                 if verbose: print(f"Consistency check failed: bond {bond.bid} references {len(bond.tids)} tensor(s), should reference at least two.")
                 return False
             dims = []
-            for tid, ax in zip(bond.tids, bond.axes):
+            bond_axes = self.get_bond_axes(bond.bid)
+            for i in range(len(bond.tids)):
+                if (bond.tids[i], bond_axes[i]) in zip(bond.tids[:i], bond_axes[:i]):
+                    if verbose: print(f"Consistency check failed: axis {bond_axes[i]} of tensor {bond.tids[i]} referenced twice by bond {k}.")
+                    return False
+            for tid, ax in zip(bond.tids, bond_axes):
                 # tensor with ID 'tid' must exist
                 if tid not in self.tensors:
                     if verbose: print(f"Consistency check failed: tensor with ID {tid} referenced by bond {k} does not exist.")

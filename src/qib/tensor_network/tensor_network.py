@@ -21,12 +21,12 @@ class TensorNetwork:
         construct a tensor network representation of the tensor.
         """
         stn = SymbolicTensorNetwork()
-        stn.add_tensor(SymbolicTensor( 0, a.shape, dataref))
+        stn.add_tensor(SymbolicTensor( 0, a.shape, range(a.ndim), dataref))
         # virtual tensor for open axes
-        stn.add_tensor(SymbolicTensor(-1, a.shape, None))
+        stn.add_tensor(SymbolicTensor(-1, a.shape, range(a.ndim), None))
         # mark tensor axes as open axes
-        for i in range(len(a.shape)):
-            stn.add_bond(SymbolicBond(i, (-1, 0), (i, i)))
+        for i in range(a.ndim):
+            stn.add_bond(SymbolicBond(i, (-1, 0)))
         return cls(stn, { dataref: a })
 
     @property
@@ -96,7 +96,7 @@ class TensorNetwork:
         axes_map = tensor_open_axes.ndim * [-1]
         for i, bid in enumerate(tensor_open_axes.bids):
             bond = self.net.bonds[bid]
-            for tid, ax in zip(bond.tids, bond.axes):
+            for tid, ax in zip(bond.tids, self.net.get_bond_axes(bid)):
                 if tid == -1:
                     continue
                 if (tid, ax) not in tree.openaxes:
