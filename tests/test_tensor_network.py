@@ -20,17 +20,7 @@ class TestTensorNetwork(unittest.TestCase):
         stn1.add_tensor(qib.tensor_network.SymbolicTensor( 0, (13,  7,  3),             ( 2,  0,  3),             "dd"))
         stn1.add_tensor(qib.tensor_network.SymbolicTensor( 5, (13, 11,  6),             ( 2, 11, -3),             "e"))
         stn1.add_tensor(qib.tensor_network.SymbolicTensor(-1, ( 7,  9, 11, 17,  4,  7), ( 0, 13, 11,  5, 17,  0), None))  # virtual tensor for open axes
-        stn1.add_bond(qib.tensor_network.SymbolicBond(-7, ( 3,  1)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond( 3, ( 0,  7,  3)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond(14, ( 1,  3)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond(-3, ( 5,  3)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond( 0, (-1,  0, -1)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond( 2, ( 0,  5)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond(11, ( 5, -1)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond(13, ( 7, -1)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond( 5, ( 7, -1,  7)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond( 6, ( 1,  7)))
-        stn1.add_bond(qib.tensor_network.SymbolicBond(17, ( 1, -1)))
+        stn1.generate_bonds()
         self.assertTrue(stn1.is_consistent())
         ntens1 = stn1.num_tensors
         nbond1 = stn1.num_bonds

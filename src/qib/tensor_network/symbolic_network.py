@@ -181,6 +181,28 @@ class SymbolicTensorNetwork:
             raise ValueError(f"bond with ID {bond.bid} already exists")
         self.bonds[bond.bid] = bond
 
+    def generate_bonds(self):
+        """
+        Generate bonds based on the information stored in the tensors.
+        """
+        if self.bonds:
+            raise RuntimeError("expecting empty bond collection before generating bonds")
+        bidlist = []
+        for tensor in self.tensors.values():
+            bidlist += tensor.bids
+        # unique bond IDs
+        bidlist = sorted(list(set(bidlist)))
+        for bid in bidlist:
+            tids = []
+            for tensor in self.tensors.values():
+                # note: same tensor ID can appear multiple times
+                for b in tensor.bids:
+                    if b == bid:
+                        tids.append(tensor.tid)
+            self.add_bond(SymbolicBond(bid, tids))
+        # enable chaining
+        return self
+
     def rename_bond(self, bid_cur: int, bid_new: int):
         """
         Rename bond ID `bid_cur` -> `bid_new`.
