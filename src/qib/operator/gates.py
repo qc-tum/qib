@@ -8,6 +8,7 @@ from typing import Sequence
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
 from qib.tensor_network import SymbolicTensor, SymbolicBond, SymbolicTensorNetwork, TensorNetwork
+from qib.util import map_particle_to_wire
 
 
 class Gate(AbstractOperator):
@@ -152,7 +153,7 @@ class PauliXGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -247,7 +248,7 @@ class PauliYGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -340,7 +341,7 @@ class PauliZGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -433,7 +434,7 @@ class HadamardGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -536,7 +537,7 @@ class RxGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -640,7 +641,7 @@ class RyGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -743,7 +744,7 @@ class RzGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -846,7 +847,7 @@ class RotationGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -940,7 +941,7 @@ class SGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1033,7 +1034,7 @@ class SAdjGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1126,7 +1127,7 @@ class TGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1219,7 +1220,7 @@ class TAdjGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
-        iwire = _map_particle_to_wire(fields, self.qubit)
+        iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1319,7 +1320,7 @@ class PhaseFactorGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.prtcl:
             raise RuntimeError("unspecified target particle(s)")
-        iwire = [_map_particle_to_wire(fields, p) for p in self.prtcl]
+        iwire = [map_particle_to_wire(fields, p) for p in self.prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1458,7 +1459,7 @@ class PrepareGate(Gate):
         if len(self.qubits) != self.nqubits:
             raise RuntimeError("unspecified qubit(s)")
         prtcl = self.particles()
-        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1622,7 +1623,7 @@ class ControlledGate(Gate):
         if len(self.tgate.particles()) != self.tgate.num_wires:
             raise RuntimeError("unspecified target gate particle(s)")
         prtcl = self.particles()
-        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -1876,7 +1877,7 @@ class MultiplexedGate(Gate):
             if len(g.particles()) != g.num_wires:
                 raise RuntimeError("unspecified target gate particle(s)")
         prtcl = self.particles()
-        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -2000,7 +2001,7 @@ class TimeEvolutionGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         prtcl = self.particles()
         assert len(prtcl) == self.num_wires
-        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -2174,7 +2175,7 @@ class BlockEncodingGate(Gate):
             raise RuntimeError("unspecified auxiliary qubit(s)")
         prtcl = self.particles()
         assert len(prtcl) == self.num_wires
-        iwire = [_map_particle_to_wire(fields, p) for p in prtcl]
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -2285,7 +2286,7 @@ class GeneralGate(Gate):
                 raise NotImplementedError("quantum wire indexing assumes local dimension 2")
         if not self.prtcl:
             raise RuntimeError("unspecified target particle(s)")
-        iwire = [_map_particle_to_wire(fields, p) for p in self.prtcl]
+        iwire = [map_particle_to_wire(fields, p) for p in self.prtcl]
         if any([iw < 0 for iw in iwire]):
             raise RuntimeError("particle not found among fields")
         nwires = sum([f.lattice.nsites for f in fields])
@@ -2313,21 +2314,6 @@ class GeneralGate(Gate):
                 and np.allclose(other.mat, self.mat)
                 and other.nwires == self.nwires
                 and other.prtcl == self.prtcl)
-
-
-def _map_particle_to_wire(fields: Sequence[Field], p: Particle):
-    """
-    Map a particle to a quantum wire.
-    """
-    i = 0
-    for f in fields:
-        if p.field == f:
-            i += p.index
-            return i
-        else:
-            i += f.lattice.nsites
-    # not found
-    return -1
 
 
 def _distribute_to_wires(nwires: int, iwire, gmat: csr_matrix):

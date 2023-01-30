@@ -28,6 +28,11 @@ class TestCircuit(unittest.TestCase):
         self.assertTrue(np.allclose(circuit.as_matrix([field1, field2]).toarray()
             @ circuit.inverse().as_matrix([field1, field2]).toarray(),
             np.identity(2**5)))
+        circtens, axes_map = circuit.as_tensornet([field1, field2]).contract_einsum()
+        # some control axes are identical; form full matrix for comparison
+        circtens = qib.tensor_network.tensor_network.to_full_tensor(circtens, axes_map)
+        self.assertTrue(np.allclose(np.reshape(circtens, (2**5, 2**5)),
+                                    circuit.as_matrix([field1, field2]).toarray()))
 
 
 if __name__ == "__main__":

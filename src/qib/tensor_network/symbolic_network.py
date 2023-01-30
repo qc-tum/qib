@@ -24,6 +24,20 @@ class SymbolicTensor:
         """
         return len(self.shape)
 
+    def transpose(self, axes=None):
+        """
+        Transpose the axes of the tensor, analogous to numpy.transpose.
+        Tensor is updated in-place.
+        """
+        if axes is None:
+            axes = reversed(range(self.ndim))
+        if len(set(axes)) != len(axes):
+            raise ValueError(f"axes = {axes} is not a valid permutation")
+        self.shape = tuple(self.shape[ax] for ax in axes)
+        self.bids  =       [self.bids[ax] for ax in axes]
+        # enable chaining
+        return self
+
 
 class SymbolicBond:
     """
@@ -86,6 +100,16 @@ class SymbolicTensorNetwork:
         if -1 not in self.tensors:
             raise RuntimeError("network requires a virtual tensor with ID -1 for the open axes")
         return self.tensors[-1].shape
+
+    def transpose(self, axes=None):
+        """
+        Logically transpose the network, i.e., the virtual output tensor of the network.
+        """
+        if -1 not in self.tensors:
+            raise RuntimeError("network requires a virtual tensor with ID -1 for the open axes")
+        self.tensors[-1].transpose(axes)
+        # enable chaining
+        return self
 
     def has_tensor(self, tid: int) -> bool:
         """

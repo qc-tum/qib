@@ -57,6 +57,14 @@ class TensorNetwork:
         """
         return self.net.shape
 
+    def transpose(self, axes=None):
+        """
+        Logically transpose the network, i.e., the virtual output tensor of the network.
+        """
+        self.net.transpose(axes)
+        # enable chaining
+        return self
+
     def merge(self, other, join_axes: Sequence[tuple]=[]):
         """
         Merge network with another tensor network,
@@ -69,6 +77,8 @@ class TensorNetwork:
                 if not np.array_equal(self.data[k], other.data[k]):
                     raise ValueError(f"tensor data entries for {k} in the to-be joined networks do not match")
         self.data.update(other.data)
+        # enable chaining
+        return self
 
     def contract_einsum(self):
         """
@@ -81,6 +91,13 @@ class TensorNetwork:
             tensor = self.net.tensors[tids[i]]
             args.append(self.data[tensor.dataref])
             args.append(tidx[i])
+        # insert vectors filled with ones for output axes which are not connected
+        # to an actual tensor, e.g., identity wires
+        shape = self.shape
+        for j in idxout:
+            if not any([j in tidx[i] for i in range(len(tidx))]):
+                args.append(np.ones(shape[axes_map.index(j)]))
+                args.append([j])
         args.append(idxout)
         return np.einsum(*args), axes_map
 
