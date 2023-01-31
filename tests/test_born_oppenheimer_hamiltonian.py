@@ -2,8 +2,6 @@ import numpy as np
 from scipy import sparse
 from pyscf import gto
 import unittest
-import sys
-sys.path.append('../src')
 import qib
 
 
