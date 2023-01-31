@@ -2,6 +2,8 @@ import numpy as np
 from scipy import sparse
 from pyscf import gto
 import unittest
+import sys
+sys.path.append('../src')
 import qib
 
 
@@ -12,7 +14,7 @@ class TestBornOppenheimerHamiltonian(unittest.TestCase):
         Test construction of the Born-Oppenheimer Hamiltonian.
         """
         # underlying lattice
-        latt = qib.lattice.FullyConnectedLattice((2,))
+        latt = qib.lattice.FullyConnectedLattice((4,))
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         # parameters
         atom = '''H 0 0 0; H 0 0 0.735'''
@@ -107,12 +109,12 @@ def construct_one_body_op(mol):
     """
     # number of lattice sites
     L = mol.nao_nr()
-    T = sparse.csr_matrix((2**L, 2**L), dtype=float)
-    h1 = mol.get_hcore()
+    T = sparse.csr_matrix((2**(2*L), 2**(2*L)), dtype=float)
+    h1 = np.kron(mol.get_hcore(), np.identity(2))
     
-    for i in range(L):
-        for j in range(L):
-            T += h1[i, j] * (fermi_create_op(L, 1 << i) @ fermi_annihil_op(L, 1 << j))
+    for i in range(2*L):
+        for j in range(2*L):
+            T += h1[i, j] * (fermi_create_op(2*L, 1 << i) @ fermi_annihil_op(2*L, 1 << j))
     return T
 
 def construct_two_body_op(mol):
@@ -121,13 +123,13 @@ def construct_two_body_op(mol):
     """
     # number of lattice sites
     L = mol.nao_nr()
-    T = sparse.csr_matrix((2**L, 2**L), dtype=float)
-    h2= mol.intor('int2e')
-    for i in range(L):
-        for j in range(L):
-            for k in range(L):
-                for l in range(L):
-                    T += h2[i, j, k, l] * (fermi_create_op(L, 1 << i) @ (fermi_annihil_op(L, 1 << j) @ fermi_create_op(L, 1 << k)) @ fermi_annihil_op(L, 1 << l))
+    T = sparse.csr_matrix((2**(2*L), 2**(2*L)), dtype=float)
+    h2= mol.intor('int2e_spinor')
+    for i in range(2*L):
+        for j in range(2*L):
+            for k in range(2*L):
+                for l in range(2*L):
+                    T += h2[i, j, k, l] * (fermi_create_op(2*L, 1 << i) @ (fermi_annihil_op(2*L, 1 << j) @ fermi_create_op(2*L, 1 << k)) @ fermi_annihil_op(2*L, 1 << l))
     return T
 
 

@@ -1,3 +1,4 @@
+import numpy as np
 from pyscf import gto
 from qib.field import ParticleType, Field
 from qib.lattice import FullyConnectedLattice
@@ -21,16 +22,17 @@ class BornOppenheimerHamiltonian(AbstractOperator):
             raise ValueError(f"expecting a field with fermionic particle type, but received {field.particle_type}")
         if not isinstance(field.lattice, FullyConnectedLattice):
             raise ValueError("expecting a layered lattice when 'spin' is True")
-        if field.lattice.nsites != mol.nao_nr():
-            raise ValueError(f"the fully connected lattice needs to have {mol.nao_nr()}, while {field.lattice.nsites} were given.")
+        if field.lattice.nsites != 2*mol.nao_nr():
+            raise ValueError(f"the fully connected lattice needs to have {2*mol.nao_nr()}, while {field.lattice.nsites} were given.")
         self.mol = mol
         self.h0 = self.mol.energy_nuc()
-        self.h1 = self.mol.get_hcore()
-        self.h2 = self.mol.intor('int2e')
+        # ACHTUNG: we care about the spin-orbital integrals
+        self.h1 = np.kron(self.mol.get_hcore(), np.identity(2))
+        self.h2 = self.mol.intor('int2e_spinor')
         self.field = field
 
     @classmethod
-    def from_params(cls, atom = [], basis = "sto3g", symmetry = None, charge = 0, spin = 0, verbose = 0):
+    def from_params(cls, atom = [], basis = "sto-3g", symmetry = None, charge = 0, spin = 0, verbose = 0):
         """
         Initialize the Hamiltonian through pyscf's gto package.
         """
