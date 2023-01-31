@@ -71,7 +71,6 @@ class EigenvalueTransformation:
             raise ValueError("the angles 'theta' have not been initialized.")
         matrix = np.identity(2**self.block_encoding.num_wires)
         num_particles = self.block_encoding.num_wires - self.block_encoding.num_aux_qubits
-        print(self.block_encoding.num_wires, self.block_encoding.num_aux_qubits)
         id_for_projector = np.identity(2**num_particles)
         U_inv_matrix = self.block_encoding.inverse().as_matrix()
         U_matrix = self.block_encoding.as_matrix()
