@@ -1,5 +1,5 @@
 import numpy as np
-from pyscf import gto
+from pyscf import gto, ao2mo
 from qib.field import ParticleType, Field
 from qib.lattice import FullyConnectedLattice
 from qib.operator import AbstractOperator, FieldOperator, FieldOperatorTerm, IFOType, IFODesc
@@ -30,6 +30,7 @@ class BornOppenheimerHamiltonian(AbstractOperator):
         self.h1 = np.kron(self.mol.get_hcore(), np.identity(2))
         self.h2 = self.mol.intor('int2e_spinor')
         self.field = field
+        self.ao_mo = 'ao'
 
     @classmethod
     def from_params(cls, atom = [], basis = "sto-3g", symmetry = None, charge = 0, spin = 0, verbose = 0):
@@ -58,6 +59,27 @@ class BornOppenheimerHamiltonian(AbstractOperator):
         Whether the Hamiltonian is Hermitian.
         """
         return True
+
+    def set_mo_integrals(self, coeff):
+        """
+        Change the spin-orbitals integral w.r.t. a coefficient matrix externally calculated (ex: Hartree Fock).
+        """
+        if self.ao_mo == 'mo':
+            return
+        spin_coeff = np.kron(coeff, np.identity(2))
+        self.h1 = np.einsum('ji,jk,kl->il', spin_coeff, self.h1, spin_coeff)
+        self.h2 = ao2mo.kernel(self.h2, spin_coeff, compact=False)
+        self.ao_mo = 'mo'
+
+    def reset_ao_integrals(self):
+        """
+        Reset atomic integrals.
+        """
+        if self.ao_mo == 'ao':
+            return
+        self.h1 = np.kron(self.mol.get_hcore(), np.identity(2))
+        self.h2 = self.mol.intor('int2e_spinor')
+        self.ao_mo = 'ao'
 
     def as_field_operator(self):
         """

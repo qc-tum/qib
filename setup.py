@@ -7,6 +7,7 @@ setup(
     install_requires=[
         "numpy",
         "scipy",
+        "pyscf",
         "importlib-metadata; python_version == '3.8'",
     ],
 )
