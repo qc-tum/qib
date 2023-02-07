@@ -2,6 +2,8 @@ import numpy as np
 from scipy import sparse
 from pyscf import gto, scf, ao2mo
 import unittest
+import sys
+sys.path.append('../src')
 import qib
 
 
@@ -26,8 +28,11 @@ class TestBornOppenheimerHamiltonian(unittest.TestCase):
                   charge = charge,
                   spin = spin,
                   verbose = verbose)
-        # construct Hamiltonian
-        H = qib.operator.BornOppenheimerHamiltonian(field, mol)
+        # construct Hamiltonian (SPIN-ORBITAL basis!)
+        h0 = mol.get_enuc()
+        h1 = np.kron(mol.get_hcore(), np.identity(2))
+        h2 = mol.intor('int2e_spinor')
+        H = qib.operator.BornOppenheimerHamiltonian(field, h0, h1, h2)
         self.assertEqual(H.fields(), [field])
         self.assertTrue(H.is_hermitian())
         
@@ -47,6 +52,7 @@ class TestBornOppenheimerHamiltonian(unittest.TestCase):
         mo_H1 = construct_one_body_op_mobasis(mol, coeff)
         mo_H2 = construct_two_body_op_mobasis(mol, coeff)
         H.set_mo_integrals(coeff)
+        #print(sparse.linalg.norm(mo_H1+mo_H2))
         # compare
         self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix()), sparse.linalg.norm(mo_H1+mo_H2))
         #BUG: norm changes? coeff is not unitary!

@@ -1,50 +1,34 @@
 import numpy as np
-from pyscf import gto, ao2mo
+from typing import Sequence
 from qib.field import ParticleType, Field
-from qib.lattice import FullyConnectedLattice
 from qib.operator import AbstractOperator, FieldOperator, FieldOperatorTerm, IFOType, IFODesc
 
 
 class BornOppenheimerHamiltonian(AbstractOperator):
     """
     Born-Oppenheimer Hamiltonian.
-    Uses pyscf gto packages.
-    Uses a fully connected lattice.
+    Gets the one and two-body integrals on the SPIN-ORBITAL basis (same conventions as pyscf).
     Note that pyscf uses chemist's notation for MO integrals:
         V = sum_{i,j,k,l} v_{i,j,k,l} a+_i a_j a+_k a_l
     """
-    def __init__(self, field: Field, mol):
+    def __init__(self, field: Field, h0: float = None, h1: Sequence[float] = None, h2: Sequence[float] = None):
         """
-        Initialize the Hamiltonian through an already created gto molcecule.
-        Save the Hamiltonian's coefficients and create a fully connected graph.
+        Initialize the Hamiltonian through its SPIN-ORBITAL integrals.
         """
+        self.n_spinor = len(h1)
+        self.h0 = h0
+        self.h1 = np.array(h1)
+        self.h2 = np.array(h2)
+        if h1.shape != (self.n_spinor, self.n_spinor):
+            raise RuntimeError(f"h1 must have size ({self.n_spinor},{self.n_spinor}), while {h1.shape} was given")
+        if h2.shape != (self.n_spinor, self.n_spinor, self.n_spinor, self.n_spinor):
+            raise RuntimeError(f"hs must have size ({self.n_spinor},{self.n_spinor},{self.n_spinor},{self.n_spinor}), while {h2.shape} was given")
         if field.particle_type != ParticleType.FERMION:
             raise ValueError(f"expecting a field with fermionic particle type, but received {field.particle_type}")
-        if not isinstance(field.lattice, FullyConnectedLattice):
-            raise ValueError("expecting a layered lattice when 'spin' is True")
-        if field.lattice.nsites != 2*mol.nao_nr():
-            raise ValueError(f"the fully connected lattice needs to have {2*mol.nao_nr()}, while {field.lattice.nsites} were given.")
-        self.mol = mol
-        self.h0 = self.mol.energy_nuc()
-        # ACHTUNG: we care about the spin-orbital integrals
-        self.h1 = np.kron(self.mol.get_hcore(), np.identity(2))
-        self.h2 = self.mol.intor('int2e_spinor')
+        if field.lattice.nsites != self.n_spinor:
+            raise ValueError(f"the lattice must have {2*self.n_spinor} sites, while {field.lattice.nsites} were given.")
         self.field = field
         self.ao_mo = 'ao'
-
-    @classmethod
-    def from_params(cls, atom = [], basis = "sto-3g", symmetry = None, charge = 0, spin = 0, verbose = 0):
-        """
-        Initialize the Hamiltonian through pyscf's gto package.
-        """
-        mol = gto.Mole()
-        mol.build(atom = atom,
-                  basis = basis,
-                  symmetry = symmetry,
-                  charge = charge,
-                  spin = spin,
-                  verbose = 0)
-        return cls(mol)
 
     def is_unitary(self):
         """
@@ -66,20 +50,17 @@ class BornOppenheimerHamiltonian(AbstractOperator):
         """
         if self.ao_mo == 'mo':
             return
+        
         spin_coeff = np.kron(coeff, np.identity(2))
-        self.h1 = np.einsum('ji,jk,kl->il', spin_coeff, self.h1, spin_coeff)
-        self.h2 = ao2mo.kernel(self.h2, spin_coeff, compact=False)
+        self.h1 = np.einsum('ji,jk,kl->il', spin_coeff.conj(), self.h1, spin_coeff)
+        self.h2 = np.einsum('pqrs,pi,qj,rk,sl->ijkl', self.h2, spin_coeff, spin_coeff, spin_coeff, spin_coeff)
         self.ao_mo = 'mo'
 
     def reset_ao_integrals(self):
         """
-        Reset atomic integrals.
+        TODO: Reset atomic integrals.
         """
-        if self.ao_mo == 'ao':
-            return
-        self.h1 = np.kron(self.mol.get_hcore(), np.identity(2))
-        self.h2 = self.mol.intor('int2e_spinor')
-        self.ao_mo = 'ao'
+        return
 
     def as_field_operator(self):
         """
