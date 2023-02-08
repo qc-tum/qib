@@ -1,9 +1,6 @@
 import numpy as np
 from scipy import sparse
-from pyscf import gto, scf, ao2mo
 import unittest
-import sys
-sys.path.append('../src')
 import qib
 
 
@@ -17,47 +14,22 @@ class TestBornOppenheimerHamiltonian(unittest.TestCase):
         latt = qib.lattice.FullyConnectedLattice((4,))
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         # parameters
-        atom = '''H 0 0 0; H 0 0 0.735'''
-        basis = 'sto-6g'
-        charge = 0
-        spin = 0
-        verbose = 0
-        mol = gto.Mole()
-        mol.build(atom = atom,
-                  basis = basis,
-                  charge = charge,
-                  spin = spin,
-                  verbose = verbose)
-        # construct Hamiltonian (SPIN-ORBITAL basis!)
-        h0 = mol.get_enuc()
-        h1 = np.kron(mol.get_hcore(), np.identity(2))
-        h2 = mol.intor('int2e_spinor')
+        # construct Hamiltonian 
+        # Example of 4 spin-orbitals: molecule H2 with sto3g basis
+        np.random.seed(0)
+        h0 = np.random.rand()
+        h1 = np.random.rand(4,4)
+        h2 = np.random.rand(4,4,4,4)
         H = qib.operator.BornOppenheimerHamiltonian(field, h0, h1, h2)
         self.assertEqual(H.fields(), [field])
         self.assertTrue(H.is_hermitian())
-        
         # reference matrices
-        #H0 = mol.energy_nuc()
-        H1 = construct_one_body_op(mol)
-        H2 = construct_two_body_op(mol)
+        H1 = construct_one_body_op(h1)
+        H2 = construct_two_body_op(h2)
         # compare
-        self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - (H1+H2)), 0)
-        # Hartree Fock
-        myhf = scf.ROHF(mol)
-        myhf.kernel()
-        # coefficient matrix
-        coeff = myhf.mo_coeff
-        # MO basis integrals
-        #n_spo = 2*mol.nao_nr()        
-        mo_H1 = construct_one_body_op_mobasis(mol, coeff)
-        mo_H2 = construct_two_body_op_mobasis(mol, coeff)
-        H.set_mo_integrals(coeff)
-        #print(sparse.linalg.norm(mo_H1+mo_H2))
-        # compare
-        self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix()), sparse.linalg.norm(mo_H1+mo_H2))
-        #BUG: norm changes? coeff is not unitary!
+        self.assertTrue(np.allclose(H.as_matrix().toarray(), (H1+H2).toarray()))
         
-
+        
 # Alternative implementation of fermionic operators, as reference
 
 
@@ -120,64 +92,31 @@ def fermi_create_op(nmodes, c):
     return sparse.csr_matrix((data[nzi], (row_ind[nzi], col_ind[nzi])), shape=(2**nmodes, 2**nmodes))
 
 
-def construct_one_body_op(mol):
+def construct_one_body_op(h1):
     """
     Construct the one body term of the molecule.
     """
     # number of lattice sites
-    L = mol.nao_nr()
-    T = sparse.csr_matrix((2**(2*L), 2**(2*L)), dtype=float)
-    h1 = np.kron(mol.get_hcore(), np.identity(2))
-    
-    for i in range(2*L):
-        for j in range(2*L):
-            T += h1[i, j] * (fermi_create_op(2*L, 1 << i) @ fermi_annihil_op(2*L, 1 << j))
+    L = len(h1)
+    T = sparse.csr_matrix((2**(L), 2**(L)), dtype=float)
+    for i in range(L):
+        for j in range(L):
+            T += h1[i, j] * (fermi_create_op(L, 1 << (L-i-1)) @ fermi_annihil_op(L, 1 << (L-j-1)))
     return T
 
-def construct_one_body_op_mobasis(mol, coeff):
-    """
-    Construct the one body term of the molecule (molecular orbitals' basis').
-    """
-    # number of lattice sites
-    L = mol.nao_nr()
-    T = sparse.csr_matrix((2**(2*L), 2**(2*L)), dtype=float)
-    spin_coeff = np.kron(coeff, np.identity(2))
-    h1 = np.einsum('ji,jk,kl->il', spin_coeff, np.kron(mol.get_hcore(), np.identity(2)), spin_coeff)
-    
-    for i in range(2*L):
-        for j in range(2*L):
-            T += h1[i, j] * (fermi_create_op(2*L, 1 << i) @ fermi_annihil_op(2*L, 1 << j))
-    return T
 
-def construct_two_body_op(mol):
+def construct_two_body_op(h2):
     """
     Construct the two body term of the molecule.
     """
     # number of lattice sites
-    L = mol.nao_nr()
-    T = sparse.csr_matrix((2**(2*L), 2**(2*L)), dtype=float)
-    h2= mol.intor('int2e_spinor')
-    for i in range(2*L):
-        for j in range(2*L):
-            for k in range(2*L):
-                for l in range(2*L):
-                    T += h2[i, j, k, l] * (fermi_create_op(2*L, 1 << i) @ (fermi_annihil_op(2*L, 1 << j) @ fermi_create_op(2*L, 1 << k)) @ fermi_annihil_op(2*L, 1 << l))
-    return T
-
-def construct_two_body_op_mobasis(mol, coeff):
-    """
-    Construct the two body term of the molecule (molecular orbitals' basis')
-    """
-    # number of lattice sites
-    L = mol.nao_nr()
-    T = sparse.csr_matrix((2**(2*L), 2**(2*L)), dtype=float)
-    spin_coeff = np.kron(coeff, np.identity(2))
-    h2= ao2mo.kernel(mol.intor('int2e_spinor'), spin_coeff, compact=False)
-    for i in range(2*L):
-        for j in range(2*L):
-            for k in range(2*L):
-                for l in range(2*L):
-                    T += h2[i, j, k, l] * (fermi_create_op(2*L, 1 << i) @ (fermi_annihil_op(2*L, 1 << j) @ fermi_create_op(2*L, 1 << k)) @ fermi_annihil_op(2*L, 1 << l))
+    L = len(h2)
+    T = sparse.csr_matrix((2**(L), 2**(L)), dtype=float)
+    for i in range(L):
+        for j in range(L):
+            for k in range(L):
+                for l in range(L):
+                    T += h2[i, j, k, l] * (fermi_create_op(L, 1 << (L-i-1)) @ (fermi_annihil_op(L, 1 << (L-j-1)) @ fermi_create_op(L, 1 << (L-k-1))) @ fermi_annihil_op(L, 1 << (L-l-1)))
     return T
 
 

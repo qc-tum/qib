@@ -28,7 +28,6 @@ class BornOppenheimerHamiltonian(AbstractOperator):
         if field.lattice.nsites != self.n_spinor:
             raise ValueError(f"the lattice must have {2*self.n_spinor} sites, while {field.lattice.nsites} were given.")
         self.field = field
-        self.ao_mo = 'ao'
 
     def is_unitary(self):
         """
@@ -44,23 +43,27 @@ class BornOppenheimerHamiltonian(AbstractOperator):
         """
         return True
 
-    def set_mo_integrals(self, coeff):
+    def set_h0(self, h0: float):
         """
-        Change the spin-orbitals integral w.r.t. a coefficient matrix externally calculated (ex: Hartree Fock).
+        Set the constant term of the Hamiltonian.
         """
-        if self.ao_mo == 'mo':
-            return
-        
-        spin_coeff = np.kron(coeff, np.identity(2))
-        self.h1 = np.einsum('ji,jk,kl->il', spin_coeff.conj(), self.h1, spin_coeff)
-        self.h2 = np.einsum('pqrs,pi,qj,rk,sl->ijkl', self.h2, spin_coeff, spin_coeff, spin_coeff, spin_coeff)
-        self.ao_mo = 'mo'
+        self.h0 = h0
 
-    def reset_ao_integrals(self):
+    def set_h1(self, h1: Sequence[float]):
         """
-        TODO: Reset atomic integrals.
+        Set the one-body term of the Hamiltonian.
         """
-        return
+        if h1.shape != (self.n_spinor, self.n_spinor):
+            raise RuntimeError(f"h1 must have size ({self.n_spinor},{self.n_spinor}), while {h1.shape} was given")
+        self.h1 = np.array(h1)
+
+    def set_h2(self, h2: Sequence[float]):
+        """
+        Set the two-body term of the Hamiltonian.
+        """
+        if h2.shape != (self.n_spinor, self.n_spinor, self.n_spinor, self.n_spinor):
+            raise RuntimeError(f"hs must have size ({self.n_spinor},{self.n_spinor},{self.n_spinor},{self.n_spinor}), while {h2.shape} was given")
+        self.h2 = np.array(h2)
 
     def as_field_operator(self):
         """
