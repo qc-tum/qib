@@ -7,12 +7,12 @@ from qib.lattice import AbstractLattice
 class HexagonalLatticeConvention(enum.Enum):
     """
     Convention for the Hexagonal Lattice.
-    Example with 1 row and 5 columns for COLS_SHIFTED_UP convention:
-     _   _   _
-    / \_/ \_/ \
-    \_/ \_/ \_/
-      \_/ \_/
+    Example with 1 row and 5 columns for COLS_SHIFTED_UP convention::
 
+      _   _   _
+     / \_/ \_/ \
+     \_/ \_/ \_/
+       \_/ \_/
     """
     COLS_SHIFTED_UP = 1       # The even numbered columns are shifted up relative to odd numbered columns.
     ROWS_SHIFTED_LEFT = 2     # The even numbered rows are shifted left relative to odd numbered rows.
@@ -22,10 +22,10 @@ class HexagonalLatticeConvention(enum.Enum):
 class HexagonalLattice(AbstractLattice):
     """
     Hexagonal lattice.
-    The lattice has n full hexagons per row and m full hexagons per column.      
+    The lattice has n full hexagons per row and m full hexagons per column.
     """
     def __init__(self, shape: Sequence[int], pbc=False, delete=False, convention: HexagonalLatticeConvention=HexagonalLatticeConvention.COLS_SHIFTED_UP):
-        if len(shape) != 2: 
+        if len(shape) != 2:
             raise NotImplementedError("Hexagonal lattices require 2 dimensions, {len(shape)} were given")
         self.shape = tuple(shape)
         self.convention = convention
@@ -62,9 +62,9 @@ class HexagonalLattice(AbstractLattice):
         """
         if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP:
             if self.shape[1]>1:
-                nrows_square = 2*self.shape[0]+2 
+                nrows_square = 2*self.shape[0]+2
             else:
-                nrows_square = 2*self.shape[0]+1 
+                nrows_square = 2*self.shape[0]+1
             ncols_square = self.shape[1]+1
         if self.convention == HexagonalLatticeConvention.ROWS_SHIFTED_LEFT:
             if self.shape[0]>1:
@@ -85,30 +85,31 @@ class HexagonalLattice(AbstractLattice):
     def adjacency_matrix(self):
         """
         Construct the adjacency matrix, indicating nearest neighbors.
-        Hexagonal lattice equivalent to a rectangular one:
-         _   _   _      _   _   _
-        / \_/ \_/ \    | |_| |_| |
-        \_/ \_/ \_/ == |_| |_| |_|
-          \_/ \_/      . |_| |_| .
-          
+        Hexagonal lattice equivalent to a rectangular one::
+
+           _   _   _      _   _   _
+          / \_/ \_/ \    | |_| |_| |
+          \_/ \_/ \_/ == |_| |_| |_|
+            \_/ \_/      . |_| |_| .
+
         If delete == True, the 2 extra points are eliminated from the adjacency matrix.
         Otherwise, they are just disconnected (corresponding rows and columns are 0)
         """
         # An equivalent square graph is built.
         # For the COLS_SHIFTED_UP case (opposite for ROWS_SHIFTED_LEFT):
-        # nrows is the number of points in the hexagonal lattice 
-        # nrows is the number of points in the hexagonal lattice 
+        # nrows is the number of points in the hexagonal lattice
+        # nrows is the number of points in the hexagonal lattice
         if self.convention == HexagonalLatticeConvention.COLS_SHIFTED_UP:
             d_square = 0
             parity_shift_condition = (self.shape[1]%2 == 1)
-            
+
         if self.convention == HexagonalLatticeConvention.ROWS_SHIFTED_LEFT:
             d_square = 1
             parity_shift_condition = (self.shape[0]>1)
-        
+
         adj = np.zeros((self.nsites_square, self.nsites_square), dtype=int)
         idx = np.arange(self.nsites_square).reshape(self.shape_square)
-        # the y axis for COLS_SHIFTED_UP and x axis for ROWS_SHIFTED_LEFT are treated like the square graph case.  
+        # the y axis for COLS_SHIFTED_UP and x axis for ROWS_SHIFTED_LEFT are treated like the square graph case.
         # the other axis only has half of the connections.
         for d in range(self.ndim):
             for s in [-1, 1]:
@@ -132,10 +133,10 @@ class HexagonalLattice(AbstractLattice):
                     for (i, j) in zip(idx_cut.reshape(-1), ids_cut.reshape(-1)):
                         if parity_shift_condition:
                             if (s == -1 and (i+i//self.shape_square[1])%2 == 0) or (s == 1 and (i+i//self.shape_square[1])%2 == 1):
-                                adj[i, j] = 1    
+                                adj[i, j] = 1
                         else:
                             if (s == -1 and i%2 == 0) or (s == 1 and i%2 == 1):
-                                adj[i, j] = 1  
+                                adj[i, j] = 1
         if self.delete:
             adj = self._delete_extra_points(adj)
         else:
@@ -164,9 +165,9 @@ class HexagonalLattice(AbstractLattice):
             else:
                 adj = np.delete(adj, -1, 0)
                 adj = np.delete(adj, -1, 1)
-                
+
         return adj
-        
+
     def _disconnect_extra_points(self, adj):
         """
         Disconnects the 2 extra points from the adjacency matrix.
@@ -190,7 +191,7 @@ class HexagonalLattice(AbstractLattice):
             else:
                 adj[-1, :] = 0
                 adj[:, -1] = 0
-                
+
         return adj
 
     def index_to_coord(self, i: int) -> tuple:
@@ -254,4 +255,3 @@ class HexagonalLattice(AbstractLattice):
                 else:
                     shift += 1
         return int(np.ravel_multi_index(c, self.shape_square)) - shift
-            

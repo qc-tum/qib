@@ -8,19 +8,19 @@ class ContractionTreeNode:
     for describing the contraction.
 
     Member variables:
-        tid:            # index of new tensor after contraction
-        # indices as used by numpy.einsum; `idxL` and `idxR` can be empty in case this is a leaf node
-        idxL:           # contraction indices for left child node tensor
-        idxR:           # contraction indices for right child node tensor
-        idxout:         # contraction indices for new (output) tensor
-        openaxes:       # list of open axes of the leaf tensors, of the form [(tid, ax), ...]
-        trackaxes:      # i-th open axis corresponds to trackaxes[i]-th leg of node tensor;
-                        # in general not bijective due to partial contractions from multi-edges
-        parent:         # parent node
-        children:       # [nL, nR], left and right child nodes
+      * tid:            index of new tensor after contraction
+      * idxL:           contraction indices for left child node tensor
+      * idxR:           contraction indices for right child node tensor
+      * idxout:         contraction indices for new (output) tensor
+      * openaxes:       list of open axes of the leaf tensors, of the form [(tid, ax), ...]
+      * trackaxes:      i-th open axis corresponds to trackaxes[i]-th leg of node tensor;
+                        in general not bijective due to partial contractions from multi-edges
+      * parent:         parent node
+      * children:       [nL, nR], left and right child nodes
     """
     def __init__(self, tid: int, nL, idxL, nR, idxR, idxout, openaxes, trackaxes):
         self.tid = tid
+        # indices as used by numpy.einsum; `idxL` and `idxR` can be empty in case this is a leaf node
         self.idxL = list(idxL)
         self.idxR = list(idxR)
         self.idxout = list(idxout)

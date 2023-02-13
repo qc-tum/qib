@@ -8,10 +8,10 @@ from qib.lattice.shifted_lattice_convention import ShiftedLatticeConvention
 class BrickLattice(AbstractLattice):
     """
     Brick lattice.
-    The lattice has n full rectangles per row and m full rectangles per column.      
+    The lattice has n full rectangles per row and m full rectangles per column.
     """
     def __init__(self, shape: Sequence[int], pbc=False, delete=False, convention: ShiftedLatticeConvention=ShiftedLatticeConvention.COLS_SHIFTED_UP):
-        if len(shape) != 2: 
+        if len(shape) != 2:
             raise NotImplementedError("Brick lattices require 2 dimensions, {len(shape)} were given")
         self.shape = tuple(shape)
         self.convention = convention
@@ -49,9 +49,9 @@ class BrickLattice(AbstractLattice):
         """
         if self.convention == ShiftedLatticeConvention.COLS_SHIFTED_UP:
             if self.shape[1]>1:
-                nrows_square = 2*self.shape[0]+2 
+                nrows_square = 2*self.shape[0]+2
             else:
-                nrows_square = 2*self.shape[0]+1 
+                nrows_square = 2*self.shape[0]+1
             ncols_square = self.shape[1]+1
         if self.convention == ShiftedLatticeConvention.ROWS_SHIFTED_LEFT:
             if self.shape[0]>1:
@@ -72,12 +72,13 @@ class BrickLattice(AbstractLattice):
     def adjacency_matrix(self):
         """
         Construct the adjacency matrix, indicating nearest neighbors.
-        Brick lattice embedded in a square grid:
-                 _   _   _ 
+        Brick lattice embedded in a square grid::
+
+                 _   _   _
                 | |_| |_| |
                 |_| |_| |_|
                 . |_| |_| .
-          
+
         If delete == True, the 2 extra points are eliminated from the adjacency matrix.
         Otherwise, they are just disconnected (corresponding rows and columns are 0)
         """
@@ -85,14 +86,14 @@ class BrickLattice(AbstractLattice):
         if self.convention == ShiftedLatticeConvention.COLS_SHIFTED_UP:
             d_square = 0
             parity_shift_condition = (self.shape[1]%2 == 1)
-            
+
         if self.convention == ShiftedLatticeConvention.ROWS_SHIFTED_LEFT:
             d_square = 1
             parity_shift_condition = (self.shape[0]>1)
-        
+
         adj = np.zeros((self.nsites_square, self.nsites_square), dtype=int)
         idx = np.arange(self.nsites_square).reshape(self.shape_square)
-        # the y axis for COLS_SHIFTED_UP and x axis for ROWS_SHIFTED_LEFT are treated like the square graph case.  
+        # the y axis for COLS_SHIFTED_UP and x axis for ROWS_SHIFTED_LEFT are treated like the square graph case.
         # the other axis only has half of the connections.
         for d in range(self.ndim):
             for s in [-1, 1]:
@@ -116,10 +117,10 @@ class BrickLattice(AbstractLattice):
                     for (i, j) in zip(idx_cut.reshape(-1), ids_cut.reshape(-1)):
                         if parity_shift_condition:
                             if (s == -1 and (i+i//self.shape_square[1])%2 == 0) or (s == 1 and (i+i//self.shape_square[1])%2 == 1):
-                                adj[i, j] = 1    
+                                adj[i, j] = 1
                         else:
                             if (s == -1 and i%2 == 0) or (s == 1 and i%2 == 1):
-                                adj[i, j] = 1  
+                                adj[i, j] = 1
         if self.delete:
             adj = self._delete_extra_points(adj)
         else:
@@ -148,9 +149,9 @@ class BrickLattice(AbstractLattice):
             else:
                 adj = np.delete(adj, -1, 0)
                 adj = np.delete(adj, -1, 1)
-                
+
         return adj
-        
+
     def _disconnect_extra_points(self, adj):
         """
         Disconnects the 2 extra points from the adjacency matrix.
@@ -174,7 +175,7 @@ class BrickLattice(AbstractLattice):
             else:
                 adj[-1, :] = 0
                 adj[:, -1] = 0
-                
+
         return adj
 
     def index_to_coord(self, i: int) -> tuple:
@@ -238,4 +239,3 @@ class BrickLattice(AbstractLattice):
                 else:
                     shift += 1
         return int(np.ravel_multi_index(c, self.shape_square)) - shift
-            

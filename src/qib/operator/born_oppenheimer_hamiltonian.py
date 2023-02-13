@@ -7,13 +7,13 @@ from qib.operator import AbstractOperator, FieldOperator, FieldOperatorTerm, IFO
 class BornOppenheimerHamiltonian(AbstractOperator):
     """
     Born-Oppenheimer Hamiltonian.
-    Gets the one and two-body integrals on the SPIN-ORBITAL basis (same conventions as pyscf).
+    Gets the one and two-body integrals on the spin-orbital basis (same conventions as pyscf).
     Note that pyscf uses chemist's notation for MO integrals:
-        V = sum_{i,j,k,l} v_{i,j,k,l} a+_i a_j a+_k a_l
+    :math:`V = \sum_{i,j,k,\ell} v_{i,j,k,\ell} a^{\dagger}_i a_j a^{\dagger}_k a_\ell`
     """
     def __init__(self, field: Field, h0: float = None, h1: Sequence[float] = None, h2: Sequence[float] = None):
         """
-        Initialize the Hamiltonian through its SPIN-ORBITAL integrals.
+        Initialize the Hamiltonian through its spin-orbital integrals.
         """
         self.n_spinor = len(h1)
         self.h0 = h0

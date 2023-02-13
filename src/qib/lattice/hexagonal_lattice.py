@@ -8,10 +8,10 @@ from qib.lattice.brick_lattice import BrickLattice
 class HexagonalLattice(AbstractLattice):
     """
     Hexagonal lattice.
-    The lattice has n full hexagons per row and m full hexagons per column.      
+    The lattice has n full hexagons per row and m full hexagons per column.
     """
     def __init__(self, shape: Sequence[int], pbc=False, convention: ShiftedLatticeConvention=ShiftedLatticeConvention.COLS_SHIFTED_UP):
-        if len(shape) != 2: 
+        if len(shape) != 2:
             raise NotImplementedError("Hexagonal lattices require 2 dimensions, {len(shape)} were given")
         self.shape = tuple(shape)
         self.convention = convention
@@ -36,12 +36,12 @@ class HexagonalLattice(AbstractLattice):
 
     def equivalent_brick_lattice(self):
         """
-        Returns the equivalent brick lattice (delete=True)
-         _   _   _      _   _   _
-        / \_/ \_/ \    | |_| |_| |
-        \_/ \_/ \_/ == |_| |_| |_|
-          \_/ \_/      . |_| |_| .
-          
+        Returns the equivalent brick lattice (delete=True)::
+
+           _   _   _      _   _   _
+          / \_/ \_/ \    | |_| |_| |
+          \_/ \_/ \_/ == |_| |_| |_|
+            \_/ \_/      . |_| |_| .
         """
         # Calculates shape, including 2 possible extra points
         return BrickLattice(shape=self.shape, pbc=self.pbc, delete=True, convention=self.convention)
@@ -90,40 +90,38 @@ class HexagonalLattice(AbstractLattice):
             x = c[0]*2./(length*math.sqrt(3.))
             int_x = round(x)
             if abs(x - int_x) > tol:
-                 raise ValueError(f"Incompatible set of coordinates")
+                 raise ValueError("Incompatible set of coordinates")
             y = c[1]/length
             if int_x%2 == 0:
                 y -= 0.5
                 int_y = round(y)
                 if abs(y - int_y) > tol:
-                    raise ValueError(f"Incompatible set of coordinates")
+                    raise ValueError("Incompatible set of coordinates")
                 int_y = 2*(int_y//3) + (int_y)%3
             else:
                 int_y = round(y)
                 if abs(y - int_y) > tol:
-                    raise ValueError(f"Incompatible set of coordinates")
+                    raise ValueError("Incompatible set of coordinates")
                 int_y = 2*((int_y)//3) + (int_y%3)//2
-                
-            
+
+
         if self.convention == ShiftedLatticeConvention.ROWS_SHIFTED_LEFT:
             y = c[1]*2./(length*math.sqrt(3.))
             int_y = round(y)
             if abs(y - int_y) > tol:
-                raise ValueError(f"Incompatible set of coordinates")
+                raise ValueError("Incompatible set of coordinates")
             x = c[0]/length
             if int_y%2 == 0:
                 x -= 0.5
                 int_x = round(x)
                 if abs(x - int_x) > tol:
-                    raise ValueError(f"Incompatible set of coordinates")
+                    raise ValueError("Incompatible set of coordinates")
                 int_x = 2*(int_x//3) + (int_x)%3
             else:
                 int_x = round(x)
                 if abs(x - int_x) > tol:
-                    raise ValueError(f"Incompatible set of coordinates")
+                    raise ValueError("Incompatible set of coordinates")
                 int_x = 2*((int_x)//3) + (int_x%3)//2
 
         equiv_lattice = self.equivalent_brick_lattice()
         return equiv_lattice.coord_to_index((int_x,int_y))
-
-
