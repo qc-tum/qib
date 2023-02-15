@@ -8,8 +8,8 @@ class BornOppenheimerHamiltonian(AbstractOperator):
     """
     Born-Oppenheimer Hamiltonian.
     Gets the one and two-body integrals on the spin-orbital basis (same conventions as pyscf).
-    Note that pyscf uses chemist's notation for MO integrals:
-    :math:`V = \sum_{i,j,k,\ell} v_{i,j,k,\ell} a^{\dagger}_i a_j a^{\dagger}_k a_\ell`
+    We use physcs' notation for MO integrals:
+    :math:`V = 0.5 \sum_{i,j,k,\ell} v_{i,j,k,\ell} a^{\dagger}_i a^{\dagger}_j a_\ell a_k`
     """
     def __init__(self, field: Field, h0: float = None, h1: Sequence[float] = None, h2: Sequence[float] = None):
         """
@@ -76,10 +76,10 @@ class BornOppenheimerHamiltonian(AbstractOperator):
                                self.h1)
         # interaction term
         V = FieldOperatorTerm([IFODesc(self.field, IFOType.FERMI_CREATE),
-                               IFODesc(self.field, IFOType.FERMI_ANNIHIL),
                                IFODesc(self.field, IFOType.FERMI_CREATE),
+                               IFODesc(self.field, IFOType.FERMI_ANNIHIL),
                                IFODesc(self.field, IFOType.FERMI_ANNIHIL)],
-                               self.h2)
+                               self.h2*0.5)
         return FieldOperator([T, V])
 
     def as_matrix(self):

@@ -28,8 +28,8 @@ class TestBornOppenheimerHamiltonian(unittest.TestCase):
         H2 = construct_two_body_op(h2)
         # compare
         self.assertTrue(np.allclose(H.as_matrix().toarray(), (H1+H2).toarray()))
-        
-        
+
+
 # Alternative implementation of fermionic operators, as reference
 
 
@@ -116,7 +116,7 @@ def construct_two_body_op(h2):
         for j in range(L):
             for k in range(L):
                 for l in range(L):
-                    T += h2[i, j, k, l] * (fermi_create_op(L, 1 << (L-i-1)) @ (fermi_annihil_op(L, 1 << (L-j-1)) @ fermi_create_op(L, 1 << (L-k-1))) @ fermi_annihil_op(L, 1 << (L-l-1)))
+                    T += h2[i, j, k, l] * 0.5 * (fermi_create_op(L, 1 << (L-i-1)) @ (fermi_create_op(L, 1 << (L-j-1)) @ fermi_annihil_op(L, 1 << (L-k-1))) @ fermi_annihil_op(L, 1 << (L-l-1)))
     return T
 
 
