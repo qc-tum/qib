@@ -13,7 +13,7 @@ import qib
 project = "qib"
 copyright = "2023, TUM Quantum Computing Group"
 author = "TUM Quantum Computing Group"
-release = "0.0.1"
+release = "0.1.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
