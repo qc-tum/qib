@@ -4,11 +4,11 @@ import unittest
 import qib
 
 
-class TestBornOppenheimerHamiltonian(unittest.TestCase):
+class TestMolecularHamiltonian(unittest.TestCase):
 
-    def test_born_oppenhemier(self):
+    def test_molecular_hamiltonian(self):
         """
-        Test construction of the Born-Oppenheimer Hamiltonian.
+        Test construction of the Molecular Hamiltonian.
         """
         # underlying lattice
         latt = qib.lattice.FullyConnectedLattice((4,))
@@ -20,7 +20,7 @@ class TestBornOppenheimerHamiltonian(unittest.TestCase):
         h0 = np.random.rand()
         h1 = np.random.rand(4,4)
         h2 = np.random.rand(4,4,4,4)
-        H = qib.operator.BornOppenheimerHamiltonian(field, h0, h1, h2)
+        H = qib.operator.MolecularHamiltonian(field, h0, h1, h2)
         self.assertEqual(H.fields(), [field])
         self.assertTrue(H.is_hermitian())
         # reference matrices

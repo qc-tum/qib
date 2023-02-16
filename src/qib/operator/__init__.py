@@ -4,7 +4,7 @@ from qib.operator.field_operator import IFOType, IFODesc, FieldOperatorTerm, Fie
 from qib.operator.ising_hamiltonian import IsingConvention, IsingHamiltonian
 from qib.operator.heisenberg_hamiltonian import HeisenbergHamiltonian
 from qib.operator.fermi_hubbard_hamiltonian import FermiHubbardHamiltonian
-from qib.operator.born_oppenheimer_hamiltonian import BornOppenheimerHamiltonian
+from qib.operator.molecular_hamiltonian import MolecularHamiltonian
 from qib.operator.gates import (
     Gate,
     PauliXGate,

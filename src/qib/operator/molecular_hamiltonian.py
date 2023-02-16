@@ -4,10 +4,10 @@ from qib.field import ParticleType, Field
 from qib.operator import AbstractOperator, FieldOperator, FieldOperatorTerm, IFOType, IFODesc
 
 
-class BornOppenheimerHamiltonian(AbstractOperator):
+class MolecularHamiltonian(AbstractOperator):
     """
-    Born-Oppenheimer Hamiltonian.
-    Gets the one and two-body integrals on the spin-orbital basis (same conventions as pyscf).
+    Molecular Hamiltonian.
+    Constructs a molecular Hamiltonian starting from the one andtwo body integrals.
     We use physcs' notation for MO integrals:
     :math:`V = 0.5 \sum_{i,j,k,\ell} v_{i,j,k,\ell} a^{\dagger}_i a^{\dagger}_j a_\ell a_k`
     """
