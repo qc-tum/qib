@@ -12,7 +12,7 @@ class MolecularHamiltonian(AbstractOperator):
 
         H = c + \sum_{i,j} t_{i,j} a^{\dagger}_i a_j + \\frac{1}{2} \sum_{i,j,k,\ell} v_{i,j,k,\ell} a^{\dagger}_i a^{\dagger}_j a_{\ell} a_k
     """
-    def __init__(self, field: Field, c: float, tkin, vint):
+    def __init__(self, field: Field, c: float, tkin, vint, check=False):
         """
         Initialize the Hamiltonian by its kinetic and interaction term coefficients.
         """
@@ -34,6 +34,8 @@ class MolecularHamiltonian(AbstractOperator):
         self.tkin = tkin
         self.vint = vint
         self.field = field
+        if check:
+            self._check_symm()
 
     def is_unitary(self):
         """
@@ -92,3 +94,17 @@ class MolecularHamiltonian(AbstractOperator):
         List of fields the Hamiltonian acts on.
         """
         return [self.field]
+
+    def _check_symm(self):
+        """
+        Checks symmetries of the 1 and 2 body integrals.
+        #TODO: null elements?
+        """
+        if not np.allclose(self.tkin, self.tkin.conj().T):
+            raise RuntimeError("Broken symmetry for 1-body operator: <i|h1|j> = <j|h1|i>*")
+        if not np.allclose(self.vint, self.vint.transpose(1,0,3,2)):
+            raise RuntimeError("Broken symmetry for 2-body operator: <ij|h2|lk> = <ji|h2|kl>")
+        if not np.allclose(self.vint, self.vint.conj().transpose(2,3,0,1)):
+            raise RuntimeError("Broken symmetry for 2-body operator: <ij|h2|lk> = <lk|h2|ij>*")
+        if not np.allclose(self.vint, self.vint.conj().transpose(3,2,1,0)):
+            raise RuntimeError("Broken symmetry for 2-body operator: <ij|h2|lk> = <kl|h2|ji>*")

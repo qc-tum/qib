@@ -6,9 +6,9 @@ import qib
 
 class TestMolecularHamiltonian(unittest.TestCase):
 
-    def test_molecular_hamiltonian(self):
+    def test_random_molecular_hamiltonian(self):
         """
-        Test construction of a molecular Hamiltonian.
+        Test construction of a random molecular Hamiltonian.
         """
         # underlying lattice
         latt = qib.lattice.FullyConnectedLattice((4,))
@@ -27,6 +27,94 @@ class TestMolecularHamiltonian(unittest.TestCase):
         # compare
         self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - (c*sparse.identity(2**4) + Tkin + Vint)), 0)
 
+    def test_h2_molecular_hamiltonian(self):
+        """
+        Test construction of a H2 molecule's hamiltonian.
+        1 and 2-body spin-orbital integrals have been calculated with sto3g basis and in physicsit's notation.
+        Integrals' symmetries are checked.
+        """
+        # underlying lattice
+        latt = qib.lattice.FullyConnectedLattice((4,))
+        field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
+        c = np.random.standard_normal()
+        tkin = np.array([[-1.12844307, -0.,         -0.96798057, -0.        ],
+                        [-0.,         -1.12844307, -0.,         -0.96798057],
+                        [-0.96798057, -0.,         -1.12844307, -0.        ],
+                        [-0.,         -0.96798057, -0.,         -1.12844307]])
+        vint = np.array([[[[0.77499852,  0.,          0.44726437,  0.         ],
+                          [0.,          0.77499852,  0.,          0.44726437 ],
+                          [0.44726437,  0.,          0.57187854,  0.         ],
+                          [0.,          0.44726437,  0.,          0.57187854 ]],
+                         [[0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ]],
+                         [[0.44726437,  0.,          0.30060831,  0.         ],
+                          [0.,          0.44726437,  0.,          0.30060831 ],
+                          [0.30060831,  0.,          0.44726437,  0.         ],
+                          [0.,          0.30060831,  0.,          0.44726437 ]],
+                         [[0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ]]],
+                        [[[0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ]],
+                         [[0.77499852,  0.,          0.44726437,  0.         ],
+                          [0.,          0.77499852,  0.,          0.44726437 ],
+                          [0.44726437,  0.,          0.57187854,  0.         ],
+                          [0.,          0.44726437,  0.,          0.57187854 ]],
+                         [[0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ]],
+                         [[0.44726437,  0.,          0.30060831,  0.         ],
+                          [0.,          0.44726437,  0.,          0.30060831 ],
+                          [0.30060831,  0.,          0.44726437,  0.         ],
+                          [0.,          0.30060831,  0.,          0.44726437 ]]],
+                        [[[0.44726437,  0.,          0.30060831,  0.         ],
+                          [0.,          0.44726437,  0.,          0.30060831 ],
+                          [0.30060831,  0.,          0.44726437,  0.         ],
+                          [0.,          0.30060831,  0.,          0.44726437 ]],
+                         [[0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ]],
+                         [[0.57187854,  0.,          0.44726437,  0.         ],
+                          [0.,          0.57187854,  0.,          0.44726437 ],
+                          [0.44726437,  0.,          0.77499852,  0.         ],
+                          [0.,          0.44726437,  0.,          0.77499852 ]],
+                         [[0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ]]],
+                        [[[0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ]],
+                         [[0.44726437,  0.,          0.30060831,  0.         ],
+                          [0.,          0.44726437,  0.,          0.30060831 ],
+                          [0.30060831,  0.,          0.44726437,  0.         ],
+                          [0.,          0.30060831,  0.,          0.44726437 ]],
+                         [[0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ],
+                          [0.,          0.,          0.,          0.         ]],
+                         [[0.57187854,  0.,          0.44726437,  0.         ],
+                          [0.,          0.57187854,  0.,          0.44726437 ],
+                          [0.44726437,  0.,          0.77499852,  0.         ],
+                          [0.,          0.44726437,  0.,          0.77499852 ]]]])
+
+        # checks symmetries as well
+        H = qib.operator.MolecularHamiltonian(field, c, tkin, vint, check=True)
+        self.assertEqual(H.num_orbitals, 4)
+        self.assertEqual(H.fields(), [field])
+        # reference matrices
+        Tkin = construct_one_body_operator(tkin)
+        Vint = construct_two_body_operator(vint)
+        # compare
+        self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - (c*sparse.identity(2**4) + Tkin + Vint)), 0)
 
 # Alternative implementation of fermionic operators, as reference
 
