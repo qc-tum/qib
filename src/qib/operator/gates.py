@@ -1475,7 +1475,7 @@ class PrepareGate(Gate):
         xten = SymbolicTensor(0, x.shape, range(self.nqubits), str(hash(x.data.tobytes())))
         stn.add_tensor(xten)
         for i in range(self.nqubits):
-            stn.add_tensor(SymbolicTensor(1 + i, (2,), (self.nqubits + i,), "|0>"))
+            stn.add_tensor(SymbolicTensor(1 + i, (2,), (self.nqubits + i,), "|0>_2"))
         # virtual tensor for open axes
         stn.add_tensor(SymbolicTensor(-1, 2*self.nqubits * (2,),
                                       range(2*self.nqubits) if not self.transpose else
@@ -1486,7 +1486,7 @@ class PrepareGate(Gate):
         for i in range(self.nqubits):
             stn.add_bond(SymbolicBond(self.nqubits + i, (-1, 1 + i)))
         assert stn.is_consistent()
-        return TensorNetwork(stn, { xten.dataref: x, "|0>": np.array([ 1., 0.]) })
+        return TensorNetwork(stn, { xten.dataref: x, "|0>_2": np.array([ 1., 0.]) })
 
     def __copy__(self):
         """

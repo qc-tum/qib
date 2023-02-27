@@ -99,7 +99,7 @@ class TensorNetwork:
                 args.append(np.ones(shape[axes_map.index(j)]))
                 args.append([j])
         args.append(idxout)
-        return np.einsum(*args), axes_map
+        return np.einsum(*args, optimize=True), axes_map
 
     def contract_tree(self, scaffold):
         """

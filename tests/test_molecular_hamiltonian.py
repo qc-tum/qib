@@ -8,26 +8,24 @@ class TestMolecularHamiltonian(unittest.TestCase):
 
     def test_molecular_hamiltonian(self):
         """
-        Test construction of the Molecular Hamiltonian.
+        Test construction of a molecular Hamiltonian.
         """
         # underlying lattice
         latt = qib.lattice.FullyConnectedLattice((4,))
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
-        # parameters
-        # construct Hamiltonian 
-        # Example of 4 spin-orbitals: molecule H2 with sto3g basis
-        np.random.seed(0)
-        h0 = np.random.rand()
-        h1 = np.random.rand(4,4)
-        h2 = np.random.rand(4,4,4,4)
-        H = qib.operator.MolecularHamiltonian(field, h0, h1, h2)
+        # Hamiltonian coefficients
+        c = np.random.standard_normal()
+        tkin = np.random.standard_normal((4, 4))
+        tkin = 0.5 * (tkin + tkin.conj().T)
+        vint = np.random.standard_normal((4, 4, 4, 4))
+        H = qib.operator.MolecularHamiltonian(field, c, tkin, vint)
+        self.assertEqual(H.num_orbitals, 4)
         self.assertEqual(H.fields(), [field])
-        self.assertTrue(H.is_hermitian())
         # reference matrices
-        H1 = construct_one_body_op(h1)
-        H2 = construct_two_body_op(h2)
+        Tkin = construct_one_body_operator(tkin)
+        Vint = construct_two_body_operator(vint)
         # compare
-        self.assertTrue(np.allclose(H.as_matrix().toarray(), (H1+H2).toarray()))
+        self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - (c*sparse.identity(2**4) + Tkin + Vint)), 0)
 
 
 # Alternative implementation of fermionic operators, as reference
@@ -92,31 +90,34 @@ def fermi_create_op(nmodes, c):
     return sparse.csr_matrix((data[nzi], (row_ind[nzi], col_ind[nzi])), shape=(2**nmodes, 2**nmodes))
 
 
-def construct_one_body_op(h1):
+def construct_one_body_operator(h):
     """
-    Construct the one body term of the molecule.
+    Construct a one-body operator.
     """
     # number of lattice sites
-    L = len(h1)
-    T = sparse.csr_matrix((2**(L), 2**(L)), dtype=float)
+    L = len(h)
+    T = sparse.csr_matrix((2**L, 2**L), dtype=float)
     for i in range(L):
         for j in range(L):
-            T += h1[i, j] * (fermi_create_op(L, 1 << (L-i-1)) @ fermi_annihil_op(L, 1 << (L-j-1)))
+            T += h[i, j] * (fermi_create_op(L, 1 << (L-i-1)) @ fermi_annihil_op(L, 1 << (L-j-1)))
     return T
 
 
-def construct_two_body_op(h2):
+def construct_two_body_operator(h):
     """
-    Construct the two body term of the molecule.
+    Construct a two body operator.
     """
     # number of lattice sites
-    L = len(h2)
+    L = len(h)
     T = sparse.csr_matrix((2**(L), 2**(L)), dtype=float)
     for i in range(L):
         for j in range(L):
             for k in range(L):
                 for l in range(L):
-                    T += h2[i, j, k, l] * 0.5 * (fermi_create_op(L, 1 << (L-i-1)) @ (fermi_create_op(L, 1 << (L-j-1)) @ fermi_annihil_op(L, 1 << (L-k-1))) @ fermi_annihil_op(L, 1 << (L-l-1)))
+                    T += h[i, j, k, l] * 0.5 * (  fermi_create_op (L, 1 << (L-i-1))
+                                                @ fermi_create_op (L, 1 << (L-j-1))
+                                                @ fermi_annihil_op(L, 1 << (L-k-1))
+                                                @ fermi_annihil_op(L, 1 << (L-l-1)))
     return T
 
 
