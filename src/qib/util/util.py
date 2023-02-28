@@ -3,7 +3,7 @@ from typing import Sequence
 from qib.field import Field, Particle
 
 
-def crandn(size):
+def crandn(size=None):
     """
     Draw random samples from the standard complex normal (Gaussian) distribution.
     """
