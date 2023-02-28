@@ -3,13 +3,13 @@ from typing import Sequence
 from qib.field import Field, Particle
 
 
-def crandn(size=None):
+def crandn(size=None, rng: np.random.Generator=None):
     """
     Draw random samples from the standard complex normal (Gaussian) distribution.
     """
+    if rng is None: rng = np.random.default_rng()
     # 1/sqrt(2) is a normalization factor
-    return (np.random.standard_normal(size)
-       + 1j*np.random.standard_normal(size)) / np.sqrt(2)
+    return (rng.normal(size=size) + 1j*rng.normal(size=size)) / np.sqrt(2)
 
 
 def permute_gate_wires(u: np.ndarray, perm):

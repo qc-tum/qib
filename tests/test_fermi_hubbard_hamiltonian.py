@@ -10,12 +10,13 @@ class TestFermiHubbardHamiltonian(unittest.TestCase):
         """
         Test construction of the spinless Fermi-Hubbard Hamiltonian.
         """
+        rng = np.random.default_rng()
         # underlying lattice
         latt = qib.lattice.HexagonalLattice((1, 2), pbc=False)
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         # parameters
-        t = np.random.uniform(-1, 1)
-        u = np.random.uniform(0, 4)
+        t = rng.uniform(-1, 1)
+        u = rng.uniform( 0, 4)
         # construct Hamiltonian
         H = qib.operator.FermiHubbardHamiltonian(field, t, u, spin=False)
         self.assertEqual(H.fields(), [field])
@@ -31,12 +32,13 @@ class TestFermiHubbardHamiltonian(unittest.TestCase):
         """
         Test construction of the spinful Fermi-Hubbard Hamiltonian.
         """
+        rng = np.random.default_rng()
         # underlying spinful lattice
         latt = qib.lattice.IntegerLattice((2, 3), pbc=False)
         field = qib.field.Field(qib.field.ParticleType.FERMION, qib.lattice.LayeredLattice(latt, 2))
         # parameters
-        t = np.random.uniform(-1, 1)
-        u = np.random.uniform(0, 4)
+        t = rng.uniform(-1, 1)
+        u = rng.uniform( 0, 4)
         # construct Hamiltonian
         H = qib.operator.FermiHubbardHamiltonian(field, t, u, spin=True)
         self.assertEqual(H.fields(), [field])

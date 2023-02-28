@@ -10,13 +10,14 @@ class TestMolecularHamiltonian(unittest.TestCase):
         """
         Test construction of a random molecular Hamiltonian.
         """
+        rng = np.random.default_rng()
         # underlying lattice
         latt = qib.lattice.FullyConnectedLattice((4,))
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         # Hamiltonian coefficients
-        c = qib.util.crandn()
-        tkin = qib.util.crandn((4, 4))
-        vint = qib.util.crandn((4, 4, 4, 4))
+        c = qib.util.crandn(rng=rng)
+        tkin = qib.util.crandn((4, 4), rng)
+        vint = qib.util.crandn((4, 4, 4, 4), rng)
         H = qib.operator.MolecularHamiltonian(field, c, tkin, vint, qib.operator.MolecularHamiltonianSymmetry(0))
         self.assertEqual(H.num_orbitals, 4)
         self.assertEqual(H.fields(), [field])
@@ -31,18 +32,18 @@ class TestMolecularHamiltonian(unittest.TestCase):
         """
         Test symmetry checks of a molecular Hamiltonian.
         """
+        rng = np.random.default_rng()
         # underlying lattice
         latt = qib.lattice.FullyConnectedLattice((4,))
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
-        c = np.random.standard_normal()
         for syh in [qib.operator.MolecularHamiltonianSymmetry(0), qib.operator.MolecularHamiltonianSymmetry.HERMITIAN]:
             for syv in [qib.operator.MolecularHamiltonianSymmetry(0), qib.operator.MolecularHamiltonianSymmetry.VARCHANGE]:
                 # combined symmetry
                 symm = syh | syv
                 # Hamiltonian coefficients
-                c = qib.util.crandn()
-                tkin = qib.util.crandn((4, 4))
-                vint = qib.util.crandn((4, 4, 4, 4))
+                c = qib.util.crandn(rng=rng)
+                tkin = qib.util.crandn((4, 4), rng)
+                vint = qib.util.crandn((4, 4, 4, 4), rng)
                 if symm != qib.operator.MolecularHamiltonianSymmetry(0):
                     self.assertRaises(ValueError, lambda: qib.operator.MolecularHamiltonian(field, c, tkin, vint, symm))
                 if qib.operator.MolecularHamiltonianSymmetry.HERMITIAN in symm:

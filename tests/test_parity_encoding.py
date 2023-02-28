@@ -9,11 +9,13 @@ class TestParityEncoding(unittest.TestCase):
         """
         Test parity encoding of a fermionic field operator.
         """
+        rng = np.random.default_rng()
+
         # construct a random fermionic field operator with complex coefficients
         latt = qib.lattice.IntegerLattice((2, 3))
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         # only real and symmetric matrix (TODO: extend)
-        coeffs = np.random.standard_normal(2 * (latt.nsites,))
+        coeffs = rng.normal(size=2*(latt.nsites,))
         # symmetrize
         coeffs = 0.5 * (coeffs + coeffs.T)
         term = qib.operator.FieldOperatorTerm(

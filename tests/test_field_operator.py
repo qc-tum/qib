@@ -10,15 +10,17 @@ class TestFieldOperator(unittest.TestCase):
         """
         Test fermionic field operator functionality.
         """
+        rng = np.random.default_rng()
+
         for pbc in [False, True]:
             # construct fermionic reference Hamiltonian
             lattsize = (3, 4)
             # onsite energy coefficients
-            μ = np.random.random_sample(lattsize)
+            μ = rng.random(lattsize)
             # hopping and superconducting pairing coefficients
             # (last dimension corresponds to hopping in x- or y-direction)
-            t = np.random.random_sample(lattsize + (2,))
-            Δ = np.random.random_sample(lattsize + (2,))
+            t = rng.random(lattsize + (2,))
+            Δ = rng.random(lattsize + (2,))
             # reference Hamiltonian
             Href = construct_tight_binding_hamiltonian(μ, t, Δ, pbc=pbc)
             # must be symmetric

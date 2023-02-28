@@ -10,11 +10,13 @@ class TestCustomizedLattice(unittest.TestCase):
         """
         Test construction of adjacency matrices.
         """
+        rng = np.random.default_rng()
+
         n_list = [5, 7, 10, 15]
         for n in n_list:
             shape = (n,)
             nsites = math.prod(shape)
-            adj_ref = np.random.randint(-10, 10, (nsites, nsites))
+            adj_ref = rng.integers(-10, 10, (nsites, nsites))
             adj_ref += adj_ref.T
             for i in range(nsites):
                 adj_ref[i,i] = 0
@@ -26,7 +28,7 @@ class TestCustomizedLattice(unittest.TestCase):
 
             shape = (n,n)
             nsites = math.prod(shape)
-            adj_ref = np.random.randint(-10, 10, (nsites, nsites))
+            adj_ref = rng.integers(-10, 10, (nsites, nsites))
             adj_ref += adj_ref.T
             for i in range(nsites):
                 adj_ref[i,i] = 0
@@ -38,7 +40,7 @@ class TestCustomizedLattice(unittest.TestCase):
 
             shape = (n, 2, 3)
             nsites = math.prod(shape)
-            adj_ref = np.random.randint(-10, 10, (nsites, nsites))
+            adj_ref = rng.integers(-10, 10, (nsites, nsites))
             adj_ref += adj_ref.T
             for i in range(nsites):
                 adj_ref[i,i] = 0
@@ -52,11 +54,13 @@ class TestCustomizedLattice(unittest.TestCase):
         """
         Test lattice coordinate indexing.
         """
+        rng = np.random.default_rng()
+
         # one-dimensional lattice
         for L in range(3, 10):
             shape = (L,)
             nsites = math.prod(shape)
-            adj_ref = np.random.randint(-10, 10, (nsites, nsites))
+            adj_ref = rng.integers(-10, 10, (nsites, nsites))
             adj_ref += adj_ref.T
             for i in range(nsites):
                 adj_ref[i,i] = 0
@@ -69,7 +73,7 @@ class TestCustomizedLattice(unittest.TestCase):
             for Ly in range(3, 5):
                 shape = (Lx, Ly)
                 nsites = math.prod(shape)
-                adj_ref = np.random.randint(-10, 10, (nsites, nsites))
+                adj_ref = rng.integers(-10, 10, (nsites, nsites))
                 adj_ref += adj_ref.T
                 for i in range(nsites):
                     adj_ref[i,i] = 0
@@ -83,7 +87,7 @@ class TestCustomizedLattice(unittest.TestCase):
                 for Lz in range(3, 5):
                     shape = (Lx, Ly, Lz)
                     nsites = math.prod(shape)
-                    adj_ref = np.random.randint(-10, 10, (nsites, nsites))
+                    adj_ref = rng.integers(-10, 10, (nsites, nsites))
                     adj_ref += adj_ref.T
                     for i in range(nsites):
                         adj_ref[i,i] = 0

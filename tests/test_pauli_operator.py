@@ -10,6 +10,8 @@ class TestPauliOperator(unittest.TestCase):
         """
         Test handling of Pauli strings.
         """
+        rng = np.random.default_rng()
+
         L = 5
         latt = qib.lattice.IntegerLattice((L,), pbc=True)
         field = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
@@ -52,9 +54,9 @@ class TestPauliOperator(unittest.TestCase):
         for nqubits in range(1, 10):
             Plist = []
             for j in range(2):
-                z = np.random.randint(0, 2, nqubits)
-                x = np.random.randint(0, 2, nqubits)
-                q = np.random.randint(0, 4)
+                z = rng.integers(0, 2, nqubits)
+                x = rng.integers(0, 2, nqubits)
+                q = rng.integers(0, 4)
                 Plist.append(qib.PauliString(z, x, q))
             self.assertEqual(sparse.linalg.norm( (Plist[0] @ Plist[1]).as_matrix()
                                                 - Plist[0].as_matrix() @ Plist[1].as_matrix()), 0)

@@ -10,10 +10,11 @@ class TestHeisenbergHamiltonian(unittest.TestCase):
         """
         Test construction of the Heisenberg model Hamiltonian.
         """
+        rng = np.random.default_rng()
         L = 5
         # Hamiltonian parameters
-        J = [np.random.uniform(-5,5) for i in range(3)]
-        h = [np.random.uniform(-5,5) for i in range(3)]
+        J = [rng.uniform(-5, 5) for i in range(3)]
+        h = [rng.uniform(-5, 5) for i in range(3)]
         # construct Hamiltonian
         latt = qib.lattice.IntegerLattice((L,), pbc=False)
         field = qib.field.Field(qib.field.ParticleType.QUBIT, latt)

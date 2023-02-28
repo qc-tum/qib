@@ -23,7 +23,8 @@ class VQE:
         self.ansatz = ansatz
         self.optimizer = optimizer
         if optimizer.x0 is None:
-            self.optimizer.x0 = np.random.rand(self.ansatz.num_parameters)
+            rng = np.random.default_rng()
+            self.optimizer.x0 = rng.random(self.ansatz.num_parameters)
         self.initial_state = np.array(initial_state)
         if not measure_method == "statevector":
             raise NotImplementedError(f"The measuring method {measure_method} has not been implemented yet. Only 'statevector' is available.")
@@ -36,7 +37,7 @@ class VQE:
             state = self.ansatz.as_matrix(params).toarray()@self.initial_state
             energy = measure_expectation_statevector(pauli_op, state)
             return energy
-            
+
         res = minimize(fun = energy_func,
                        x0 = self.optimizer.x0,
                        args = self.optimizer.args,
@@ -45,7 +46,7 @@ class VQE:
                        tol = self.optimizer.tol,
                        callback = self.optimizer.callback,
                        options = self.optimizer.options)
-        
+
         self._optimal_params = res.x
         return res
 
