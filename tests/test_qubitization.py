@@ -6,11 +6,13 @@ import qib
 
 
 class TestQubitization(unittest.TestCase):
-    
+
     def test_projector_controlled_phase_shift(self):
         """
         Test the projector controlled phase shift.
         """
+        rng = np.random.default_rng()
+
         # encoding qubits' field
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
                                  qib.lattice.IntegerLattice((4,), pbc=False))
@@ -30,7 +32,7 @@ class TestQubitization(unittest.TestCase):
                 processing.set_theta(np.pi)
                 self.assertTrue(np.allclose(processing.as_matrix(), -np.identity(2**(len(state)))))
                 # random angle, comparison with definition
-                theta = np.random.uniform(0, 2*np.pi)
+                theta = rng.uniform(0, 2*np.pi)
                 processing.set_theta(theta)
                 binary_index = int(''.join(map(str,state)), 2)
                 basis_state = np.zeros((2**len(state)))
@@ -43,18 +45,20 @@ class TestQubitization(unittest.TestCase):
                                             np.kron(np.kron(np.identity(2**(1-i)), mat_proc), np.identity(2**(4-len(state))))))
                 self.assertTrue(np.allclose(mat_proc, mat_ref))
                 # check particles, wires and fields
-                self.assertTrue(processing.num_wires==len(state)+i)   
+                self.assertTrue(processing.num_wires==len(state)+i)
                 #print("method: ", method, "/ state: ", state, "\t...OK!")
 
     def test_eigenvalue_transformation(self):
         """
         Test the eigenvalue transformation.
         """
+        rng = np.random.default_rng()
+
         # construct a simple Hamiltonian
         latt = qib.lattice.IntegerLattice((5,), pbc=True)
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
-        H = qib.operator.HeisenbergHamiltonian(field1, np.random.standard_normal(size=3),
-                                                       np.random.standard_normal(size=3))
+        H = qib.operator.HeisenbergHamiltonian(field1, rng.normal(size=3),
+                                                       rng.normal(size=3))
         # rescale parameters (effectively rescales overall Hamiltonian)
         scale = 1.25 * np.linalg.norm(H.as_matrix().toarray(), ord=2)
         H.J /= scale
@@ -84,13 +88,13 @@ class TestQubitization(unittest.TestCase):
                 self.assertTrue(np.allclose(np.identity(2**(latt.nsites + field2.lattice.nsites)),
                                             eigen_transform.as_circuit().as_matrix([field2, field1]).toarray()))
                 # random theta
-                theta = [np.random.uniform(0, 2*np.pi) for i in range(5)]
+                theta = [rng.uniform(0, 2*np.pi) for i in range(5)]
                 for i in range(1, 5):
                     eigen_transform.set_theta_seq(theta[:i])
                     mat_class = eigen_transform.as_matrix()
                     circ_class = eigen_transform.as_circuit().as_matrix([field2, field1]).toarray()[:2**6, :2**6]
                     self.assertTrue(np.allclose(mat_class, circ_class))
-    
+
                 # TODO: add more tests
                 #print("method encoding: ", method_enc, "method processing: ", method_proc, "/ state: ", [0], "\t...OK!")
 

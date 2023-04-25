@@ -115,10 +115,12 @@ class TestCompactEncoding(unittest.TestCase):
         """
         Test encoding of a fermionic field operator.
         """
+        rng = np.random.default_rng()
+
         # construct fermionic field operator
         latt_fermi = qib.lattice.IntegerLattice((3, 3), pbc=False)
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt_fermi)
-        coeffs = np.random.standard_normal(2 * (latt_fermi.nsites,))
+        coeffs = rng.standard_normal(2 * (latt_fermi.nsites,))
         # symmetrize
         coeffs = 0.5 * (coeffs + coeffs.T)
         # only on-site and nearest neighbors

@@ -40,12 +40,13 @@ class TestGates(unittest.TestCase):
         """
         Test implementation of rotation gates.
         """
+        rng = np.random.default_rng()
         # create a qubit the gates can act on
         field = qib.field.Field(qib.field.ParticleType.QUBIT,
                                 qib.lattice.IntegerLattice((5,), pbc=False))
         q = qib.field.Qubit(field, 3)
-        θ = np.random.uniform(0, 2*np.pi)
-        nθ = np.random.standard_normal(size=3)
+        θ = rng.uniform(0, 2*np.pi)
+        nθ = rng.normal(size=3)
         gates = [qib.RxGate(θ, q),
                   qib.RyGate(θ, q),
                   qib.RzGate(θ, q),
@@ -117,7 +118,8 @@ class TestGates(unittest.TestCase):
         """
         Test implementation of the phase factor gate.
         """
-        gate = qib.PhaseFactorGate(np.random.standard_normal(), 3)
+        rng = np.random.default_rng()
+        gate = qib.PhaseFactorGate(rng.normal(), 3)
         self.assertTrue(gate.is_unitary())
         self.assertFalse(gate.is_hermitian())
         self.assertEqual(gate.num_wires, 3)
@@ -143,8 +145,9 @@ class TestGates(unittest.TestCase):
         """
         Test implementation of the "prepare" gate.
         """
+        rng = np.random.default_rng()
         for tp in [False, True]:
-            gate = qib.PrepareGate(np.random.standard_normal(size=8), 3, transpose=tp)
+            gate = qib.PrepareGate(rng.normal(size=8), 3, transpose=tp)
             # must be normalized
             self.assertTrue(np.allclose(np.linalg.norm(gate.vec, ord=1), 1))
             self.assertTrue(gate.is_unitary())
@@ -176,6 +179,8 @@ class TestGates(unittest.TestCase):
         """
         Test implementation of controlled quantum gates.
         """
+        rng = np.random.default_rng()
+
         for cs in [0, 1]:
             # construct the CNOT gate
             cnot = qib.ControlledGate(qib.PauliXGate(), 1, ctrl_state=[cs])
@@ -243,7 +248,7 @@ class TestGates(unittest.TestCase):
         latt = qib.lattice.IntegerLattice((5,), pbc=False)
         field3 = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         # field operator term
-        coeffs = qib.util.crandn((5, 5))
+        coeffs = qib.util.crandn((5, 5), rng)
         coeffs = 0.5 * (coeffs + coeffs.conj().T)
         term = qib.operator.FieldOperatorTerm(
             [qib.operator.IFODesc(field3, qib.operator.IFOType.FERMI_CREATE),
@@ -279,11 +284,13 @@ class TestGates(unittest.TestCase):
         """
         Test implementation of multiplexed quantum gates.
         """
+        rng = np.random.default_rng()
+
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT,
                                   qib.lattice.IntegerLattice((5,), pbc=False))
         qt = qib.field.Qubit(field1, 1)
         tgates = [qib.PauliXGate(qt),
-                  qib.RotationGate(np.random.standard_normal(size=3), qt),
+                  qib.RotationGate(rng.normal(size=3), qt),
                   qib.operator.SGate(qt),
                   qib.HadamardGate(qt)]
         # construct a multiplexed gate
@@ -321,7 +328,7 @@ class TestGates(unittest.TestCase):
         h = [None, None]
         for i in range(2):
             # field operator term
-            coeffs = qib.util.crandn((5, 5))
+            coeffs = qib.util.crandn((5, 5), rng)
             coeffs = 0.5 * (coeffs + coeffs.conj().T)
             term = qib.operator.FieldOperatorTerm(
                 [qib.operator.IFODesc(field3, qib.operator.IFOType.FERMI_CREATE),
@@ -404,12 +411,13 @@ class TestGates(unittest.TestCase):
         """
         Test the block encoding gate.
         """
+        rng = np.random.default_rng()
+
         # construct a simple Hamiltonian
         L = 5
         latt = qib.lattice.IntegerLattice((L,), pbc=True)
         field1 = qib.field.Field(qib.field.ParticleType.QUBIT, latt)
-        H = qib.operator.HeisenbergHamiltonian(field1, np.random.standard_normal(size=3),
-                                                        np.random.standard_normal(size=3))
+        H = qib.operator.HeisenbergHamiltonian(field1, rng.normal(size=3), rng.normal(size=3))
         # rescale parameters (effectively rescales overall Hamiltonian)
         scale = 1.25 * np.linalg.norm(H.as_matrix().toarray(), ord=2)
         H.J /= scale
@@ -430,10 +438,10 @@ class TestGates(unittest.TestCase):
             gate.set_auxiliary_qubits([q])
             self.assertTrue(gate.fields() == [field2, field1])
             # principal quantum state
-            ψp = qib.util.crandn(2**L)
+            ψp = qib.util.crandn(2**L, rng)
             ψp /= np.linalg.norm(ψp)
             # quantum state on auxiliary register
-            ψa = np.kron(qib.util.crandn(8), [1, 0])
+            ψa = np.kron(qib.util.crandn(8, rng), [1, 0])
             ψa /= np.linalg.norm(ψa)
             # overall quantum state
             ψ = np.kron(ψa, ψp)

@@ -6,115 +6,55 @@ import qib
 
 class TestMolecularHamiltonian(unittest.TestCase):
 
-    def test_random_molecular_hamiltonian(self):
+    def test_molecular_hamiltonian_construction(self):
         """
         Test construction of a random molecular Hamiltonian.
         """
+        rng = np.random.default_rng()
         # underlying lattice
         latt = qib.lattice.FullyConnectedLattice((4,))
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         # Hamiltonian coefficients
-        c = np.random.standard_normal()
-        tkin = np.random.standard_normal((4, 4))
-        tkin = 0.5 * (tkin + tkin.conj().T)
-        vint = np.random.standard_normal((4, 4, 4, 4))
-        H = qib.operator.MolecularHamiltonian(field, c, tkin, vint)
+        c = qib.util.crandn(rng=rng)
+        tkin = qib.util.crandn((4, 4), rng)
+        vint = qib.util.crandn((4, 4, 4, 4), rng)
+        H = qib.operator.MolecularHamiltonian(field, c, tkin, vint, qib.operator.MolecularHamiltonianSymmetry(0))
         self.assertEqual(H.num_orbitals, 4)
         self.assertEqual(H.fields(), [field])
+        self.assertFalse(H.is_hermitian())
         # reference matrices
         Tkin = construct_one_body_operator(tkin)
         Vint = construct_two_body_operator(vint)
         # compare
         self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - (c*sparse.identity(2**4) + Tkin + Vint)), 0)
 
-    def test_h2_molecular_hamiltonian(self):
+    def test_molecular_hamiltonian_symmetries(self):
         """
-        Test construction of a H2 molecule's hamiltonian.
-        1 and 2-body spin-orbital integrals have been calculated with sto3g basis and in physicsit's notation.
-        Integrals' symmetries are checked.
+        Test symmetry checks of a molecular Hamiltonian.
         """
+        rng = np.random.default_rng()
         # underlying lattice
         latt = qib.lattice.FullyConnectedLattice((4,))
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
-        c = np.random.standard_normal()
-        tkin = np.array([[-1.12844307, -0.,         -0.96798057, -0.        ],
-                        [-0.,         -1.12844307, -0.,         -0.96798057],
-                        [-0.96798057, -0.,         -1.12844307, -0.        ],
-                        [-0.,         -0.96798057, -0.,         -1.12844307]])
-        vint = np.array([[[[0.77499852,  0.,          0.44726437,  0.         ],
-                          [0.,          0.77499852,  0.,          0.44726437 ],
-                          [0.44726437,  0.,          0.57187854,  0.         ],
-                          [0.,          0.44726437,  0.,          0.57187854 ]],
-                         [[0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ]],
-                         [[0.44726437,  0.,          0.30060831,  0.         ],
-                          [0.,          0.44726437,  0.,          0.30060831 ],
-                          [0.30060831,  0.,          0.44726437,  0.         ],
-                          [0.,          0.30060831,  0.,          0.44726437 ]],
-                         [[0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ]]],
-                        [[[0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ]],
-                         [[0.77499852,  0.,          0.44726437,  0.         ],
-                          [0.,          0.77499852,  0.,          0.44726437 ],
-                          [0.44726437,  0.,          0.57187854,  0.         ],
-                          [0.,          0.44726437,  0.,          0.57187854 ]],
-                         [[0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ]],
-                         [[0.44726437,  0.,          0.30060831,  0.         ],
-                          [0.,          0.44726437,  0.,          0.30060831 ],
-                          [0.30060831,  0.,          0.44726437,  0.         ],
-                          [0.,          0.30060831,  0.,          0.44726437 ]]],
-                        [[[0.44726437,  0.,          0.30060831,  0.         ],
-                          [0.,          0.44726437,  0.,          0.30060831 ],
-                          [0.30060831,  0.,          0.44726437,  0.         ],
-                          [0.,          0.30060831,  0.,          0.44726437 ]],
-                         [[0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ]],
-                         [[0.57187854,  0.,          0.44726437,  0.         ],
-                          [0.,          0.57187854,  0.,          0.44726437 ],
-                          [0.44726437,  0.,          0.77499852,  0.         ],
-                          [0.,          0.44726437,  0.,          0.77499852 ]],
-                         [[0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ]]],
-                        [[[0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ]],
-                         [[0.44726437,  0.,          0.30060831,  0.         ],
-                          [0.,          0.44726437,  0.,          0.30060831 ],
-                          [0.30060831,  0.,          0.44726437,  0.         ],
-                          [0.,          0.30060831,  0.,          0.44726437 ]],
-                         [[0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ],
-                          [0.,          0.,          0.,          0.         ]],
-                         [[0.57187854,  0.,          0.44726437,  0.         ],
-                          [0.,          0.57187854,  0.,          0.44726437 ],
-                          [0.44726437,  0.,          0.77499852,  0.         ],
-                          [0.,          0.44726437,  0.,          0.77499852 ]]]])
+        for syh in [qib.operator.MolecularHamiltonianSymmetry(0), qib.operator.MolecularHamiltonianSymmetry.HERMITIAN]:
+            for syv in [qib.operator.MolecularHamiltonianSymmetry(0), qib.operator.MolecularHamiltonianSymmetry.VARCHANGE]:
+                # combined symmetry
+                symm = syh | syv
+                # Hamiltonian coefficients
+                c = qib.util.crandn(rng=rng)
+                tkin = qib.util.crandn((4, 4), rng)
+                vint = qib.util.crandn((4, 4, 4, 4), rng)
+                if symm != qib.operator.MolecularHamiltonianSymmetry(0):
+                    self.assertRaises(ValueError, lambda: qib.operator.MolecularHamiltonian(field, c, tkin, vint, symm))
+                if qib.operator.MolecularHamiltonianSymmetry.HERMITIAN in symm:
+                    c = c.real
+                    tkin = 0.5 * (tkin + tkin.conj().T)
+                    vint = 0.5 * (vint + vint.conj().transpose((2, 3, 0, 1)))
+                if qib.operator.MolecularHamiltonianSymmetry.VARCHANGE in symm:
+                    vint = 0.5 * (vint + vint.transpose((1, 0, 3, 2)))
+                # checks symmetries automatically
+                qib.operator.MolecularHamiltonian(field, c, tkin, vint, symm)
 
-        # checks symmetries as well
-        H = qib.operator.MolecularHamiltonian(field, c, tkin, vint, check=True)
-        self.assertEqual(H.num_orbitals, 4)
-        self.assertEqual(H.fields(), [field])
-        # reference matrices
-        Tkin = construct_one_body_operator(tkin)
-        Vint = construct_two_body_operator(vint)
-        # compare
-        self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - (c*sparse.identity(2**4) + Tkin + Vint)), 0)
 
 # Alternative implementation of fermionic operators, as reference
 
@@ -178,35 +118,36 @@ def fermi_create_op(nmodes, c):
     return sparse.csr_matrix((data[nzi], (row_ind[nzi], col_ind[nzi])), shape=(2**nmodes, 2**nmodes))
 
 
-def construct_one_body_operator(h):
+def construct_one_body_operator(coeffs: np.ndarray):
     """
     Construct a one-body operator.
     """
     # number of lattice sites
-    L = len(h)
-    T = sparse.csr_matrix((2**L, 2**L), dtype=float)
+    L = len(coeffs)
+    T = sparse.csr_matrix((2**L, 2**L), dtype=coeffs.dtype)
     for i in range(L):
         for j in range(L):
-            T += h[i, j] * (fermi_create_op(L, 1 << (L-i-1)) @ fermi_annihil_op(L, 1 << (L-j-1)))
+            T += coeffs[i, j] * (fermi_create_op(L, 1 << (L-i-1)) @ fermi_annihil_op(L, 1 << (L-j-1)))
     return T
 
 
-def construct_two_body_operator(h):
+def construct_two_body_operator(coeffs: np.ndarray):
     """
     Construct a two body operator.
     """
     # number of lattice sites
-    L = len(h)
-    T = sparse.csr_matrix((2**(L), 2**(L)), dtype=float)
+    L = len(coeffs)
+    V = sparse.csr_matrix((2**L, 2**L), dtype=coeffs.dtype)
     for i in range(L):
         for j in range(L):
             for k in range(L):
                 for l in range(L):
-                    T += h[i, j, k, l] * 0.5 * (  fermi_create_op (L, 1 << (L-i-1))
-                                                @ fermi_create_op (L, 1 << (L-j-1))
-                                                @ fermi_annihil_op(L, 1 << (L-k-1))
-                                                @ fermi_annihil_op(L, 1 << (L-l-1)))
-    return T
+                    V += 0.5 * coeffs[i, j, k, l] * (
+                          fermi_create_op (L, 1 << (L-i-1))
+                        @ fermi_create_op (L, 1 << (L-j-1))
+                        @ fermi_annihil_op(L, 1 << (L-l-1))  # note: k and l are interchanged
+                        @ fermi_annihil_op(L, 1 << (L-k-1)))
+    return V
 
 
 if __name__ == "__main__":
