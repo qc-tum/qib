@@ -50,6 +50,11 @@ class TestPauliOperator(unittest.TestCase):
         # logical product
         self.assertEqual(sparse.linalg.norm(( P @ P2).as_matrix()
                                             - P.as_matrix() @ P2.as_matrix()), 0)
+        # Pauli string commutes with itself
+        self.assertTrue(P.commutes_with(P))
+        # the two Pauli strings do not commute
+        self.assertFalse(P.commutes_with(P2))
+        self.assertFalse(P2.commutes_with(P))
         # logical product for various lengths
         for nqubits in range(1, 10):
             Plist = []

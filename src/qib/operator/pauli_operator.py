@@ -193,6 +193,12 @@ class PauliString(AbstractOperator):
             and np.array_equal(self.x, other.x)
             and self.q == other.q)
 
+    def commutes_with(self, other):
+        """
+        Test whether the Pauli string commutes with another Pauli string.
+        """
+        return (np.dot(self.x, other.z) + np.dot(self.z, other.x)) % 2 == 0
+
     def as_matrix(self):
         """
         Generate the sparse matrix representation of the Pauli string.
@@ -275,6 +281,12 @@ class WeightedPauliString(AbstractOperator):
         Number of qubits, i.e., length of Pauli string, including identities.
         """
         return self.paulis.num_qubits
+
+    def commutes_with(self, other):
+        """
+        Test whether the weighted Pauli string commutes with another weighted Pauli string.
+        """
+        return self.paulis.commutes_with(other.paulis)
 
     def as_matrix(self):
         """
