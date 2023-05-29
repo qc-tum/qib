@@ -1,6 +1,6 @@
 import math
-import numpy as np
 from typing import Sequence
+import numpy as np
 from qib.lattice import AbstractLattice
 
 
@@ -100,6 +100,6 @@ class IntegerLattice(AbstractLattice):
         """
         Map lattice coordinate to linear index.
         """
-        for i in range(len(self.shape)):
-            assert c[i] < self.shape[i]
+        for i, n in enumerate(self.shape):
+            assert c[i] < n
         return int(np.ravel_multi_index(c, self.shape))

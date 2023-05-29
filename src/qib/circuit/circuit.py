@@ -1,6 +1,6 @@
-import numpy as np
-from typing import Sequence
 from copy import copy
+from typing import Sequence
+import numpy as np
 from qib.operator import Gate
 from qib.field import Field
 from qib.tensor_network import SymbolicTensor, SymbolicTensorNetwork, TensorNetwork
@@ -13,8 +13,11 @@ class Circuit:
 
     We follow the convention that the first gate in the list is applied first.
     """
-    def __init__(self, gates: Sequence[Gate]=[]):
-        self.gates = list(gates)
+    def __init__(self, gates: Sequence[Gate]=None):
+        if gates is None:
+            self.gates = []
+        else:
+            self.gates = list(gates)
 
     def append_gate(self, gate: Gate):
         """
@@ -64,9 +67,9 @@ class Circuit:
         """
         if not self.gates:
             raise RuntimeError("missing gates, hence cannot compute matrix representation of circuit")
-        mat = self.gates[0]._circuit_matrix(fields)
+        mat = self.gates[0].as_circuit_matrix(fields)
         for g in self.gates[1:]:
-            mat = g._circuit_matrix(fields) @ mat
+            mat = g.as_circuit_matrix(fields) @ mat
         return mat
 
     def as_tensornet(self, fields: Sequence[Field]):
@@ -89,7 +92,7 @@ class Circuit:
         for gate in self.gates:
             prtcl = gate.particles()
             iwire = [map_particle_to_wire(fields, p) for p in prtcl]
-            if any([iw < 0 for iw in iwire]):
+            if any(iw < 0 for iw in iwire):
                 raise RuntimeError("particle not found among fields")
             gate_net = gate.as_tensornet()
             assert gate_net.num_open_axes == 2*len(prtcl)

@@ -1,6 +1,6 @@
-import numpy as np
 import math
 import unittest
+import numpy as np
 import qib
 
 

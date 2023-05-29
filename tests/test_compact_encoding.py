@@ -1,7 +1,7 @@
+import unittest
 import numpy as np
 from scipy import sparse
 import scipy.sparse.linalg as spla
-import unittest
 import qib
 from qib.transform.compact_encoding import _encode_edge_operator, _encode_vertex_operator
 
@@ -135,7 +135,7 @@ class TestCompactEncoding(unittest.TestCase):
         # must be symmetric
         self.assertEqual(spla.norm(Hfield_mat - Hfield_mat.conj().T), 0)
         # eigenvalues
-        ϵref = np.linalg.eigvalsh(Hfield_mat.toarray())
+        en_ref = np.linalg.eigvalsh(Hfield_mat.toarray())
 
         # encode Hamiltonian
         Henc, latt_enc = qib.transform.compact_encode_field_operator(Hfield)
@@ -163,7 +163,8 @@ class TestCompactEncoding(unittest.TestCase):
         # stabilizers must commute
         self.assertEqual(spla.norm(comm(R1, R2)), 0)
         # define projector onto stabilizer subspaces
-        P = 0.25 * (R1 + sparse.identity(2**latt_enc.nsites)) @ (R2 + sparse.identity(2**latt_enc.nsites))
+        P = 0.25 * ((R1 + sparse.identity(2**latt_enc.nsites))
+                  @ (R2 + sparse.identity(2**latt_enc.nsites)))
         # consistency checks
         self.assertEqual(spla.norm(P.conj().T - P), 0)
         self.assertEqual(spla.norm(P @ P - P), 0)
@@ -172,21 +173,21 @@ class TestCompactEncoding(unittest.TestCase):
         # also commutes with Hamiltonian
         self.assertEqual(spla.norm(comm(Henc_mat, P)), 0)
         # eigenstates with eigenvalue 1 of P define stabilized subspace
-        p, ψ = np.linalg.eigh(P.toarray())
-        ψ = ψ[:, p > 0.5]
-        self.assertEqual(ψ.shape[1], 2**latt_fermi.nsites)
-        self.assertTrue(np.allclose(ψ.conj().T @ ψ, np.identity(ψ.shape[1]), rtol=1e-11, atol=1e-14))
-        self.assertTrue(np.allclose(R1 @ ψ, ψ, rtol=1e-11, atol=1e-14))
-        self.assertTrue(np.allclose(R2 @ ψ, ψ, rtol=1e-11, atol=1e-14))
+        p, psi = np.linalg.eigh(P.toarray())
+        psi = psi[:, p > 0.5]
+        self.assertEqual(psi.shape[1], 2**latt_fermi.nsites)
+        self.assertTrue(np.allclose(psi.conj().T @ psi, np.identity(psi.shape[1]), rtol=1e-11, atol=1e-14))
+        self.assertTrue(np.allclose(R1 @ psi, psi, rtol=1e-11, atol=1e-14))
+        self.assertTrue(np.allclose(R2 @ psi, psi, rtol=1e-11, atol=1e-14))
 
         # project qubit Hamiltonian onto stabilized subspace
-        H_proj = ψ.conj().T @ Henc_mat @ ψ
+        H_proj = psi.conj().T @ Henc_mat @ psi
         # must be symmetric
         self.assertTrue(np.allclose(H_proj, H_proj.conj().T, rtol=1e-11, atol=1e-14))
 
         # compare spectrum
-        ϵ = np.linalg.eigvalsh(H_proj)
-        self.assertTrue(np.allclose(ϵ, ϵref, rtol=1e-11, atol=1e-14))
+        en = np.linalg.eigvalsh(H_proj)
+        self.assertTrue(np.allclose(en, en_ref, rtol=1e-11, atol=1e-14))
 
 
 if __name__ == "__main__":

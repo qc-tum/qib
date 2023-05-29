@@ -1,6 +1,6 @@
 import math
-import numpy as np
 from typing import Sequence
+import numpy as np
 from qib.lattice import AbstractLattice
 
 
@@ -16,7 +16,7 @@ class CustomizedLattice(AbstractLattice):
             raise ValueError("The given matrix adj has shape {self.adj.shape} instead of {(nsites,nsites)}.")
         if not np.array_equal(self.adj, self.adj.T):
             raise ValueError("The adjacency matrix must be symmetric.")
-        if not all([adj[i,i]==0 for i in range(nsites)]):
+        if not all(adj[i, i] == 0 for i in range(nsites)):
             raise ValueError("The adjacency matrix must have a null diagonal")
 
     @property
@@ -50,6 +50,6 @@ class CustomizedLattice(AbstractLattice):
         """
         Map lattice coordinate to linear index.
         """
-        for i in range(len(self.shape)):
-            assert c[i] < self.shape[i]
+        for i, n in enumerate(self.shape):
+            assert c[i] < n
         return int(np.ravel_multi_index(c, self.shape))

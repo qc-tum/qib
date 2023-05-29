@@ -1,6 +1,6 @@
 import math
-import numpy as np
 from typing import Sequence
+import numpy as np
 from qib.lattice import AbstractLattice
 
 
@@ -10,7 +10,7 @@ class TriangularLattice(AbstractLattice):
     Formally equal to an integer lattice with one chord splitting every cell from top left to bottom right.
     """
     def __init__(self, shape: Sequence[int], pbc=False):
-        if len(shape) > 2: 
+        if len(shape) > 2:
             raise NotImplementedError("Triangular lattices require at most 2 dimensions, {len(shape)} were given")
         self.shape = tuple(shape)
         # whether to assume periodic boundary conditions along individual axes
@@ -110,6 +110,6 @@ class TriangularLattice(AbstractLattice):
         """
         Map lattice coordinate to linear index.
         """
-        for i in range(len(self.shape)):
-            assert c[i] < self.shape[i]
+        for i, n in enumerate(self.shape):
+            assert c[i] < n
         return int(np.ravel_multi_index(c, self.shape))

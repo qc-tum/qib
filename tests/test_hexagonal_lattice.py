@@ -1,5 +1,5 @@
-import numpy as np
 import unittest
+import numpy as np
 import qib
 
 
@@ -72,7 +72,7 @@ class TestHexagonalLattice(unittest.TestCase):
                         elif a[1] == b[1] and abs(a[0]-b[0])==1:
                             if (max(a[0],b[0])+a[1])%2 == 1 :
                                 adj_ref[i,j] = 1
-                # delete extra points        
+                # delete extra points
                 if Lx > 1:
                     adj_ref = np.delete(adj_ref, 2*Ly+1, 0)
                     adj_ref = np.delete(adj_ref, 2*Ly+1, 1)
@@ -100,6 +100,6 @@ class TestHexagonalLattice(unittest.TestCase):
                 for i in range(latt_2.nsites):
                     self.assertEqual(i, latt_2.coord_to_index(latt_2.index_to_coord(i)))
 
-   
+
 if __name__ == "__main__":
     unittest.main()

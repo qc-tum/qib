@@ -30,9 +30,9 @@ class BrickLattice(AbstractLattice):
         If delete=False, it includes the 2 extra points if they are needed.
         """
         if not self.delete and ((self.convention == ShiftedLatticeConvention.COLS_SHIFTED_UP and self.shape[1]>1) or (self.convention == ShiftedLatticeConvention.ROWS_SHIFTED_LEFT and self.shape[0]>1)):
-            return 2*self.shape[0]*self.shape[1] +2*(self.shape[0]+self.shape[1]) + 2
+            return 2*self.shape[0]*self.shape[1] + 2*(self.shape[0]+self.shape[1]) + 2
         else:
-            return 2*self.shape[0]*self.shape[1] +2*(self.shape[0]+self.shape[1])
+            return 2*self.shape[0]*self.shape[1] + 2*(self.shape[0]+self.shape[1])
 
     @property
     def ndim(self) -> int:

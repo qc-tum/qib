@@ -1,5 +1,5 @@
-import numpy as np
 from enum import Flag, auto
+import numpy as np
 from qib.field import ParticleType, Field
 from qib.operator import AbstractOperator, FieldOperator, FieldOperatorTerm, IFOType, IFODesc
 
@@ -38,7 +38,7 @@ class MolecularHamiltonian(AbstractOperator):
             raise ValueError(f"underlying lattice must have {norbs} sites, while {field.lattice.nsites} were given")
         # check symmetries of the 1- and 2-body term coefficients
         if MolecularHamiltonianSymmetry.HERMITIAN in symm:
-            if not (isinstance(c, int) or isinstance(c, float)):
+            if not isinstance(c, (int, float)):
                 raise ValueError(f"constant coefficient must be a real number, received {c}")
             if not np.allclose(tkin, tkin.conj().T):
                 raise ValueError("kinetic coefficients must be Hermitian")

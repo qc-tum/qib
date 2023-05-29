@@ -1,6 +1,6 @@
+import unittest
 import numpy as np
 from scipy import sparse
-import unittest
 import qib
 
 
@@ -84,9 +84,8 @@ def fermi_annihil_sign(n, a):
             counter += (na & (lsb - 1)).bit_count()
             a -= lsb
         return 1 - 2*(counter % 2)
-    else:
-        # applying annihilation operator yields zero
-        return 0
+    # applying annihilation operator yields zero
+    return 0
 
 
 def fermi_create_sign(n, c):
@@ -102,9 +101,8 @@ def fermi_create_sign(n, c):
             counter += (n & (lsb - 1)).bit_count()
             c -= lsb
         return 1 - 2*(counter % 2)
-    else:
-        # applying creation operator yields zero
-        return 0
+    # applying creation operator yields zero
+    return 0
 
 
 def fermi_annihil_op(nmodes, a):

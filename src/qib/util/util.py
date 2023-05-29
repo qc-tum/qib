@@ -1,5 +1,5 @@
-import numpy as np
 from typing import Sequence
+import numpy as np
 from qib.field import Field, Particle
 
 
@@ -7,7 +7,8 @@ def crandn(size=None, rng: np.random.Generator=None):
     """
     Draw random samples from the standard complex normal (Gaussian) distribution.
     """
-    if rng is None: rng = np.random.default_rng()
+    if rng is None:
+        rng = np.random.default_rng()
     # 1/sqrt(2) is a normalization factor
     return (rng.normal(size=size) + 1j*rng.normal(size=size)) / np.sqrt(2)
 
@@ -34,7 +35,6 @@ def map_particle_to_wire(fields: Sequence[Field], p: Particle):
         if p.field == f:
             i += p.index
             return i
-        else:
-            i += f.lattice.nsites
+        i += f.lattice.nsites
     # not found
     return -1

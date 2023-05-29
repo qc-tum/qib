@@ -90,7 +90,7 @@ class HexagonalLattice(AbstractLattice):
             x = c[0]*2./(length*math.sqrt(3.))
             int_x = round(x)
             if abs(x - int_x) > tol:
-                 raise ValueError("Incompatible set of coordinates")
+                raise ValueError("Incompatible set of coordinates")
             y = c[1]/length
             if int_x%2 == 0:
                 y -= 0.5

@@ -1,7 +1,7 @@
 import enum
+from typing import Sequence
 import numpy as np
 from scipy import sparse
-from typing import Sequence
 from qib.operator import AbstractOperator
 from qib.field import ParticleType, Field
 
@@ -26,14 +26,13 @@ class IFOType(enum.Enum):
             raise ValueError("incorrect argument type, expecting 'IFOType'")
         if otype == IFOType.BOSON_CREATE:
             return IFOType.BOSON_ANNIHIL
-        elif otype == IFOType.BOSON_ANNIHIL:
+        if otype == IFOType.BOSON_ANNIHIL:
             return IFOType.BOSON_CREATE
-        elif otype == IFOType.FERMI_CREATE:
+        if otype == IFOType.FERMI_CREATE:
             return IFOType.FERMI_ANNIHIL
-        elif otype == IFOType.FERMI_ANNIHIL:
+        if otype == IFOType.FERMI_ANNIHIL:
             return IFOType.FERMI_CREATE
-        else:
-            return otype
+        return otype
 
 class IFODesc:
     """
@@ -42,13 +41,13 @@ class IFODesc:
     def __init__(self, field: Field, otype: IFOType):
         # consistency checks
         if field.particle_type == ParticleType.BOSON:
-            if (otype != IFOType.BOSON_CREATE) and (otype != IFOType.BOSON_ANNIHIL):
+            if otype not in (IFOType.BOSON_CREATE, IFOType.BOSON_ANNIHIL):
                 raise ValueError(f"expecting bosonic operator, but received {otype}")
         elif field.particle_type == ParticleType.FERMION:
-            if (otype != IFOType.FERMI_CREATE) and (otype != IFOType.FERMI_ANNIHIL):
+            if otype not in (IFOType.FERMI_CREATE, IFOType.FERMI_ANNIHIL):
                 raise ValueError(f"expecting fermionic operator, but received {otype}")
         elif field.particle_type == ParticleType.MAJORANA:
-            if (otype != IFOType.MAJORANA_RE) and (otype != IFOType.MAJORANA_IM):
+            if otype not in (IFOType.MAJORANA_RE, IFOType.MAJORANA_IM):
                 raise ValueError(f"expecting Majorana operator, but received {otype}")
         self.field = field
         self.otype = otype
@@ -94,8 +93,11 @@ class FieldOperator(AbstractOperator):
     """
     Field operator in second quantized form.
     """
-    def __init__(self, terms: Sequence[FieldOperatorTerm]=[]):
-        self.terms = list(terms)
+    def __init__(self, terms: Sequence[FieldOperatorTerm]=None):
+        if terms is None:
+            self.terms = []
+        else:
+            self.terms = list(terms)
 
     def fields(self):
         """

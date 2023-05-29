@@ -17,9 +17,9 @@ class HeisenbergHamiltonian(AbstractOperator):
         if not (len(J) == 3 and len(h) == 3):
             raise ValueError(f"expecting 3 components of 'J' and 'h', received {len(J)} and {len(h)}")
         for i in range(3):
-            if not (isinstance(J[i], int) or isinstance(J[i], float)):
+            if not isinstance(J[i], (int, float)):
                 raise ValueError(f"expecting real numeric value for J[{i}], received {J[i]}")
-            if not (isinstance(h[i], int) or isinstance(h[i], float)):
+            if not isinstance(h[i], (int, float)):
                 raise ValueError(f"expecting real numeric value for h[{i}], received {h[i]}")
 
         self.field = field

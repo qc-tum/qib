@@ -1,5 +1,5 @@
-import numpy as np
 from typing import Sequence
+import numpy as np
 from qib.tensor_network.symbolic_network import SymbolicTensor, SymbolicBond, SymbolicTensorNetwork
 from qib.tensor_network.contraction_tree import perform_tree_contraction
 
@@ -65,11 +65,13 @@ class TensorNetwork:
         # enable chaining
         return self
 
-    def merge(self, other, join_axes: Sequence[tuple]=[]):
+    def merge(self, other, join_axes: Sequence[tuple]=None):
         """
         Merge network with another tensor network,
         and join open axes specified as [(openax_self, openax_other), ...].
         """
+        if join_axes is None:
+            join_axes = []
         self.net.merge(other.net, join_axes)
         # include tensor data from other network
         for k in other.data:
@@ -87,15 +89,15 @@ class TensorNetwork:
         tids, tidx, idxout, axes_map = self.net.as_einsum()
         # arguments for call of np.einsum
         args = []
-        for i in range(len(tids)):
-            tensor = self.net.tensors[tids[i]]
+        for i, tid in enumerate(tids):
+            tensor = self.net.tensors[tid]
             args.append(self.data[tensor.dataref])
             args.append(tidx[i])
         # insert vectors filled with ones for output axes which are not connected
         # to an actual tensor, e.g., identity wires
         shape = self.shape
         for j in idxout:
-            if not any([j in tidx[i] for i in range(len(tidx))]):
+            if not any(j in tidx[i] for i in range(len(tidx))):
                 args.append(np.ones(shape[axes_map.index(j)]))
                 args.append([j])
         args.append(idxout)
@@ -130,10 +132,10 @@ class TensorNetwork:
         # permute tree root axes to match logical output axes as far as possible
         sort_indices = tree.ndim * [-1]
         c = 0
-        for i in range(len(axes_map)):
-            if sort_indices[axes_map[i]] == -1:
+        for i, ax in enumerate(axes_map):
+            if sort_indices[ax] == -1:
                 # use next available index
-                sort_indices[axes_map[i]] = c
+                sort_indices[ax] = c
                 c += 1
         assert c == tree.ndim
         tree.permute_axes(np.argsort(sort_indices))
@@ -155,10 +157,12 @@ class TensorNetwork:
             if tensor.tid == -1:
                 continue
             if tensor.dataref not in self.data:
-                if verbose: print(f"Consistency check failed: dataref {tensor.dataref} not in data dictionary.")
+                if verbose:
+                    print(f"Consistency check failed: dataref {tensor.dataref} not in data dictionary.")
                 return False
             if np.shape(self.data[tensor.dataref]) != tensor.shape:
-                if verbose: print(f"Consistency check failed: shape of dataref {tensor.dataref} does not match shape of symbolic tensor {tensor.tid}.")
+                if verbose:
+                    print(f"Consistency check failed: shape of dataref {tensor.dataref} does not match shape of symbolic tensor {tensor.tid}.")
                 return False
         return True
 
@@ -174,10 +178,10 @@ def to_full_tensor(tensor: np.ndarray, axes_map):
         i = it.multi_index
         idx = tensor.ndim * [-1]
         valid = True
-        for j in range(len(axes_map)):
-            if idx[axes_map[j]] == -1:
-                idx[axes_map[j]] = i[j]
-            elif idx[axes_map[j]] != i[j]:
+        for j, ax in enumerate(axes_map):
+            if idx[ax] == -1:
+                idx[ax] = i[j]
+            elif idx[ax] != i[j]:
                 valid = False
         if valid:
             ft[i] = tensor[tuple(idx)]

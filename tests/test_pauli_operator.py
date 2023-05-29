@@ -1,6 +1,6 @@
+import unittest
 import numpy as np
 from scipy import sparse
-import unittest
 import qib
 
 
@@ -58,7 +58,7 @@ class TestPauliOperator(unittest.TestCase):
         # logical product for various lengths
         for nqubits in range(1, 10):
             Plist = []
-            for j in range(2):
+            for _ in range(2):
                 z = rng.integers(0, 2, nqubits)
                 x = rng.integers(0, 2, nqubits)
                 q = rng.integers(0, 4)

@@ -1,5 +1,5 @@
-import numpy as np
 import unittest
+import numpy as np
 import qib
 
 
@@ -70,7 +70,7 @@ class TestBrickLattice(unittest.TestCase):
                         elif a[1] == b[1] and abs(a[0]-b[0])==1:
                             if (max(a[0],b[0])+a[1])%2 == 1 :
                                 adj_ref[i,j] = 1
-                # delete extra points        
+                # delete extra points
                 if Lx > 1:
                     adj_ref = np.delete(adj_ref, 2*Ly+1, 0)
                     adj_ref = np.delete(adj_ref, 2*Ly+1, 1)
@@ -81,7 +81,7 @@ class TestBrickLattice(unittest.TestCase):
                         adj_ref = np.delete(adj_ref, Lx*(2*Ly+2)-1, 0)
                         adj_ref = np.delete(adj_ref, Lx*(2*Ly+2)-1, 1)
                 self.assertTrue(np.array_equal(adj, adj_ref))
-    
+
     def test_lattice_adjacency_without_delete(self):
         """
         Test construction of adjacency matrices.
@@ -147,7 +147,7 @@ class TestBrickLattice(unittest.TestCase):
                         elif a[1] == b[1] and abs(a[0]-b[0])==1:
                             if (max(a[0],b[0])+a[1])%2 == 1 :
                                 adj_ref[i,j] = 1
-                # disconnect extra points        
+                # disconnect extra points
                 if Lx > 1:
                     adj_ref[2*Ly+1, :] = 0
                     adj_ref[:, 2*Ly+1] = 0
@@ -178,6 +178,7 @@ class TestBrickLattice(unittest.TestCase):
                     self.assertEqual(i, latt_1.coord_to_index(latt_1.index_to_coord(i)))
                 for i in range(latt_2.nsites):
                     self.assertEqual(i, latt_2.coord_to_index(latt_2.index_to_coord(i)))
-                    
+
+
 if __name__ == "__main__":
     unittest.main()

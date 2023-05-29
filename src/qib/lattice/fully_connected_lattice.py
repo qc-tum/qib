@@ -1,6 +1,6 @@
 import math
-import numpy as np
 from typing import Sequence, Union
+import numpy as np
 from qib.lattice import AbstractLattice
 
 
@@ -10,11 +10,11 @@ class FullyConnectedLattice(AbstractLattice):
     Can be used to represent orbitals in a molecule
     """
     def __init__(self, shape: Union[int, Sequence[int]]):
-        if type(shape) == int:
+        if isinstance(shape, int):
             self.shape = (shape,)
         else:
             self.shape = tuple(shape)
-            
+
     @property
     def nsites(self) -> int:
         """
@@ -35,7 +35,7 @@ class FullyConnectedLattice(AbstractLattice):
         """
         adj = np.ones((self.nsites, self.nsites), dtype=int)
         for n in range(self.nsites):
-            adj[n,n] = 0;
+            adj[n, n] = 0
         return adj
 
     def index_to_coord(self, i: int) -> tuple:
@@ -49,6 +49,6 @@ class FullyConnectedLattice(AbstractLattice):
         """
         Map lattice coordinate to linear index.
         """
-        for i in range(len(self.shape)):
-            assert c[i] < self.shape[i]
+        for i, n in enumerate(self.shape):
+            assert c[i] < n
         return int(np.ravel_multi_index(c, self.shape))

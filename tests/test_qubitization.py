@@ -1,8 +1,7 @@
+import unittest
 import numpy as np
 from scipy.linalg import expm
-import unittest
 import qib
-
 
 
 class TestQubitization(unittest.TestCase):
@@ -21,7 +20,7 @@ class TestQubitization(unittest.TestCase):
                                  qib.lattice.IntegerLattice((1,), pbc=False))
         q_aux = [qib.field.Qubit(field2, 0)]
         for i, method in enumerate(["c-phase", "auxiliary"]):
-            for state in [[0], [0,0], [0,0,0], [0,0,0,0]]:
+            for state in [[0], [0, 0], [0, 0, 0], [0, 0, 0, 0]]:
                 # len(state) == number of encoding qubits
                 q_enc = [qib.field.Qubit(field1, i) for i in range(len(state))]
                 processing = qib.algorithms.qubitization.ProjectorControlledPhaseShift(0., state, q_enc, q_aux, method)
@@ -72,7 +71,7 @@ class TestQubitization(unittest.TestCase):
         for method_enc in qib.operator.BlockEncodingMethod:
             block = qib.BlockEncodingGate(H, method_enc)
             block.set_auxiliary_qubits(q_enc)
-            for j, method_proc in enumerate(["c-phase", "auxiliary"]):
+            for method_proc in ["c-phase", "auxiliary"]:
                 processing = qib.algorithms.qubitization.ProjectorControlledPhaseShift(0., [0], q_enc, q_anc, method_proc)
                 self.assertTrue(block.auxiliary_qubits == processing.encoding_qubits)
                 theta = [0.]
@@ -98,5 +97,6 @@ class TestQubitization(unittest.TestCase):
                 # TODO: add more tests
                 #print("method encoding: ", method_enc, "method processing: ", method_proc, "/ state: ", [0], "\t...OK!")
 
+
 if __name__ == "__main__":
-     unittest.main()
+    unittest.main()

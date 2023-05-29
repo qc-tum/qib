@@ -24,11 +24,11 @@ class IsingHamiltonian(AbstractOperator):
         # parameter checks
         if field.particle_type != ParticleType.QUBIT:
             raise ValueError(f"expecting a field with qubit particle type, but received {field.particle_type}")
-        if not (isinstance(J, int) or isinstance(J, float)):
+        if not isinstance(J, (int, float)):
             raise ValueError(f"expecting real numeric value for 'J', received {J}")
-        if not (isinstance(h, int) or isinstance(h, float)):
+        if not isinstance(h, (int, float)):
             raise ValueError(f"expecting real numeric value for 'h', received {h}")
-        if not (isinstance(g, int) or isinstance(g, float)):
+        if not isinstance(g, (int, float)):
             raise ValueError(f"expecting real numeric value for 'g', received {g}")
         if not isinstance(convention, IsingConvention):
             raise ValueError(f"'convention' must be of type 'IsingConvention', received {convention}")

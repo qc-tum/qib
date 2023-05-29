@@ -1,6 +1,6 @@
+import unittest
 import numpy as np
 from scipy import sparse
-import unittest
 import qib
 
 

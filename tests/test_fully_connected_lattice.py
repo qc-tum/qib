@@ -1,6 +1,7 @@
-import numpy as np
 import unittest
+import numpy as np
 import qib
+
 
 class TestFullyConnectedLattice(unittest.TestCase):
 
@@ -18,7 +19,7 @@ class TestFullyConnectedLattice(unittest.TestCase):
             for i in range(n):
                 adj_ref[i,i] = 0
             self.assertTrue(np.array_equal(adj, adj_ref))
-            
+
             latt = qib.lattice.FullyConnectedLattice((n,))
             self.assertEqual(latt.ndim, 1)
             self.assertEqual(latt.nsites, n)

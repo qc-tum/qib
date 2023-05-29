@@ -1,6 +1,6 @@
+from typing import Sequence
 import numpy as np
 from scipy import sparse
-from typing import Sequence
 from qib.operator import AbstractOperator
 from qib.field import ParticleType, Field
 
@@ -169,9 +169,8 @@ class PauliString(AbstractOperator):
         assert self.q < 4
         if self.q < 2:
             return 1
-        else:
-            self.q %= 2
-            return -1
+        self.q %= 2
+        return -1
 
     def __matmul__(self, other):
         """
@@ -233,8 +232,7 @@ class PauliString(AbstractOperator):
         """
         if self.field is not None:
             return [self.field]
-        else:
-            return []
+        return []
 
     def __str__(self):
         """
@@ -324,7 +322,9 @@ class PauliOperator(AbstractOperator):
     """
     An operator consisting of Pauli strings.
     """
-    def __init__(self, pstrings: Sequence[WeightedPauliString]=[]):
+    def __init__(self, pstrings: Sequence[WeightedPauliString]=None):
+        if pstrings is None:
+            pstrings = []
         # consistency check
         nqs = [ps.num_qubits for ps in pstrings]
         if len(set(nqs)) > 1:
@@ -361,9 +361,8 @@ class PauliOperator(AbstractOperator):
         """
         if self.pstrings:
             return self.pstrings[0].num_qubits
-        else:
-            # not specified
-            return 0
+        # not specified
+        return 0
 
     def as_matrix(self):
         """
@@ -406,15 +405,14 @@ class PauliOperator(AbstractOperator):
                 if not flist == pstring.fields():
                     raise RuntimeError("all weighted Pauli strings must act on the same field.")
             return flist
-        else:
-            return []
+        return []
 
     def __str__(self):
         """
         String representation of the Pauli operator.
         """
         ps_list = [str(ps) for ps in self.pstrings]
-        max_width = max([len(ps) for ps in ps_list])
+        max_width = max(len(ps) for ps in ps_list)
         s = "Pauli operator consisting of weighted Pauli strings\n"
         for ps in ps_list:
             s += ps.rjust(max_width) + '\n'

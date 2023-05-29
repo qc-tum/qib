@@ -1,6 +1,6 @@
+import unittest
 import numpy as np
 from scipy import sparse
-import unittest
 import qib
 
 
@@ -45,7 +45,8 @@ class TestMolecularHamiltonian(unittest.TestCase):
                 tkin = qib.util.crandn((4, 4), rng)
                 vint = qib.util.crandn((4, 4, 4, 4), rng)
                 if symm != qib.operator.MolecularHamiltonianSymmetry(0):
-                    self.assertRaises(ValueError, lambda: qib.operator.MolecularHamiltonian(field, c, tkin, vint, symm))
+                    with self.assertRaises(ValueError):
+                        qib.operator.MolecularHamiltonian(field, c, tkin, vint, symm)
                 if qib.operator.MolecularHamiltonianSymmetry.HERMITIAN in symm:
                     c = c.real
                     tkin = 0.5 * (tkin + tkin.conj().T)
@@ -73,9 +74,8 @@ def fermi_annihil_sign(n, a):
             counter += (na & (lsb - 1)).bit_count()
             a -= lsb
         return 1 - 2*(counter % 2)
-    else:
-        # applying annihilation operator yields zero
-        return 0
+    # applying annihilation operator yields zero
+    return 0
 
 
 def fermi_create_sign(n, c):
@@ -91,9 +91,8 @@ def fermi_create_sign(n, c):
             counter += (n & (lsb - 1)).bit_count()
             c -= lsb
         return 1 - 2*(counter % 2)
-    else:
-        # applying creation operator yields zero
-        return 0
+    # applying creation operator yields zero
+    return 0
 
 
 def fermi_annihil_op(nmodes, a):

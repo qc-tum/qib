@@ -63,7 +63,11 @@ class SymbolicTensorNetwork:
     Symbolic tensor network, storing a list of tensors and bonds.
     Open (uncontracted) axes in the network are represented by the legs of a virtual tensor with ID -1.
     """
-    def __init__(self, tensors: Sequence[SymbolicTensor]=[], bonds: Sequence[SymbolicBond]=[]):
+    def __init__(self, tensors: Sequence[SymbolicTensor]=None, bonds: Sequence[SymbolicBond]=None):
+        if tensors is None:
+            tensors = []
+        if bonds is None:
+            bonds = []
         # dictionary of tensors
         self.tensors = {}
         for tensor in tensors:
@@ -280,16 +284,17 @@ class SymbolicTensorNetwork:
                     if j == 0:
                         axes[i] = ax
                         break
-                    else:
-                        j -= 1
-        assert all([ax >= 0 for ax in axes])
+                    j -= 1
+        assert all(ax >= 0 for ax in axes)
         return axes
 
-    def merge(self, other, join_axes: Sequence[tuple]=[]):
+    def merge(self, other, join_axes: Sequence[tuple]=None):
         """
         Merge network with another symbolic tensor network,
         and join open axes specified as [(openax_self, openax_other), ...].
         """
+        if join_axes is None:
+            join_axes = []
         for joinax in join_axes:
             if joinax[0] < 0 or joinax[0] >= self.num_open_axes:
                 raise ValueError(f"to-be joined open axis index {joinax[0]} of first network out of range")
@@ -475,7 +480,7 @@ class SymbolicTensorNetwork:
         for bond in self.bonds.values():
             it = [tids.index(tid) for tid in bond.tids]
             bond_axes = self.get_bond_axes(bond.bid)
-            imin = min([tidx[i][ax] for i, ax in zip(it, bond_axes)], default=0)
+            imin = min((tidx[i][ax] for i, ax in zip(it, bond_axes)), default=0)
             for i, ax in zip(it, bond_axes):
                 tidx[i][ax] = imin
         # condense indices
@@ -550,7 +555,7 @@ class SymbolicTensorNetwork:
                     return False
                 dims.append(tensor.shape[ax])
             if dims:
-                if not all([d == dims[0] for d in dims]):
+                if not all(d == dims[0] for d in dims):
                     if verbose: print(f"Consistency check failed: axes dimensions of bond {bond.bid} are not all the same.")
                     return False
         return True

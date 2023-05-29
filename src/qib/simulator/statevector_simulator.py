@@ -21,5 +21,5 @@ class StatevectorSimulator(Simulator):
         # apply gates
         for g in circ.gates:
             # TODO: matrix-free application of gate
-            psi = g._circuit_matrix(fields) @ psi
+            psi = g.as_circuit_matrix(fields) @ psi
         return psi

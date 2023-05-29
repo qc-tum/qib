@@ -1,6 +1,6 @@
 import math
-import numpy as np
 from typing import Sequence
+import numpy as np
 from qib.lattice import AbstractLattice
 
 
@@ -19,8 +19,8 @@ class OddFaceCenteredLattice(AbstractLattice):
         else:
             assert len(shape) == len(pbc)
             self.pbc = tuple(pbc)
-        for i in range(len(self.shape)):
-            if self.shape[i] % 2 == 1 and self.pbc[i]:
+        for i, n in enumerate(self.shape):
+            if n % 2 == 1 and self.pbc[i]:
                 raise ValueError("each axis with periodic boundary conditions must have even dimension")
 
     @property
@@ -97,12 +97,11 @@ class OddFaceCenteredLattice(AbstractLattice):
         nverts = math.prod(self.shape)
         if i < nverts:
             return np.unravel_index(i, self.shape)
-        else:
-            assert len(self.shape) == 2
-            i -= nverts
-            x = 2 * i // (self.shape[1] - 1)
-            y = 2 * (i - (x*(self.shape[1] - 1) + 1) // 2) + (x % 2)
-            return (x + 0.5, y + 0.5)
+        assert len(self.shape) == 2
+        i -= nverts
+        x = 2 * i // (self.shape[1] - 1)
+        y = 2 * (i - (x*(self.shape[1] - 1) + 1) // 2) + (x % 2)
+        return (x + 0.5, y + 0.5)
 
     def coord_to_index(self, c) -> int:
         """
@@ -111,18 +110,17 @@ class OddFaceCenteredLattice(AbstractLattice):
         idx = np.array(c)
         if np.issubdtype(idx.dtype, np.integer):
             return int(np.ravel_multi_index(idx, self.shape))
-        else:
-            if idx.shape != (2,):
-                raise ValueError("multi-index must be a sequence of length 2")
-            idx = np.round(idx - 0.5)
-            x, y = int(idx[0]), int(idx[1])
-            if (x + y) % 2 == 1:
-                raise ValueError(f"multi-index {c} is not a valid odd face index")
-            if x < 0 or y < 0 or x >= self.shape[0] - 1 or y >= self.shape[1] - 1:
-                # face outside of the rectangular region
-                raise ValueError(f"coordinates {c} outside of the rectangular region")
-            # take offset by primary vertex qubits into account
-            return math.prod(self.shape) + (x*(self.shape[1] - 1) + 1) // 2 + (y // 2)
+        if idx.shape != (2,):
+            raise ValueError("multi-index must be a sequence of length 2")
+        idx = np.round(idx - 0.5)
+        x, y = int(idx[0]), int(idx[1])
+        if (x + y) % 2 == 1:
+            raise ValueError(f"multi-index {c} is not a valid odd face index")
+        if x < 0 or y < 0 or x >= self.shape[0] - 1 or y >= self.shape[1] - 1:
+            # face outside of the rectangular region
+            raise ValueError(f"coordinates {c} outside of the rectangular region")
+        # take offset by primary vertex qubits into account
+        return math.prod(self.shape) + (x*(self.shape[1] - 1) + 1) // 2 + (y // 2)
 
     def edge_to_odd_face_index(self, i, j):
         """

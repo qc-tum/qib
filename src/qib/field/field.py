@@ -39,8 +39,7 @@ class Field:
         """
         if self.ptype == ParticleType.BOSON:
             return self.maxocc + 1
-        else:
-            return 2
+        return 2
 
     def dof(self):
         """

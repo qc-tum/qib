@@ -1,10 +1,10 @@
 import abc
-import numpy as np
 from enum import Enum
 from copy import copy
+from typing import Sequence
+import numpy as np
 from scipy.linalg import expm, sqrtm, block_diag
 from scipy.sparse import csr_matrix
-from typing import Sequence
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
 from qib.tensor_network import SymbolicTensor, SymbolicBond, SymbolicTensorNetwork, TensorNetwork
@@ -31,36 +31,31 @@ class Gate(AbstractOperator):
         """
         The number of "wires" (or quantum particles) this gate acts on.
         """
-        pass
 
     @abc.abstractmethod
     def particles(self):
         """
         Return the list of quantum particles the gate acts on.
         """
-        pass
 
     @abc.abstractmethod
     def fields(self):
         """
         Return the list of fields hosting the quantum particles which the gate acts on.
         """
-        pass
 
     @abc.abstractmethod
     def inverse(self):
         """
         Return the inverse operator.
         """
-        pass
 
     @abc.abstractmethod
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
         """
-        pass
 
     @abc.abstractmethod
     def as_tensornet(self):
@@ -68,21 +63,18 @@ class Gate(AbstractOperator):
         Generate a tensor network representation of the gate,
         using an individual tensor axis for each wire.
         """
-        pass
 
     @abc.abstractmethod
     def __copy__(self):
         """
         Create a copy of the gate.
         """
-        pass
 
     @abc.abstractmethod
     def __eq__(self, other):
         """
         Check if gates are equivalent.
         """
-        pass
 
 
 class PauliXGate(Gate):
@@ -117,8 +109,7 @@ class PauliXGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -126,8 +117,7 @@ class PauliXGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -143,7 +133,7 @@ class PauliXGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -156,7 +146,7 @@ class PauliXGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -212,8 +202,7 @@ class PauliYGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -221,8 +210,7 @@ class PauliYGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -238,7 +226,7 @@ class PauliYGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -251,7 +239,7 @@ class PauliYGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -305,8 +293,7 @@ class PauliZGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -314,8 +301,7 @@ class PauliZGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -331,7 +317,7 @@ class PauliZGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -344,7 +330,7 @@ class PauliZGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -398,8 +384,7 @@ class HadamardGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -407,8 +392,7 @@ class HadamardGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -424,7 +408,7 @@ class HadamardGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -437,7 +421,7 @@ class HadamardGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -501,8 +485,7 @@ class RxGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -510,8 +493,7 @@ class RxGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -527,7 +509,7 @@ class RxGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -540,7 +522,7 @@ class RxGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -605,8 +587,7 @@ class RyGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -614,8 +595,7 @@ class RyGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -631,7 +611,7 @@ class RyGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -644,7 +624,7 @@ class RyGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -708,8 +688,7 @@ class RzGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -717,8 +696,7 @@ class RzGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -734,7 +712,7 @@ class RzGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -747,7 +725,7 @@ class RzGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -811,8 +789,7 @@ class RotationGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -820,8 +797,7 @@ class RotationGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -837,7 +813,7 @@ class RotationGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -850,7 +826,7 @@ class RotationGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -905,8 +881,7 @@ class SGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -914,8 +889,7 @@ class SGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -931,7 +905,7 @@ class SGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -944,7 +918,7 @@ class SGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -998,8 +972,7 @@ class SAdjGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -1007,8 +980,7 @@ class SAdjGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -1024,7 +996,7 @@ class SAdjGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -1037,7 +1009,7 @@ class SAdjGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -1091,8 +1063,7 @@ class TGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -1100,8 +1071,7 @@ class TGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -1117,7 +1087,7 @@ class TGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -1130,7 +1100,7 @@ class TGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -1184,8 +1154,7 @@ class TAdjGate(Gate):
         """
         if self.qubit:
             return [self.qubit]
-        else:
-            return []
+        return []
 
     def fields(self):
         """
@@ -1193,8 +1162,7 @@ class TAdjGate(Gate):
         """
         if self.qubit:
             return [self.qubit.field]
-        else:
-            return []
+        return []
 
     def inverse(self):
         """
@@ -1210,7 +1178,7 @@ class TAdjGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -1223,7 +1191,7 @@ class TAdjGate(Gate):
         iwire = map_particle_to_wire(fields, self.qubit)
         if iwire < 0:
             raise RuntimeError("qubit not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -1310,7 +1278,7 @@ class PhaseFactorGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -1321,9 +1289,9 @@ class PhaseFactorGate(Gate):
         if not self.prtcl:
             raise RuntimeError("unspecified target particle(s)")
         iwire = [map_particle_to_wire(fields, p) for p in self.prtcl]
-        if any([iw < 0 for iw in iwire]):
+        if any(iw < 0 for iw in iwire):
             raise RuntimeError("particle not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -1397,10 +1365,9 @@ class PrepareGate(Gate):
         Q = np.linalg.qr(x.reshape((-1, 1)), mode="complete")[0]
         if np.dot(x, Q[:, 0]) < 0:
             Q[:, 0] = -Q[:, 0]
-        if not self.transpose:
-            return Q
-        else:
+        if self.transpose:
             return Q.T
+        return Q
 
     @property
     def num_wires(self):
@@ -1448,7 +1415,7 @@ class PrepareGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -1460,9 +1427,9 @@ class PrepareGate(Gate):
             raise RuntimeError("unspecified qubit(s)")
         prtcl = self.particles()
         iwire = [map_particle_to_wire(fields, p) for p in prtcl]
-        if any([iw < 0 for iw in iwire]):
+        if any(iw < 0 for iw in iwire):
             raise RuntimeError("particle not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -1520,7 +1487,7 @@ class ControlledGate(Gate):
         if len(ctrl_state) != ncontrols:
             raise ValueError(f"length of `ctrl_state` must be equal to number of control qubits, {ncontrols}")
         for i in ctrl_state:
-            if not (i == 0 or i == 1):
+            if not i in (0, 1):
                 raise ValueError(f"`ctrl_state` can only contain 0 or 1 bits, received {i}")
         self.ctrl_state = list(ctrl_state)
 
@@ -1610,7 +1577,7 @@ class ControlledGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -1624,9 +1591,9 @@ class ControlledGate(Gate):
             raise RuntimeError("unspecified target gate particle(s)")
         prtcl = self.particles()
         iwire = [map_particle_to_wire(fields, p) for p in prtcl]
-        if any([iw < 0 for iw in iwire]):
+        if any(iw < 0 for iw in iwire):
             raise RuntimeError("particle not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -1637,117 +1604,116 @@ class ControlledGate(Gate):
             # in case target gate is also a controlled gate...
             return ControlledGate(self.tgate.tgate, self.ncontrols + self.tgate.ncontrols,
                                   self.ctrl_state + self.tgate.ctrl_state).as_tensornet()
-        else:
-            # use matrix representation of target gate in tensor network, for simplicity
-            ntargets = self.tgate.num_wires
-            ctgmat = np.reshape(self.tgate.as_matrix(), 2*ntargets * (2,))
-            # elevate target gate tensor to a controlled tensor
-            ctgmat = np.stack((np.reshape(np.identity(2**ntargets), 2*ntargets * (2,)),
-                               ctgmat), axis=0)
-            stn = SymbolicTensorNetwork()
-            # dummy bond IDs will be set later
-            ctgten = SymbolicTensor(0, ctgmat.shape, ctgmat.ndim * [-1], "ctrl_" + str(hash(ctgmat.data.tobytes())))
-            stn.add_tensor(ctgten)
-            data = { ctgten.dataref: ctgmat }
-            # virtual tensor for open axes
-            oaxten = SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), 2*(self.ncontrols + ntargets) * [-1], None)
-            stn.add_tensor(oaxten)
-            # next available bond ID
-            bid_next = 0
-            # add bonds to specify open target gate axes
-            for i in range(ntargets):
-                stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
-                ctgten.bids[1 + i] = bid_next
-                oaxten.bids[self.ncontrols + i] = bid_next
-                bid_next += 1
-            for i in range(ntargets):
-                stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
-                ctgten.bids[1 + ntargets + i] = bid_next
-                oaxten.bids[2*self.ncontrols + ntargets + i] = bid_next
-                bid_next += 1
-            # "wire crossing" tensors:
-            # axis ordering: physical output wire, physical input wire, upward axis, downward axis
-            # control remains active if in |1> state
-            ctrl_cross_pos = np.zeros(shape=(2, 2, 2, 2))
-            ctrl_cross_pos[0, 0, 0, 0] = 1
-            ctrl_cross_pos[1, 1, 1, 1] = 1
-            ctrl_cross_pos[0, 0, 1, 0] = 1
-            ctrl_cross_pos[1, 1, 0, 0] = 1
-            # control remains active if in |0> state
-            ctrl_cross_neg = np.zeros(shape=(2, 2, 2, 2))
-            ctrl_cross_neg[1, 1, 0, 0] = 1
-            ctrl_cross_neg[0, 0, 1, 1] = 1
-            ctrl_cross_neg[1, 1, 1, 0] = 1
-            ctrl_cross_neg[0, 0, 0, 0] = 1
-            ctrl_cross = [ctrl_cross_neg, ctrl_cross_pos]
-            cc_dataref = ["ctrl_cross_neg", "ctrl_cross_pos"]
-            if self.ctrl_state[0] == 0:
-                # insert Pauli-X gates for negated control
-                x_ten1 = SymbolicTensor(self.ncontrols, (2, 2), [bid_next, -1], "PauliX")
-                stn.add_tensor(x_ten1)
-                stn.add_bond(SymbolicBond(bid_next, (-1, x_ten1.tid)))
-                oaxten.bids[0] = bid_next
-                bid_next += 1
-                x_ten2 = SymbolicTensor(self.ncontrols + 1, (2, 2), [-1, bid_next], "PauliX")
-                stn.add_tensor(x_ten2)
-                stn.add_bond(SymbolicBond(bid_next, (-1, x_ten2.tid)))
-                oaxten.bids[self.ncontrols + ntargets] = bid_next
-                bid_next += 1
-                data["PauliX"] = np.array([[ 0.,  1.], [ 1.,  0.]])
-            for i in range(1, self.ncontrols):
-                j = self.ctrl_state[i]
-                ccrten = SymbolicTensor(i, ctrl_cross[j].shape, [bid_next, bid_next + 1, -1, -1], cc_dataref[j])
-                stn.add_tensor(ccrten)
-                stn.add_bond(SymbolicBond(bid_next, (-1, i)))
-                oaxten.bids[i] = bid_next
-                bid_next += 1
-                stn.add_bond(SymbolicBond(bid_next, (-1, i)))
-                oaxten.bids[self.ncontrols + ntargets + i] = bid_next
-                bid_next += 1
-                if i == 1:
-                    if self.ctrl_state[0] == 1:
-                        stn.add_bond(SymbolicBond(bid_next, (-1, -1, i)))
-                        oaxten.bids[0] = bid_next
-                        oaxten.bids[self.ncontrols + ntargets] = bid_next
-                        ccrten.bids[2] = bid_next
-                        bid_next += 1
-                    else:
-                        # connect to Pauli-X gates
-                        stn.add_bond(SymbolicBond(bid_next, (self.ncontrols, self.ncontrols + 1, i)))
-                        x_ten1.bids[1] = bid_next
-                        x_ten2.bids[0] = bid_next
-                        ccrten.bids[2] = bid_next
-                        bid_next += 1
-                else:
-                    # vertical control bond connection
-                    stn.add_bond(SymbolicBond(bid_next, (i - 1, i)))
-                    stn.get_tensor(i - 1).bids[3] = bid_next
-                    ccrten.bids[2] = bid_next
-                    bid_next += 1
-                if cc_dataref[j] not in data:
-                    data[cc_dataref[j]] = ctrl_cross[j]
-            # control bond connected to target gate tensor
-            if self.ncontrols == 1:
+        # use matrix representation of target gate in tensor network, for simplicity
+        ntargets = self.tgate.num_wires
+        ctgmat = np.reshape(self.tgate.as_matrix(), 2*ntargets * (2,))
+        # elevate target gate tensor to a controlled tensor
+        ctgmat = np.stack((np.reshape(np.identity(2**ntargets), 2*ntargets * (2,)),
+                           ctgmat), axis=0)
+        stn = SymbolicTensorNetwork()
+        # dummy bond IDs will be set later
+        ctgten = SymbolicTensor(0, ctgmat.shape, ctgmat.ndim * [-1], "ctrl_" + str(hash(ctgmat.data.tobytes())))
+        stn.add_tensor(ctgten)
+        data = { ctgten.dataref: ctgmat }
+        # virtual tensor for open axes
+        oaxten = SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), 2*(self.ncontrols + ntargets) * [-1], None)
+        stn.add_tensor(oaxten)
+        # next available bond ID
+        bid_next = 0
+        # add bonds to specify open target gate axes
+        for i in range(ntargets):
+            stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
+            ctgten.bids[1 + i] = bid_next
+            oaxten.bids[self.ncontrols + i] = bid_next
+            bid_next += 1
+        for i in range(ntargets):
+            stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
+            ctgten.bids[1 + ntargets + i] = bid_next
+            oaxten.bids[2*self.ncontrols + ntargets + i] = bid_next
+            bid_next += 1
+        # "wire crossing" tensors:
+        # axis ordering: physical output wire, physical input wire, upward axis, downward axis
+        # control remains active if in |1> state
+        ctrl_cross_pos = np.zeros(shape=(2, 2, 2, 2))
+        ctrl_cross_pos[0, 0, 0, 0] = 1
+        ctrl_cross_pos[1, 1, 1, 1] = 1
+        ctrl_cross_pos[0, 0, 1, 0] = 1
+        ctrl_cross_pos[1, 1, 0, 0] = 1
+        # control remains active if in |0> state
+        ctrl_cross_neg = np.zeros(shape=(2, 2, 2, 2))
+        ctrl_cross_neg[1, 1, 0, 0] = 1
+        ctrl_cross_neg[0, 0, 1, 1] = 1
+        ctrl_cross_neg[1, 1, 1, 0] = 1
+        ctrl_cross_neg[0, 0, 0, 0] = 1
+        ctrl_cross = [ctrl_cross_neg, ctrl_cross_pos]
+        cc_dataref = ["ctrl_cross_neg", "ctrl_cross_pos"]
+        if self.ctrl_state[0] == 0:
+            # insert Pauli-X gates for negated control
+            x_ten1 = SymbolicTensor(self.ncontrols, (2, 2), [bid_next, -1], "PauliX")
+            stn.add_tensor(x_ten1)
+            stn.add_bond(SymbolicBond(bid_next, (-1, x_ten1.tid)))
+            oaxten.bids[0] = bid_next
+            bid_next += 1
+            x_ten2 = SymbolicTensor(self.ncontrols + 1, (2, 2), [-1, bid_next], "PauliX")
+            stn.add_tensor(x_ten2)
+            stn.add_bond(SymbolicBond(bid_next, (-1, x_ten2.tid)))
+            oaxten.bids[self.ncontrols + ntargets] = bid_next
+            bid_next += 1
+            data["PauliX"] = np.array([[ 0.,  1.], [ 1.,  0.]])
+        for i in range(1, self.ncontrols):
+            j = self.ctrl_state[i]
+            ccrten = SymbolicTensor(i, ctrl_cross[j].shape, [bid_next, bid_next + 1, -1, -1], cc_dataref[j])
+            stn.add_tensor(ccrten)
+            stn.add_bond(SymbolicBond(bid_next, (-1, i)))
+            oaxten.bids[i] = bid_next
+            bid_next += 1
+            stn.add_bond(SymbolicBond(bid_next, (-1, i)))
+            oaxten.bids[self.ncontrols + ntargets + i] = bid_next
+            bid_next += 1
+            if i == 1:
                 if self.ctrl_state[0] == 1:
-                    stn.add_bond(SymbolicBond(bid_next, (0, -1, -1)))
-                    ctgten.bids[0] = bid_next
+                    stn.add_bond(SymbolicBond(bid_next, (-1, -1, i)))
                     oaxten.bids[0] = bid_next
                     oaxten.bids[self.ncontrols + ntargets] = bid_next
+                    ccrten.bids[2] = bid_next
                     bid_next += 1
                 else:
                     # connect to Pauli-X gates
-                    stn.add_bond(SymbolicBond(bid_next, (0, 1, 2)))
-                    ctgten.bids[0] = bid_next
+                    stn.add_bond(SymbolicBond(bid_next, (self.ncontrols, self.ncontrols + 1, i)))
                     x_ten1.bids[1] = bid_next
                     x_ten2.bids[0] = bid_next
+                    ccrten.bids[2] = bid_next
                     bid_next += 1
-            else:   # self.ncontrols > 1
-                stn.add_bond(SymbolicBond(bid_next, (0, self.ncontrols - 1)))
-                ctgten.bids[0] = bid_next
-                stn.get_tensor(self.ncontrols - 1).bids[3] = bid_next
+            else:
+                # vertical control bond connection
+                stn.add_bond(SymbolicBond(bid_next, (i - 1, i)))
+                stn.get_tensor(i - 1).bids[3] = bid_next
+                ccrten.bids[2] = bid_next
                 bid_next += 1
-            assert stn.is_consistent()
-            return TensorNetwork(stn, data)
+            if cc_dataref[j] not in data:
+                data[cc_dataref[j]] = ctrl_cross[j]
+        # control bond connected to target gate tensor
+        if self.ncontrols == 1:
+            if self.ctrl_state[0] == 1:
+                stn.add_bond(SymbolicBond(bid_next, (0, -1, -1)))
+                ctgten.bids[0] = bid_next
+                oaxten.bids[0] = bid_next
+                oaxten.bids[self.ncontrols + ntargets] = bid_next
+                bid_next += 1
+            else:
+                # connect to Pauli-X gates
+                stn.add_bond(SymbolicBond(bid_next, (0, 1, 2)))
+                ctgten.bids[0] = bid_next
+                x_ten1.bids[1] = bid_next
+                x_ten2.bids[0] = bid_next
+                bid_next += 1
+        else:   # self.ncontrols > 1
+            stn.add_bond(SymbolicBond(bid_next, (0, self.ncontrols - 1)))
+            ctgten.bids[0] = bid_next
+            stn.get_tensor(self.ncontrols - 1).bids[3] = bid_next
+            bid_next += 1
+        assert stn.is_consistent()
+        return TensorNetwork(stn, data)
 
     def __copy__(self):
         """
@@ -1863,7 +1829,7 @@ class MultiplexedGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -1878,9 +1844,9 @@ class MultiplexedGate(Gate):
                 raise RuntimeError("unspecified target gate particle(s)")
         prtcl = self.particles()
         iwire = [map_particle_to_wire(fields, p) for p in prtcl]
-        if any([iw < 0 for iw in iwire]):
+        if any(iw < 0 for iw in iwire):
             raise RuntimeError("particle not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -1991,7 +1957,7 @@ class TimeEvolutionGate(Gate):
         """
         return TimeEvolutionGate(self.h, -self.t)
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -2002,9 +1968,9 @@ class TimeEvolutionGate(Gate):
         prtcl = self.particles()
         assert len(prtcl) == self.num_wires
         iwire = [map_particle_to_wire(fields, p) for p in prtcl]
-        if any([iw < 0 for iw in iwire]):
+        if any(iw < 0 for iw in iwire):
             raise RuntimeError("particle not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -2056,9 +2022,9 @@ class BlockEncodingGate(Gate):
         """
         if self.method == BlockEncodingMethod.Wx:
             return False
-        elif self.method == BlockEncodingMethod.Wxi:
+        if self.method == BlockEncodingMethod.Wxi:
             return False
-        elif self.method == BlockEncodingMethod.R:
+        if self.method == BlockEncodingMethod.R:
             # assuming that `h` is Hermitian
             return True
         raise NotImplementedError(f"encoding method {self.method} not supported yet")
@@ -2092,12 +2058,12 @@ class BlockEncodingGate(Gate):
             if self.auxiliary_qubits:
                 ginv.set_auxiliary_qubits(self.auxiliary_qubits)
             return ginv
-        elif self.method == BlockEncodingMethod.Wxi:
+        if self.method == BlockEncodingMethod.Wxi:
             ginv = BlockEncodingGate(self.h, BlockEncodingMethod.Wx)
             if self.auxiliary_qubits:
                 ginv.set_auxiliary_qubits(self.auxiliary_qubits)
             return ginv
-        elif self.method == BlockEncodingMethod.R:
+        if self.method == BlockEncodingMethod.R:
             return self
         raise NotImplementedError(f"encoding method {self.method} not supported yet")
 
@@ -2127,9 +2093,9 @@ class BlockEncodingGate(Gate):
         """
         if self.method == BlockEncodingMethod.Wx:
             return 1
-        elif self.method == BlockEncodingMethod.Wxi:
+        if self.method == BlockEncodingMethod.Wxi:
             return 1
-        elif self.method == BlockEncodingMethod.R:
+        if self.method == BlockEncodingMethod.R:
             return 1
         raise NotImplementedError(f"encoding method {self.method} not supported yet")
 
@@ -2157,13 +2123,13 @@ class BlockEncodingGate(Gate):
         sq1h = sqrtm(np.identity(hmat.shape[0]) - hmat @ hmat)
         if self.method == BlockEncodingMethod.Wx:
             return np.block([[hmat, 1j*sq1h], [1j*sq1h, hmat]])
-        elif self.method == BlockEncodingMethod.Wxi:
+        if self.method == BlockEncodingMethod.Wxi:
             return np.block([[hmat, -1j*sq1h], [-1j*sq1h, hmat]])
-        elif self.method == BlockEncodingMethod.R:
+        if self.method == BlockEncodingMethod.R:
             return np.block([[hmat, sq1h], [sq1h, -hmat]])
         raise NotImplementedError(f"encoding method {self.method} not supported yet")
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -2176,9 +2142,9 @@ class BlockEncodingGate(Gate):
         prtcl = self.particles()
         assert len(prtcl) == self.num_wires
         iwire = [map_particle_to_wire(fields, p) for p in prtcl]
-        if any([iw < 0 for iw in iwire]):
+        if any(iw < 0 for iw in iwire):
             raise RuntimeError("particle not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
@@ -2276,7 +2242,7 @@ class GeneralGate(Gate):
         # enable chaining
         return self
 
-    def _circuit_matrix(self, fields: Sequence[Field]):
+    def as_circuit_matrix(self, fields: Sequence[Field]):
         """
         Generate the sparse matrix representation of the gate
         as element of a quantum circuit.
@@ -2287,9 +2253,9 @@ class GeneralGate(Gate):
         if not self.prtcl:
             raise RuntimeError("unspecified target particle(s)")
         iwire = [map_particle_to_wire(fields, p) for p in self.prtcl]
-        if any([iw < 0 for iw in iwire]):
+        if any(iw < 0 for iw in iwire):
             raise RuntimeError("particle not found among fields")
-        nwires = sum([f.lattice.nsites for f in fields])
+        nwires = sum(f.lattice.nsites for f in fields)
         return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
 
     def as_tensornet(self):
