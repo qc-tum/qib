@@ -65,6 +65,38 @@ class TestFieldOperator(unittest.TestCase):
             # compare
             self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - Href), 0)
 
+    def test_multiply(self):
+        """
+        Test logical multiplication of two field operators.
+        """
+        rng = np.random.default_rng()
+        # underlying lattice
+        L = 5
+        latt = qib.lattice.FullyConnectedLattice((L,))
+        field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
+        term1 = qib.operator.FieldOperatorTerm(
+            [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
+              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
+            0.5 * qib.util.crandn((L, L), rng))
+        term2 = qib.operator.FieldOperatorTerm(
+            [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL),
+              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
+              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
+            0.5 * qib.util.crandn((L, L, L), rng))
+        term3 = qib.operator.FieldOperatorTerm(
+            [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE)],
+            0.5 * qib.util.crandn((L,), rng))
+        term4 = qib.operator.FieldOperatorTerm(
+            [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL),
+             qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
+            0.5 * qib.util.crandn((L, L), rng))
+        op_a = qib.FieldOperator([term1, term2])
+        op_b = qib.FieldOperator([term3, term4])
+        # logical product of the two field operators
+        op_ab = op_a @ op_b
+        # compare
+        self.assertAlmostEqual(
+            sparse.linalg.norm(op_a.as_matrix() @ op_b.as_matrix() - op_ab.as_matrix()), 0, delta=1e-12)
 
 
 # Alternative implementation of fermionic operators, as reference

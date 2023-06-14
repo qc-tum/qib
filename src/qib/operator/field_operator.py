@@ -54,7 +54,7 @@ class IFODesc:
 
 
 class FieldOperatorTerm:
-    """
+    r"""
     Field operator term in second quantization, e.g.,
     :math:`\sum_{j,k} h_{j,k} a^{\dagger}_j a_k`.
 
@@ -63,7 +63,7 @@ class FieldOperatorTerm:
     """
     def __init__(self, opdesc: Sequence[IFODesc], coeffs):
         self.opdesc = tuple(opdesc)
-        self.coeffs = np.array(coeffs, copy=False)
+        self.coeffs = np.asarray(coeffs)
         if self.coeffs.ndim != len(self.opdesc):
             raise ValueError("number of operator descriptions must match dimension of coefficient array")
 
@@ -87,6 +87,16 @@ class FieldOperatorTerm:
             if desc.field not in f_list:
                 f_list.append(desc.field)
         return f_list
+
+    def __matmul__(self, other):
+        """
+        Logical product of two field operator terms.
+        """
+        if not isinstance(other, FieldOperatorTerm):
+            raise ValueError("expecting another field operator term for multiplication")
+        coeffs = np.kron(self.coeffs.reshape(-1),
+                        other.coeffs.reshape(-1)).reshape(self.coeffs.shape + other.coeffs.shape)
+        return FieldOperatorTerm(self.opdesc + other.opdesc, coeffs)
 
 
 class FieldOperator(AbstractOperator):
@@ -127,6 +137,15 @@ class FieldOperator(AbstractOperator):
         # sum of two terms can be Hermitian, although the individual
         # terms are not, like the superconducting pairing term
         raise NotImplementedError
+
+    def __matmul__(self, other):
+        """
+        Logical product of two field operators.
+        """
+        if not isinstance(other, FieldOperator):
+            raise ValueError("expecting another field operator for multiplication")
+        # take all pairwise products
+        return FieldOperator([t1 @ t2 for t1 in self.terms for t2 in other.terms])
 
     def as_matrix(self):
         """
