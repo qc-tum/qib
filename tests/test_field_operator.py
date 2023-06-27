@@ -91,7 +91,7 @@ class TestFieldOperator(unittest.TestCase):
              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
             0.5 * qib.util.crandn((L, L), rng))
         op_a = qib.FieldOperator([term1, term2])
-        op_b = qib.FieldOperator([term3, term4])
+        op_b = qib.FieldOperator([term3]) + qib.FieldOperator([term4])
         # logical product of the two field operators
         op_ab = op_a @ op_b
         # compare

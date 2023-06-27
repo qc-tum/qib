@@ -138,6 +138,14 @@ class FieldOperator(AbstractOperator):
         # terms are not, like the superconducting pairing term
         raise NotImplementedError
 
+    def __add__(self, other):
+        """
+        Logical sum of two field operators.
+        """
+        if not isinstance(other, FieldOperator):
+            raise ValueError("expecting another field operator for summation")
+        return FieldOperator(self.terms + other.terms)
+
     def __matmul__(self, other):
         """
         Logical product of two field operators.
