@@ -65,6 +65,31 @@ class TestFieldOperator(unittest.TestCase):
             # compare
             self.assertAlmostEqual(sparse.linalg.norm(H.as_matrix() - Href), 0)
 
+    def test_adjoint(self):
+        """
+        Test construction of the adjoint (conjugate transpose) field operator.
+        """
+        rng = np.random.default_rng()
+        # underlying lattice
+        L = 5
+        latt = qib.lattice.FullyConnectedLattice((L,))
+        field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
+        term1 = qib.operator.FieldOperatorTerm(
+            [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
+             qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
+            0.5 * qib.util.crandn((L, L), rng))
+        term2 = qib.operator.FieldOperatorTerm(
+            [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL),
+             qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
+             qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
+            0.5 * qib.util.crandn((L, L, L), rng))
+        term3 = qib.operator.FieldOperatorTerm(
+            [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE)],
+            0.5 * qib.util.crandn((L,), rng))
+        op = qib.FieldOperator([term1, term2, term3])
+        self.assertAlmostEqual(
+            sparse.linalg.norm(op.as_matrix().conj().T - op.adjoint().as_matrix()), 0, delta=1e-12)
+
     def test_multiply(self):
         """
         Test logical multiplication of two field operators.
@@ -76,12 +101,12 @@ class TestFieldOperator(unittest.TestCase):
         field = qib.field.Field(qib.field.ParticleType.FERMION, latt)
         term1 = qib.operator.FieldOperatorTerm(
             [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
-              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
+             qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
             0.5 * qib.util.crandn((L, L), rng))
         term2 = qib.operator.FieldOperatorTerm(
             [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL),
-              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
-              qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
+             qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE),
+             qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_ANNIHIL)],
             0.5 * qib.util.crandn((L, L, L), rng))
         term3 = qib.operator.FieldOperatorTerm(
             [qib.operator.IFODesc(field, qib.operator.IFOType.FERMI_CREATE)],

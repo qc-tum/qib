@@ -34,6 +34,7 @@ class IFOType(enum.Enum):
             return IFOType.FERMI_CREATE
         return otype
 
+
 class IFODesc:
     """
     Individual field operator description: field and operator type.
@@ -51,6 +52,12 @@ class IFODesc:
                 raise ValueError(f"expecting Majorana operator, but received {otype}")
         self.field = field
         self.otype = otype
+
+    def adjoint(self):
+        """
+        Construct the logical adjoint (conjugate transpose) field operator description.
+        """
+        return IFODesc(self.field, IFOType.adjoint(self.otype))
 
 
 class FieldOperatorTerm:
@@ -87,6 +94,13 @@ class FieldOperatorTerm:
             if desc.field not in f_list:
                 f_list.append(desc.field)
         return f_list
+
+    def adjoint(self):
+        """
+        Construct the adjoint (conjugate transpose) field operator term.
+        """
+        return FieldOperatorTerm((desc.adjoint() for desc in reversed(self.opdesc)),
+                                 self.coeffs.conj().T)
 
     def __matmul__(self, other):
         """
@@ -154,6 +168,12 @@ class FieldOperator(AbstractOperator):
             raise ValueError("expecting another field operator for multiplication")
         # take all pairwise products
         return FieldOperator([t1 @ t2 for t1 in self.terms for t2 in other.terms])
+
+    def adjoint(self):
+        """
+        Construct the adjoint (conjugate transpose) field operator.
+        """
+        return FieldOperator([term.adjoint() for term in self.terms])
 
     def as_matrix(self):
         """
