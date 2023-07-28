@@ -156,9 +156,22 @@ class FieldOperator(AbstractOperator):
         """
         Logical sum of two field operators.
         """
+        if other == 0:
+            return self
         if not isinstance(other, FieldOperator):
             raise ValueError("expecting another field operator for summation")
         return FieldOperator(self.terms + other.terms)
+
+    def __radd__(self, other):
+        """
+        Logical sum of two field operators.
+        """
+        # support summation via sum(...)
+        if other == 0:
+            return self
+        if not isinstance(other, FieldOperator):
+            raise ValueError("expecting another field operator for summation")
+        return FieldOperator(other.terms + self.terms)
 
     def __matmul__(self, other):
         """
