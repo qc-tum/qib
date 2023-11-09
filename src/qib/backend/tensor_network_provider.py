@@ -1,5 +1,5 @@
-import h5py
 from typing import Sequence
+import h5py
 from qib.backend import QuantumProvider
 from qib.circuit import Circuit
 from qib.field import Field
@@ -28,4 +28,3 @@ class TensorNetworkProvider(QuantumProvider):
         """
         Query results of a previously submitted job.
         """
-        pass
