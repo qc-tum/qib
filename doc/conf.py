@@ -6,6 +6,11 @@
 
 import qib
 
+import os
+import sys
+import inspect
+import pkg_resources
+
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -61,16 +66,39 @@ def linkcode_resolve(domain, info):
     """
     Code link resolve function for sphinx.ext.linkcode extension.
     """
-    if domain != "py":
+    # adapted from https://gist.github.com/nlgranger/55ff2e7ff10c280731348a16d569cb73
+
+    if domain != "py" or not info["module"]:
         return None
-    if not info["module"]:
+
+    modname = info["module"]
+    topmodulename = modname.split('.')[0]
+    modpath = pkg_resources.require(topmodulename)[0].location
+
+    module = sys.modules.get(modname)
+    if module is None:
         return None
-    filename = info["module"].replace(".", "/")
-    if "fullname" in info:
-        anchor = "#:~:text=" + info["fullname"].split(".")[0]
+
+    obj = module
+    fullname = info["fullname"]
+    for part in fullname.split('.'):
+        obj = getattr(obj, part)
+
+    try:
+        filepath = os.path.relpath(inspect.getsourcefile(obj), modpath)
+        if filepath is None:
+            return None
+    except Exception:
+       return None
+
+    try:
+        source, linenum = inspect.getsourcelines(obj)
+    except OSError:
+        return None
     else:
-        anchor = ""
-    return f"https://github.com/qc-tum/qib/blob/master/src/{filename}.py{anchor}"
+        linestart, linestop = linenum, linenum + len(source) - 1
+
+    return f"https://github.com/qc-tum/qib/tree/master/src/{filepath}#L{linestart}-L{linestop}"
 
 
 # List of patterns, relative to source directory, that match files and
