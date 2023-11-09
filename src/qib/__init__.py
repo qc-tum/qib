@@ -7,6 +7,7 @@ from qib import (
     algorithms,
     simulator,
     tensor_network,
+    backend,
     util
 )
 
