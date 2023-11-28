@@ -34,8 +34,6 @@ from qib.operator import (
     PhaseFactorGate,
     PrepareGate,
     ControlledGate,
-    RxxGate,
-    RyyGate,
     RzzGate,
     MultiplexedGate,
     TimeEvolutionGate,

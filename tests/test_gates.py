@@ -280,6 +280,56 @@ class TestGates(unittest.TestCase):
         self.assertTrue(g_copy == cexph)
         self.assertTrue(np.allclose(g_copy.as_matrix(), cexph.as_matrix()))
 
+    def test_two_qubit_rotation_gates(self):
+        """
+        Test implementation of two qubit rotation gates.
+        """
+        # prepare lattice and qubits
+        field = qib.field.Field(qib.field.ParticleType.QUBIT,
+                                qib.lattice.IntegerLattice((5,), pbc=False))
+        q1 = qib.field.Qubit(field, 2)
+        q2 = qib.field.Qubit(field, 3)
+        # sample random theta value
+        rng = np.random.default_rng()
+        θ = rng.uniform(0, 2*np.pi)
+        # Rxx gate tests
+        X = qib.PauliXGate().as_matrix()
+        self.assertTrue(np.allclose(qib.RxxGate(0, q1, q2).as_matrix(), np.identity(4)))
+        self.assertTrue(np.allclose(qib.RxxGate(np.pi, q1, q2).as_matrix(), -1j*np.kron(X,X)))
+        self.assertTrue(np.allclose(qib.RxxGate(θ, q1, q2).as_matrix(), expm(-1j*θ/2*np.kron(X,X))))
+        # Ryy gate tests
+        Y = qib.PauliYGate().as_matrix()
+        self.assertTrue(np.allclose(qib.RyyGate(0, q1, q2).as_matrix(), np.identity(4)))
+        self.assertTrue(np.allclose(qib.RyyGate(np.pi, q1, q2).as_matrix(), -1j*np.kron(Y,Y)))
+        self.assertTrue(np.allclose(qib.RyyGate(θ, q1, q2).as_matrix(), expm(-1j*θ/2*np.kron(Y,Y))))
+        # Rzz gate tests
+        Z = qib.PauliZGate().as_matrix()
+        self.assertTrue(np.allclose(qib.RzzGate(0, q1, q2).as_matrix(), np.identity(4)))
+        self.assertTrue(np.allclose(qib.RzzGate(2*np.pi, q1, q2).as_matrix(), -np.identity(4)))
+        self.assertTrue(np.allclose(qib.RzzGate(np.pi, q1, q2).as_matrix(), -1j*np.kron(Z,Z)))
+        RZ = qib.RzGate(θ).as_matrix()
+        nRZ = qib.RzGate(-θ).as_matrix()
+        self.assertTrue(np.allclose(qib.RzzGate(θ, q1, q2).as_matrix(), block_diag(RZ, nRZ)))
+        self.assertTrue(np.allclose(qib.RzzGate(θ, q1, q2).as_matrix(), expm(-1j*θ/2*np.kron(Z,Z))))
+        # general tests
+        gates = [qib.RxxGate(θ, q1, q2),
+                  qib.RzzGate(θ, q1, q2)]
+        for i in range(len(gates)):
+            gate = gates[i]
+            self.assertTrue(gate.is_unitary())
+            self.assertFalse(gate.is_hermitian())
+            self.assertEqual(gate.num_wires, 2)
+            self.assertTrue(gate.fields() == [field])
+            self.assertTrue(np.allclose(gate.as_matrix() @ gate.inverse().as_matrix(),
+                            np.identity(4)))
+            self.assertTrue(np.array_equal(gate.as_tensornet().contract_einsum()[0],
+                            gate.as_matrix()))
+            self.assertTrue(np.array_equal(gate.as_circuit_matrix([field]).toarray(),
+                        np.kron(np.kron(np.eye(2**2), gate.as_matrix()), np.eye(2))))
+            g_copy = copy(gate)
+            self.assertTrue(g_copy == gate)
+            self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))
+
     def test_multiplexed_gate(self):
         """
         Test implementation of multiplexed quantum gates.
