@@ -9,6 +9,9 @@ __pycache__
 *.zip
 *.tar.gz
 
+# ignore build folder
+build/
+
 # Mac
 .DS_Store
 
