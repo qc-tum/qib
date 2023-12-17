@@ -7,9 +7,10 @@ class TestBackend(unittest.TestCase):
 
     def test_tensor_network(self):
         """
-        Test tensor network backend functionality.
+        Test tensor network processor functionality.
         """
-        field = qib.field.Field(qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((2,)))
+        field = qib.field.Field(
+            qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((2,)))
         qa = qib.field.Qubit(field, 0)
         qb = qib.field.Qubit(field, 1)
         # Hadamard gate
@@ -22,9 +23,36 @@ class TestBackend(unittest.TestCase):
         circuit.append_gate(cnot)
         self.assertTrue(circuit.fields() == [field])
         h_cnot = cnot.as_matrix() @ np.kron(hadamard.as_matrix(), np.identity(2))
-        self.assertTrue(np.array_equal(circuit.as_matrix([field]).toarray(), h_cnot))
-        provider = qib.backend.TensorNetworkProvider()
-        provider.submit(circuit, [field], { "filename": "bell_circuit_tensornet.hdf5" })
+        self.assertTrue(np.array_equal(
+            circuit.as_matrix([field]).toarray(), h_cnot))
+        processor = qib.backend.TensorNetworkProcessor()
+        processor.submit(circuit, [field], {
+            "filename": "bell_circuit_tensornet.hdf5"})
+
+    def test_qiskit_sim(self):
+        """
+        Test Qiskit Simulator processor functionality.
+        """
+        # Qubits
+        field = qib.field.Field(
+            qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((2,)))
+        qa = qib.field.Qubit(field, 0)
+        qb = qib.field.Qubit(field, 1)
+
+        # Gates
+        hadamard = qib.HadamardGate(qa)
+        cnot = qib.ControlledGate(qib.PauliXGate(qb), 1).set_control(qa)
+
+        # Circuit
+        circuit = qib.Circuit()
+        circuit.append_gate(hadamard)
+        circuit.append_gate(cnot)
+        # Measurement gate ???
+
+        # Processor
+        processor = qib.backend.QiskitSimProcessor()
+        processor.submit(circuit, [field], {
+            "filename": "bell_circuit_qiskit_sim.hdf5"})
 
 
 if __name__ == "__main__":
