@@ -29,7 +29,7 @@ class TestBackend(unittest.TestCase):
         processor.submit(circuit, [field], {
             "filename": "bell_circuit_tensornet.hdf5"})
 
-    def test_qiskit_sim(self):
+    async def test_qiskit_sim(self):
         """
         Test Qiskit Simulator processor functionality.
         """
@@ -49,10 +49,15 @@ class TestBackend(unittest.TestCase):
         circuit.append_gate(cnot)
         # Measurement gate ???
 
-        # Processor
+        # Processor & Experiment
         processor = qib.backend.QiskitSimProcessor()
-        processor.submit(circuit, [field], {
-            "filename": "bell_circuit_qiskit_sim.hdf5"})
+        options = qib.backend.QiskitSimOptions(
+            shots=1024, memory=False, do_emulation=True)
+        experiment = processor.submit_experiment(circuit, [field], options)
+
+        # Experiment Results
+        results = await experiment.wait_for_results()
+        # TEST: test results
 
 
 if __name__ == "__main__":

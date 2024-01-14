@@ -15,25 +15,23 @@ class QuantumProcessor(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def submit(self, circ: Circuit, fields: Sequence[Field], description) -> Experiment:
+    def submit_experiment(self, circ: Circuit, fields: Sequence[Field], options: Options) -> Experiment:
         """
-        Submit a quantum circuit to a backend provider,
+        Submit a quantum circuit, fields, and options to a backend provider,
         returning an "experiment" object to query the results.
         """
         pass
 
     @abc.abstractmethod
-    def query_results(self, experiment: Experiment) -> ExperimentResults:
-        """
-        Query results of a previously submitted experiment.
-        """
+    def _validate_circuit(self, circ: Circuit, fields: Sequence[Field]):
         pass
 
     @abc.abstractmethod
-    async def wait_for_results(self, experiment: Experiment) -> ExperimentResults:
-        """
-        Wait for results of a previously submitted experiment.
-        """
+    def _serialize_experiment(self, circ: Circuit, fields: Sequence[Field]):
+        pass
+
+    @abc.abstractmethod
+    def _send_experiment(self, experiment: Experiment):
         pass
 
 
@@ -45,16 +43,20 @@ class ProcessorConfiguration:
             backend_version: str,
             n_qubits: int,
             basis_gates: Sequence[str],
+            coupling_map: Sequence[Sequence[int]],
             local: bool,
             simulator: bool,
             conditional: bool,
-            open_pulse: bool
+            open_pulse: bool,
+            max_shots: int
     ) -> None:
-        self.backend_name = backend_name
-        self.backend_version = backend_version
-        self.n_qubits = n_qubits
-        self.basis_gates = basis_gates
-        self.local = local
-        self.simulator = simulator
-        self.conditional = conditional
-        self.open_pulse = open_pulse
+        self.backend_name: str = backend_name
+        self.backend_version: str = backend_version
+        self.n_qubits: int = n_qubits
+        self.basis_gates: Sequence[str] = basis_gates
+        self.coupling_map: Sequence[Sequence[int]] = coupling_map
+        self.local: bool = local
+        self.simulator: bool = simulator
+        self.conditional: bool = conditional
+        self.open_pulse: bool = open_pulse
+        self.max_shots: int = max_shots

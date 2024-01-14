@@ -7,7 +7,6 @@ class WMIOptions(Options):
 
     def __init__(self,
                  shots,
-                 memory,
                  do_emulation,
                  loops,
                  sequence_settings,
@@ -27,7 +26,8 @@ class WMIOptions(Options):
                  meas_level,
                  fridge
                  ):
-        super().__init__(shots, memory, do_emulation)
+        super().__init__(shots)
+        self.do_emulation = do_emulation
         self.loops = loops
         self.sequence_settings = sequence_settings
         self.reference_measurement = reference_measurement
@@ -50,7 +50,6 @@ class WMIOptions(Options):
     def default() -> WMIOptions:
         return WMIOptions(
             shots=1024,
-            memory=False,
             do_emulation=True,
             loops={},
             sequence_settings={},

@@ -12,7 +12,7 @@ class WMIProcessor(QuantumProcessor):
             backend_name="WMIQC",
             backend_version="1.0.0",
             n_qubits=6,
-            basis_gates=['id', 'x', 'y', 'sx', 'rz', 'cz'],
+            basis_gates=['id', 'x', 'y', 'sx', 'rz'],
             local=False,
             simulator=False,
             conditional=False,
@@ -22,9 +22,3 @@ class WMIProcessor(QuantumProcessor):
     @property
     def configuration(self):
         return self.configuration
-
-    def submit(self, circ: Circuit, fields: Sequence[Field], description):
-        pass
-
-    def query_results(self, experiment):
-        pass

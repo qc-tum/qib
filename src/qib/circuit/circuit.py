@@ -105,3 +105,5 @@ class Circuit:
             net.transpose(np.argsort(perm))
             assert net.is_consistent()
         return net
+
+    # TODO: as_qobj()
