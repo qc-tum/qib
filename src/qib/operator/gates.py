@@ -63,12 +63,14 @@ class Gate(AbstractOperator):
         Generate a tensor network representation of the gate,
         using an individual tensor axis for each wire.
         """
-        
+
     @abc.abstractmethod
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
+        raise NotImplementedError(
+            "Qobj OpenQASM representation not currently supported")
 
     @abc.abstractmethod
     def __copy__(self):
@@ -87,7 +89,8 @@ class PauliXGate(Gate):
     """
     Pauli-X gate.
     """
-    def __init__(self, qubit: Qubit=None):
+
+    def __init__(self, qubit: Qubit = None):
         self.qubit = qubit
 
     def is_hermitian(self):
@@ -100,7 +103,7 @@ class PauliXGate(Gate):
         """
         Generate the matrix representation of the Pauli-X gate.
         """
-        return np.array([[ 0.,  1.], [ 1.,  0.]])
+        return np.array([[0.,  1.], [1.,  0.]])
 
     @property
     def num_wires(self):
@@ -146,7 +149,8 @@ class PauliXGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -160,8 +164,8 @@ class PauliXGate(Gate):
         Generate a tensor network representation of the gate.
         """
         return TensorNetwork.wrap(self.as_matrix(), "PauliX")
-    
-    def as_qobj_openQASM(self):
+
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -190,7 +194,8 @@ class PauliYGate(Gate):
     """
     Pauli-Y gate.
     """
-    def __init__(self, qubit: Qubit=None):
+
+    def __init__(self, qubit: Qubit = None):
         self.qubit = qubit
 
     def is_hermitian(self):
@@ -203,7 +208,7 @@ class PauliYGate(Gate):
         """
         Generate the matrix representation of the Pauli-Y gate.
         """
-        return np.array([[ 0., -1j], [ 1j,  0.]])
+        return np.array([[0., -1j], [1j,  0.]])
 
     @property
     def num_wires(self):
@@ -249,7 +254,8 @@ class PauliYGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -263,8 +269,8 @@ class PauliYGate(Gate):
         Generate a tensor network representation of the gate.
         """
         return TensorNetwork.wrap(self.as_matrix(), "PauliY")
-    
-    def as_qobj_openQASM(self):
+
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -291,7 +297,8 @@ class PauliZGate(Gate):
     """
     Pauli-Z gate.
     """
-    def __init__(self, qubit: Qubit=None):
+
+    def __init__(self, qubit: Qubit = None):
         self.qubit = qubit
 
     def is_hermitian(self):
@@ -304,7 +311,7 @@ class PauliZGate(Gate):
         """
         Generate the matrix representation of the Pauli-Z gate.
         """
-        return np.array([[ 1.,  0.], [ 0., -1.]])
+        return np.array([[1.,  0.], [0., -1.]])
 
     @property
     def num_wires(self):
@@ -350,7 +357,8 @@ class PauliZGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -365,7 +373,7 @@ class PauliZGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "PauliZ")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -392,7 +400,8 @@ class HadamardGate(Gate):
     """
     Hadamard gate.
     """
-    def __init__(self, qubit: Qubit=None):
+
+    def __init__(self, qubit: Qubit = None):
         self.qubit = qubit
 
     def is_hermitian(self):
@@ -405,7 +414,7 @@ class HadamardGate(Gate):
         """
         Generate the matrix representation of the Hadamard gate.
         """
-        return np.array([[ 1.,  1.], [ 1., -1.]]) / np.sqrt(2)
+        return np.array([[1.,  1.], [1., -1.]]) / np.sqrt(2)
 
     @property
     def num_wires(self):
@@ -451,7 +460,8 @@ class HadamardGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -466,15 +476,15 @@ class HadamardGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "Hadamard")
 
-    def as_qobj_openQASM(self):
-            """
-            Generate a Qobj OpenQASM representation of the gate.
-            """
-            return {
-                "name": "h",
-                "params": [],
-                "qubits": [self.qubit.index]
-            }
+    def as_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "h",
+            "params": [],
+            "qubits": [self.qubit.index]
+        }
 
     def __copy__(self):
         """
@@ -493,7 +503,8 @@ class RxGate(Gate):
     """
     X-axis rotation gate.
     """
-    def __init__(self, theta: float, qubit: Qubit=None):
+
+    def __init__(self, theta: float, qubit: Qubit = None):
         self.theta = theta
         self.qubit = qubit
 
@@ -562,7 +573,8 @@ class RxGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -578,7 +590,7 @@ class RxGate(Gate):
         # require a unique name for each rotation angle
         return TensorNetwork.wrap(self.as_matrix(), f"Rx({self.theta})")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -605,7 +617,8 @@ class RyGate(Gate):
     """
     Y-axis rotation gate
     """
-    def __init__(self, theta: float, qubit: Qubit=None):
+
+    def __init__(self, theta: float, qubit: Qubit = None):
         self.theta = theta
         self.qubit = qubit
 
@@ -674,7 +687,8 @@ class RyGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -690,7 +704,7 @@ class RyGate(Gate):
         # require a unique name for each rotation angle
         return TensorNetwork.wrap(self.as_matrix(), f"Ry({self.theta})")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -717,7 +731,8 @@ class RzGate(Gate):
     """
     Z-axis rotation gate
     """
-    def __init__(self, theta: float, qubit: Qubit=None):
+
+    def __init__(self, theta: float, qubit: Qubit = None):
         self.theta = theta
         self.qubit = qubit
 
@@ -785,7 +800,8 @@ class RzGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -801,7 +817,7 @@ class RzGate(Gate):
         # require a unique name for each rotation angle
         return TensorNetwork.wrap(self.as_matrix(), f"Rz({self.theta})")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -829,7 +845,8 @@ class RotationGate(Gate):
     General rotation gate; the rotation angle and axis are combined into
     a single vector `ntheta` of length 3.
     """
-    def __init__(self, ntheta: Sequence[float], qubit: Qubit=None):
+
+    def __init__(self, ntheta: Sequence[float], qubit: Qubit = None):
         self.ntheta = np.array(ntheta, copy=False)
         if self.ntheta.shape != (3,):
             raise ValueError("'ntheta' must be a vector of length 3")
@@ -849,7 +866,7 @@ class RotationGate(Gate):
         if theta == 0:
             return np.identity(2)
         n = self.ntheta / theta
-        return (     np.cos(theta/2)*np.identity(2)
+        return (np.cos(theta/2)*np.identity(2)
                 - 1j*np.sin(theta/2)*np.array([[n[2], n[0] - 1j*n[1]], [n[0] + 1j*n[1], -n[2]]]))
 
     @property
@@ -896,7 +913,8 @@ class RotationGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -912,7 +930,7 @@ class RotationGate(Gate):
         # require a unique name for each rotation angle
         return TensorNetwork.wrap(self.as_matrix(), f"Rn({self.ntheta})")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -939,7 +957,8 @@ class SGate(Gate):
     """
     S (phase) gate - provides a phase shift of pi/2.
     """
-    def __init__(self, qubit: Qubit=None):
+
+    def __init__(self, qubit: Qubit = None):
         self.qubit = qubit
 
     def is_hermitian(self):
@@ -952,7 +971,7 @@ class SGate(Gate):
         """
         Generate the matrix representation of the gate.
         """
-        return np.array([[ 1.,  0.], [ 0.,  1j]])
+        return np.array([[1.,  0.], [0.,  1j]])
 
     @property
     def num_wires(self):
@@ -998,7 +1017,8 @@ class SGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -1013,7 +1033,7 @@ class SGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "S")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -1040,7 +1060,8 @@ class SAdjGate(Gate):
     """
     Adjoint of S gate - provides a phase shift of -pi/2.
     """
-    def __init__(self, qubit: Qubit=None):
+
+    def __init__(self, qubit: Qubit = None):
         self.qubit = qubit
 
     def is_hermitian(self):
@@ -1053,7 +1074,7 @@ class SAdjGate(Gate):
         """
         Generate the matrix representation of the gate.
         """
-        return np.array([[ 1.,  0.], [ 0., -1j]])
+        return np.array([[1.,  0.], [0., -1j]])
 
     @property
     def num_wires(self):
@@ -1099,7 +1120,8 @@ class SAdjGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -1114,7 +1136,7 @@ class SAdjGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "Sadj")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -1141,7 +1163,8 @@ class TGate(Gate):
     """
     T gate - provides a phase shift of pi/4.
     """
-    def __init__(self, qubit: Qubit=None):
+
+    def __init__(self, qubit: Qubit = None):
         self.qubit = qubit
 
     def is_hermitian(self):
@@ -1154,7 +1177,7 @@ class TGate(Gate):
         """
         Generate the matrix representation of the gate.
         """
-        return np.array([[ 1.,  0.], [ 0., (1+1j)/np.sqrt(2)]])
+        return np.array([[1.,  0.], [0., (1+1j)/np.sqrt(2)]])
 
     @property
     def num_wires(self):
@@ -1200,7 +1223,8 @@ class TGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -1215,7 +1239,7 @@ class TGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "T")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -1242,7 +1266,8 @@ class TAdjGate(Gate):
     """
     Adjoint of T gate - provides a phase shift of -pi/4.
     """
-    def __init__(self, qubit: Qubit=None):
+
+    def __init__(self, qubit: Qubit = None):
         self.qubit = qubit
 
     def is_hermitian(self):
@@ -1255,7 +1280,7 @@ class TAdjGate(Gate):
         """
         Generate the matrix representation of the gate.
         """
-        return np.array([[ 1.,  0.], [ 0., (1-1j)/np.sqrt(2)]])
+        return np.array([[1.,  0.], [0., (1-1j)/np.sqrt(2)]])
 
     @property
     def num_wires(self):
@@ -1301,7 +1326,8 @@ class TAdjGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.qubit:
             raise RuntimeError("unspecified target qubit")
         iwire = map_particle_to_wire(fields, self.qubit)
@@ -1316,7 +1342,7 @@ class TAdjGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "Tadj")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
@@ -1343,6 +1369,7 @@ class PhaseFactorGate(Gate):
     """
     Phase factor gate: multiplication by the phase factor :math:`e^{i \phi}`.
     """
+
     def __init__(self, phi: float, nwires: int):
         self.phi = phi
         self.nwires = nwires
@@ -1399,7 +1426,8 @@ class PhaseFactorGate(Gate):
         else:
             prtcl = list(args)
         if len(prtcl) != self.nwires:
-            raise ValueError(f"require {self.nwires} particles, but received {len(prtcl)}")
+            raise ValueError(
+                f"require {self.nwires} particles, but received {len(prtcl)}")
         self.prtcl = prtcl
         # enable chaining
         return self
@@ -1411,7 +1439,8 @@ class PhaseFactorGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.prtcl:
             raise RuntimeError("unspecified target particle(s)")
         iwire = [map_particle_to_wire(fields, p) for p in self.prtcl]
@@ -1430,19 +1459,19 @@ class PhaseFactorGate(Gate):
             stn.add_tensor(SymbolicTensor(i, (2, 2), (2*i, 2*i + 1), dataref))
         # virtual tensor for open axes
         stn.add_tensor(SymbolicTensor(-1, 2*self.nwires * (2,),
-                                        list(range(0, 2*self.nwires, 2))
+                                      list(range(0, 2*self.nwires, 2))
                                       + list(range(1, 2*self.nwires, 2)), None))
         for i in range(self.nwires):
             stn.add_bond(SymbolicBond(2*i,     (-1, i)))
             stn.add_bond(SymbolicBond(2*i + 1, (-1, i)))
         assert stn.is_consistent()
-        return TensorNetwork(stn, { dataref: np.exp(1j*self.phi / self.nwires) * np.identity(2) })
+        return TensorNetwork(stn, {dataref: np.exp(1j*self.phi / self.nwires) * np.identity(2)})
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
-        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+        return super().as_openQASM()
 
     def __copy__(self):
         """
@@ -1463,6 +1492,7 @@ class PrepareGate(Gate):
     """
     Vector "preparation" gate.
     """
+
     def __init__(self, vec, nqubits: int, transpose=False):
         vec = np.array(vec)
         if vec.ndim != 1:
@@ -1470,7 +1500,8 @@ class PrepareGate(Gate):
         if not np.isrealobj(vec):
             raise ValueError("only real-valued vectors supported")
         if vec.shape[0] != 2**nqubits:
-            raise ValueError(f"input vector must have length 2^nqubits = {2**nqubits}")
+            raise ValueError(
+                f"input vector must have length 2^nqubits = {2**nqubits}")
         # note: using 1-norm here by convention
         n = np.linalg.norm(vec, ord=1)
         if abs(n - 1) > 1e-12:
@@ -1542,7 +1573,8 @@ class PrepareGate(Gate):
         else:
             qubits = list(args)
         if len(qubits) != self.nqubits:
-            raise ValueError(f"expecting {self.nqubits} qubits, but received {len(qubits)}")
+            raise ValueError(
+                f"expecting {self.nqubits} qubits, but received {len(qubits)}")
         self.qubits = qubits
         # enable chaining
         return self
@@ -1554,7 +1586,8 @@ class PrepareGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if len(self.qubits) != self.nqubits:
             raise RuntimeError("unspecified qubit(s)")
         prtcl = self.particles()
@@ -1569,12 +1602,15 @@ class PrepareGate(Gate):
         Generate a tensor network representation of the gate.
         """
         # construct tensor network corresponding to |vec/norm(vec)> <0|...<0|
-        x = np.reshape(np.sign(self.vec) * np.sqrt(np.abs(self.vec)), self.nqubits * (2,))
+        x = np.reshape(np.sign(self.vec) *
+                       np.sqrt(np.abs(self.vec)), self.nqubits * (2,))
         stn = SymbolicTensorNetwork()
-        xten = SymbolicTensor(0, x.shape, range(self.nqubits), str(hash(x.data.tobytes())))
+        xten = SymbolicTensor(0, x.shape, range(
+            self.nqubits), str(hash(x.data.tobytes())))
         stn.add_tensor(xten)
         for i in range(self.nqubits):
-            stn.add_tensor(SymbolicTensor(1 + i, (2,), (self.nqubits + i,), "|0>_2"))
+            stn.add_tensor(SymbolicTensor(
+                1 + i, (2,), (self.nqubits + i,), "|0>_2"))
         # virtual tensor for open axes
         stn.add_tensor(SymbolicTensor(-1, 2*self.nqubits * (2,),
                                       range(2*self.nqubits) if not self.transpose else
@@ -1585,13 +1621,13 @@ class PrepareGate(Gate):
         for i in range(self.nqubits):
             stn.add_bond(SymbolicBond(self.nqubits + i, (-1, 1 + i)))
         assert stn.is_consistent()
-        return TensorNetwork(stn, { xten.dataref: x, "|0>_2": np.array([ 1., 0.]) })
+        return TensorNetwork(stn, {xten.dataref: x, "|0>_2": np.array([1., 0.])})
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
-        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+        return super().as_openQASM()
 
     def __copy__(self):
         """
@@ -1615,7 +1651,8 @@ class ControlledGate(Gate):
     The control qubits have to be set explicitly.
     The target qubits (or particles) are specified via the target gate.
     """
-    def __init__(self, tgate: Gate, ncontrols: int, ctrl_state: Sequence[int]=None):
+
+    def __init__(self, tgate: Gate, ncontrols: int, ctrl_state: Sequence[int] = None):
         self.tgate = tgate
         self.ncontrols = ncontrols
         self.control_qubits = []
@@ -1623,10 +1660,12 @@ class ControlledGate(Gate):
         if ctrl_state is None:
             ctrl_state = ncontrols * [1]
         if len(ctrl_state) != ncontrols:
-            raise ValueError(f"length of `ctrl_state` must be equal to number of control qubits, {ncontrols}")
+            raise ValueError(
+                f"length of `ctrl_state` must be equal to number of control qubits, {ncontrols}")
         for i in ctrl_state:
             if not i in (0, 1):
-                raise ValueError(f"`ctrl_state` can only contain 0 or 1 bits, received {i}")
+                raise ValueError(
+                    f"`ctrl_state` can only contain 0 or 1 bits, received {i}")
         self.ctrl_state = list(ctrl_state)
 
     def is_hermitian(self):
@@ -1639,7 +1678,8 @@ class ControlledGate(Gate):
         """
         Return the inverse operator.
         """
-        invgate = ControlledGate(self.tgate.inverse(), self.ncontrols, self.ctrl_state)
+        invgate = ControlledGate(self.tgate.inverse(),
+                                 self.ncontrols, self.ctrl_state)
         if self.control_qubits:
             invgate.set_control(self.control_qubits)
         return invgate
@@ -1659,7 +1699,7 @@ class ControlledGate(Gate):
                 # first digit is the most significant bit
                 ic += 1 << (self.ncontrols - 1 - j)
         cidx[ic] = 1
-        return (  np.kron(np.diag(1 - cidx), np.identity(tgmat.shape[0]))
+        return (np.kron(np.diag(1 - cidx), np.identity(tgmat.shape[0]))
                 + np.kron(np.diag(cidx), tgmat))
 
     @property
@@ -1710,7 +1750,8 @@ class ControlledGate(Gate):
         else:
             control_qubits = list(args)
         if len(control_qubits) != self.ncontrols:
-            raise ValueError(f"require {self.ncontrols} control qubits, but received {len(control_qubits)}")
+            raise ValueError(
+                f"require {self.ncontrols} control qubits, but received {len(control_qubits)}")
         self.control_qubits = control_qubits
         # enable chaining
         return self
@@ -1722,7 +1763,8 @@ class ControlledGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if len(self.control_qubits) != self.ncontrols:
             raise RuntimeError("unspecified control qubit(s)")
         if len(self.tgate.particles()) != self.tgate.num_wires:
@@ -1750,11 +1792,13 @@ class ControlledGate(Gate):
                            ctgmat), axis=0)
         stn = SymbolicTensorNetwork()
         # dummy bond IDs will be set later
-        ctgten = SymbolicTensor(0, ctgmat.shape, ctgmat.ndim * [-1], "ctrl_" + str(hash(ctgmat.data.tobytes())))
+        ctgten = SymbolicTensor(
+            0, ctgmat.shape, ctgmat.ndim * [-1], "ctrl_" + str(hash(ctgmat.data.tobytes())))
         stn.add_tensor(ctgten)
-        data = { ctgten.dataref: ctgmat }
+        data = {ctgten.dataref: ctgmat}
         # virtual tensor for open axes
-        oaxten = SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), 2*(self.ncontrols + ntargets) * [-1], None)
+        oaxten = SymbolicTensor(-1, 2*(self.ncontrols + ntargets)
+                                * (2,), 2*(self.ncontrols + ntargets) * [-1], None)
         stn.add_tensor(oaxten)
         # next available bond ID
         bid_next = 0
@@ -1787,20 +1831,23 @@ class ControlledGate(Gate):
         cc_dataref = ["ctrl_cross_neg", "ctrl_cross_pos"]
         if self.ctrl_state[0] == 0:
             # insert Pauli-X gates for negated control
-            x_ten1 = SymbolicTensor(self.ncontrols, (2, 2), [bid_next, -1], "PauliX")
+            x_ten1 = SymbolicTensor(self.ncontrols, (2, 2), [
+                                    bid_next, -1], "PauliX")
             stn.add_tensor(x_ten1)
             stn.add_bond(SymbolicBond(bid_next, (-1, x_ten1.tid)))
             oaxten.bids[0] = bid_next
             bid_next += 1
-            x_ten2 = SymbolicTensor(self.ncontrols + 1, (2, 2), [-1, bid_next], "PauliX")
+            x_ten2 = SymbolicTensor(
+                self.ncontrols + 1, (2, 2), [-1, bid_next], "PauliX")
             stn.add_tensor(x_ten2)
             stn.add_bond(SymbolicBond(bid_next, (-1, x_ten2.tid)))
             oaxten.bids[self.ncontrols + ntargets] = bid_next
             bid_next += 1
-            data["PauliX"] = np.array([[ 0.,  1.], [ 1.,  0.]])
+            data["PauliX"] = np.array([[0.,  1.], [1.,  0.]])
         for i in range(1, self.ncontrols):
             j = self.ctrl_state[i]
-            ccrten = SymbolicTensor(i, ctrl_cross[j].shape, [bid_next, bid_next + 1, -1, -1], cc_dataref[j])
+            ccrten = SymbolicTensor(i, ctrl_cross[j].shape, [
+                                    bid_next, bid_next + 1, -1, -1], cc_dataref[j])
             stn.add_tensor(ccrten)
             stn.add_bond(SymbolicBond(bid_next, (-1, i)))
             oaxten.bids[i] = bid_next
@@ -1817,7 +1864,8 @@ class ControlledGate(Gate):
                     bid_next += 1
                 else:
                     # connect to Pauli-X gates
-                    stn.add_bond(SymbolicBond(bid_next, (self.ncontrols, self.ncontrols + 1, i)))
+                    stn.add_bond(SymbolicBond(
+                        bid_next, (self.ncontrols, self.ncontrols + 1, i)))
                     x_ten1.bids[1] = bid_next
                     x_ten2.bids[0] = bid_next
                     ccrten.bids[2] = bid_next
@@ -1853,17 +1901,18 @@ class ControlledGate(Gate):
         assert stn.is_consistent()
         return TensorNetwork(stn, data)
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
-        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+        return super().as_openQASM()
 
     def __copy__(self):
         """
         Create a copy of the gate.
         """
-        gate = ControlledGate(copy(self.tgate), self.ncontrols, self.ctrl_state)
+        gate = ControlledGate(
+            copy(self.tgate), self.ncontrols, self.ctrl_state)
         gate.set_control(self.control_qubits)
         return gate
 
@@ -2209,9 +2258,11 @@ class MultiplexedGate(Gate):
     """
     Multiplexed gate (control qubits select a unitary), generalizing a controlled gate.
     """
+
     def __init__(self, tgates: Sequence[Gate], ncontrols: int):
         if len(tgates) != 2**ncontrols:
-            assert ValueError(f"require {2**ncontrols} target gates for {ncontrols} control qubits")
+            assert ValueError(
+                f"require {2**ncontrols} target gates for {ncontrols} control qubits")
         self.tgates = list(tgates)
         self.ncontrols = ncontrols
         self.control_qubits = []
@@ -2226,7 +2277,8 @@ class MultiplexedGate(Gate):
         """
         Return the inverse operator.
         """
-        invgate = MultiplexedGate([g.inverse() for g in self.tgates], self.ncontrols)
+        invgate = MultiplexedGate([g.inverse()
+                                  for g in self.tgates], self.ncontrols)
         if self.control_qubits:
             invgate.set_control(self.control_qubits)
         return invgate
@@ -2267,7 +2319,8 @@ class MultiplexedGate(Gate):
                 flist.append(q.field)
         assert self.tgates
         for g in self.tgates:
-            assert self.tgates[0].fields() == g.fields(), "fields of all target gates must match"
+            assert self.tgates[0].fields() == g.fields(
+            ), "fields of all target gates must match"
         for f in self.tgates[0].fields():
             if f not in flist:
                 flist.append(f)
@@ -2295,7 +2348,8 @@ class MultiplexedGate(Gate):
         else:
             control_qubits = list(args)
         if len(control_qubits) != self.ncontrols:
-            raise ValueError(f"require {self.ncontrols} control qubits, but received {len(control_qubits)}")
+            raise ValueError(
+                f"require {self.ncontrols} control qubits, but received {len(control_qubits)}")
         self.control_qubits = control_qubits
         # enable chaining
         return self
@@ -2307,7 +2361,8 @@ class MultiplexedGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if len(self.control_qubits) != self.ncontrols:
             raise RuntimeError("unspecified control qubit(s)")
         for g in self.tgates:
@@ -2326,12 +2381,15 @@ class MultiplexedGate(Gate):
         """
         ntargets = self.tgates[0].num_wires
         # use matrix representation of target gates in tensor network, for simplicity
-        mtgmat = np.reshape(np.stack([g.as_matrix() for g in self.tgates], axis=0), self.ncontrols * (2,) + 2*ntargets * (2,))
+        mtgmat = np.reshape(np.stack([g.as_matrix(
+        ) for g in self.tgates], axis=0), self.ncontrols * (2,) + 2*ntargets * (2,))
         stn = SymbolicTensorNetwork()
-        ctgten = SymbolicTensor(0, mtgmat.shape, mtgmat.ndim * [-1], str(hash(mtgmat.data.tobytes())))
+        ctgten = SymbolicTensor(
+            0, mtgmat.shape, mtgmat.ndim * [-1], str(hash(mtgmat.data.tobytes())))
         stn.add_tensor(ctgten)
         # virtual tensor for open axes
-        oaxten = SymbolicTensor(-1, 2*(self.ncontrols + ntargets) * (2,), 2*(self.ncontrols + ntargets) * [-1], None)
+        oaxten = SymbolicTensor(-1, 2*(self.ncontrols + ntargets)
+                                * (2,), 2*(self.ncontrols + ntargets) * [-1], None)
         stn.add_tensor(oaxten)
         # next available bond ID
         bid_next = 0
@@ -2344,22 +2402,22 @@ class MultiplexedGate(Gate):
         for i in range(ntargets):
             stn.add_bond(SymbolicBond(bid_next, (-1, 0)))
             oaxten.bids[2*self.ncontrols + ntargets + i] = bid_next
-            ctgten.bids[self.ncontrols + ntargets + i]   = bid_next
+            ctgten.bids[self.ncontrols + ntargets + i] = bid_next
             bid_next += 1
         for i in range(self.ncontrols):
             stn.add_bond(SymbolicBond(bid_next, (-1, -1, 0)))
-            oaxten.bids[i]                             = bid_next
+            oaxten.bids[i] = bid_next
             oaxten.bids[self.ncontrols + ntargets + i] = bid_next
-            ctgten.bids[i]                             = bid_next
+            ctgten.bids[i] = bid_next
             bid_next += 1
         assert stn.is_consistent()
-        return TensorNetwork(stn, { ctgten.dataref: mtgmat })
+        return TensorNetwork(stn, {ctgten.dataref: mtgmat})
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
-        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+        return super().as_openQASM()
 
     def __copy__(self):
         """
@@ -2384,6 +2442,7 @@ class TimeEvolutionGate(Gate):
     Quantum time evolution gate, i.e., matrix exponential,
     given a Hamiltonian `h`: :math:`e^{-i h t}`.
     """
+
     def __init__(self, h: AbstractOperator, t: float):
         self.h = h
         self.t = t
@@ -2441,7 +2500,8 @@ class TimeEvolutionGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         prtcl = self.particles()
         assert len(prtcl) == self.num_wires
         iwire = [map_particle_to_wire(fields, p) for p in prtcl]
@@ -2459,12 +2519,12 @@ class TimeEvolutionGate(Gate):
         umat = self.as_matrix()
         return TensorNetwork.wrap(np.reshape(umat, dims + dims), str(hash(umat.data.tobytes())))
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
-        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
-    
+        return super().as_openQASM()
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -2482,9 +2542,9 @@ class BlockEncodingMethod(Enum):
     """
     Block encoding method.
     """
-    Wx  = 1
-    Wxi = 2 # inverse Wx
-    R   = 3
+    Wx = 1
+    Wxi = 2  # inverse Wx
+    R = 3
 
 
 class BlockEncodingGate(Gate):
@@ -2494,6 +2554,7 @@ class BlockEncodingGate(Gate):
     Output state is Hamiltonian applied to principal input state
     if auxiliary qubit(s) is initialized to |0>.
     """
+
     def __init__(self, h: AbstractOperator, method: BlockEncodingMethod = BlockEncodingMethod.Wx):
         self.h = h
         self.method = method
@@ -2510,7 +2571,8 @@ class BlockEncodingGate(Gate):
         if self.method == BlockEncodingMethod.R:
             # assuming that `h` is Hermitian
             return True
-        raise NotImplementedError(f"encoding method {self.method} not supported yet")
+        raise NotImplementedError(
+            f"encoding method {self.method} not supported yet")
 
     @property
     def num_wires(self):
@@ -2525,7 +2587,8 @@ class BlockEncodingGate(Gate):
         Return the list of quantum particles the gate acts on.
         """
         if len(self.auxiliary_qubits) != self.num_aux_qubits:
-            raise RuntimeError(f"require {self.num_aux_qubits} auxiliary qubits, but have {len(self.auxiliary_qubits)}")
+            raise RuntimeError(
+                f"require {self.num_aux_qubits} auxiliary qubits, but have {len(self.auxiliary_qubits)}")
         prtcl = [q for q in self.auxiliary_qubits]  # copy of list
         fields = self.h.fields()
         for f in fields:
@@ -2548,7 +2611,8 @@ class BlockEncodingGate(Gate):
             return ginv
         if self.method == BlockEncodingMethod.R:
             return self
-        raise NotImplementedError(f"encoding method {self.method} not supported yet")
+        raise NotImplementedError(
+            f"encoding method {self.method} not supported yet")
 
     def fields(self):
         """
@@ -2580,7 +2644,8 @@ class BlockEncodingGate(Gate):
             return 1
         if self.method == BlockEncodingMethod.R:
             return 1
-        raise NotImplementedError(f"encoding method {self.method} not supported yet")
+        raise NotImplementedError(
+            f"encoding method {self.method} not supported yet")
 
     def set_auxiliary_qubits(self, *args):
         """
@@ -2591,7 +2656,8 @@ class BlockEncodingGate(Gate):
         else:
             auxiliary_qubits = list(args)
         if len(auxiliary_qubits) != self.num_aux_qubits:
-            raise ValueError(f"require {self.num_aux_qubits} auxiliary qubits, but received {len(auxiliary_qubits)}")
+            raise ValueError(
+                f"require {self.num_aux_qubits} auxiliary qubits, but received {len(auxiliary_qubits)}")
         self.auxiliary_qubits = auxiliary_qubits
         # enable chaining
         return self
@@ -2610,7 +2676,8 @@ class BlockEncodingGate(Gate):
             return np.block([[hmat, -1j*sq1h], [-1j*sq1h, hmat]])
         if self.method == BlockEncodingMethod.R:
             return np.block([[hmat, sq1h], [sq1h, -hmat]])
-        raise NotImplementedError(f"encoding method {self.method} not supported yet")
+        raise NotImplementedError(
+            f"encoding method {self.method} not supported yet")
 
     def as_circuit_matrix(self, fields: Sequence[Field]):
         """
@@ -2619,7 +2686,8 @@ class BlockEncodingGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if len(self.auxiliary_qubits) != self.num_aux_qubits:
             raise RuntimeError("unspecified auxiliary qubit(s)")
         prtcl = self.particles()
@@ -2634,13 +2702,14 @@ class BlockEncodingGate(Gate):
         """
         Generate a tensor network representation of the gate.
         """
-        raise NotImplementedError("as_tensornet not yet implemented for this gate")
+        raise NotImplementedError(
+            "as_tensornet not yet implemented for this gate")
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
-        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+        return super().as_openQASM()
 
     def __copy__(self):
         """
@@ -2666,10 +2735,12 @@ class GeneralGate(Gate):
     """
     General (user-defined) quantum gate, specified by a unitary matrix.
     """
+
     def __init__(self, mat, nwires: int):
         mat = np.array(mat, copy=False)
         if mat.shape != (2**nwires, 2**nwires):
-            raise ValueError(f"`mat` must be a {2**nwires} x {2**nwires} matrix")
+            raise ValueError(
+                f"`mat` must be a {2**nwires} x {2**nwires} matrix")
         if not np.allclose(mat @ mat.conj().T, np.identity(mat.shape[0])):
             raise ValueError("`mat` must be unitary")
         self.mat = mat
@@ -2726,7 +2797,8 @@ class GeneralGate(Gate):
         else:
             prtcl = list(args)
         if len(prtcl) != self.nwires:
-            raise ValueError(f"require {self.nwires} particles, but received {len(prtcl)}")
+            raise ValueError(
+                f"require {self.nwires} particles, but received {len(prtcl)}")
         self.prtcl = prtcl
         # enable chaining
         return self
@@ -2738,7 +2810,8 @@ class GeneralGate(Gate):
         """
         for f in fields:
             if f.local_dim != 2:
-                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
         if not self.prtcl:
             raise RuntimeError("unspecified target particle(s)")
         iwire = [map_particle_to_wire(fields, p) for p in self.prtcl]
@@ -2753,11 +2826,11 @@ class GeneralGate(Gate):
         """
         return TensorNetwork.wrap(np.reshape(self.as_matrix(), 2*self.nwires * (2,)), str(hash(self.mat.data.tobytes())))
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a Qobj OpenQASM representation of the gate.
         """
-        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+        return super().as_openQASM()
 
     def __copy__(self):
         """
@@ -2797,8 +2870,9 @@ def _distribute_to_wires(nwires: int, iwire, gmat: csr_matrix):
     colind = np.zeros_like(values, dtype=int)
 
     # reverse ordering, due to convention that wire 0 corresponds to slowest varying index
-    iwire   = [(nwires - 1 - iwire[m - 1 - b]) for b in range(m)]
-    iwcompl = [(nwires - 1 - iwcompl[nwires - m - 1 - b]) for b in range(nwires - m)]
+    iwire = [(nwires - 1 - iwire[m - 1 - b]) for b in range(m)]
+    iwcompl = [(nwires - 1 - iwcompl[nwires - m - 1 - b])
+               for b in range(nwires - m)]
 
     for j in range(2**m):
         r = 0

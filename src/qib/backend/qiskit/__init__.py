@@ -1,3 +1,3 @@
-from qib.backend.qiskit.qiskit_sim_processor import QiskitSimProcessor
 from qib.backend.qiskit.qiskit_sim_experiment import QiskitSimExperiment, QiskitSimExperimentResults
 from qib.backend.qiskit.qiskit_sim_options import QiskitSimOptions
+from qib.backend.qiskit.qiskit_sim_processor import QiskitSimProcessor

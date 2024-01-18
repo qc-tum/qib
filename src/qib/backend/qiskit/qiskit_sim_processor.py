@@ -39,10 +39,13 @@ class QiskitSimProcessor(QuantumProcessor):
         pass
 
     def _validate_experiment(self, circ: Circuit, fields: Sequence[Field]):
+        # TODO: ensure that used gates are supported by the processor
+        # TODO: ensure that used fields are configured for the used gates
         pass
-    
+
     def _serialize_experiment(self, circ: Circuit, fields: Sequence[Field]):
+        # TODO: serialize experiment in a "Job" Qobj format
         pass
-    
+
     def _send_experiment(self, experiment: QiskitSimExperiment):
         pass

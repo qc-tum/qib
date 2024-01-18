@@ -1,8 +1,4 @@
-from typing import Sequence
 from qib.backend import QuantumProcessor, ProcessorConfiguration
-from qib.backend.wmi import WMIOptions
-from qib.circuit import Circuit
-from qib.field import Field
 
 
 class WMIProcessor(QuantumProcessor):

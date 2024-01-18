@@ -4,7 +4,8 @@ import abc
 from typing import Sequence
 from qib.circuit import Circuit
 from qib.field import Field
-from qib.backend import Experiment, ExperimentResults, Options
+from qib.backend.experiment import Experiment
+from qib.backend.options import Options
 
 
 class QuantumProcessor(abc.ABC):

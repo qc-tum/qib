@@ -13,7 +13,8 @@ class Circuit:
 
     We follow the convention that the first gate in the list is applied first.
     """
-    def __init__(self, gates: Sequence[Gate]=None):
+
+    def __init__(self, gates: Sequence[Gate] = None):
         if gates is None:
             self.gates = []
         else:
@@ -66,7 +67,8 @@ class Circuit:
         Generate the sparse matrix representation of the circuit.
         """
         if not self.gates:
-            raise RuntimeError("missing gates, hence cannot compute matrix representation of circuit")
+            raise RuntimeError(
+                "missing gates, hence cannot compute matrix representation of circuit")
         mat = self.gates[0].as_circuit_matrix(fields)
         for g in self.gates[1:]:
             mat = g.as_circuit_matrix(fields) @ mat
@@ -85,7 +87,8 @@ class Circuit:
         # total number of wires
         nwires = len(wiredims)
         # connect input and output open axes
-        stn.add_tensor(SymbolicTensor(-1, 2*wiredims, 2*list(range(nwires)), None))
+        stn.add_tensor(SymbolicTensor(-1, 2*wiredims,
+                       2*list(range(nwires)), None))
         stn.generate_bonds()
         net = TensorNetwork(stn, {})
         assert net.is_consistent()
@@ -96,7 +99,8 @@ class Circuit:
                 raise RuntimeError("particle not found among fields")
             gate_net = gate.as_tensornet()
             assert gate_net.num_open_axes == 2*len(prtcl)
-            net.merge(gate_net, list(zip(iwire, list(range(len(prtcl), 2*len(prtcl))))))
+            net.merge(gate_net, list(
+                zip(iwire, list(range(len(prtcl), 2*len(prtcl))))))
             # permute open axes
             perm = list(range(2*nwires))
             for i in iwire:
@@ -106,10 +110,11 @@ class Circuit:
             assert net.is_consistent()
         return net
 
-    def as_qobj_openQASM(self):
+    def as_openQASM(self):
         """
         Generate a list of Qobj OpenQASM instructions representation of the circuit.
         """
         instructions = []
         for gate in self.gates:
-            instructions.append()
+            instructions.append(gate.as_openQASM())
+        return instructions
