@@ -38,5 +38,11 @@ class QiskitSimProcessor(QuantumProcessor):
         # TODO: return experiment object
         pass
 
-    def _http_put_experiment(self, experiment):
+    def _validate_experiment(self, circ: Circuit, fields: Sequence[Field]):
+        pass
+    
+    def _serialize_experiment(self, circ: Circuit, fields: Sequence[Field]):
+        pass
+    
+    def _send_experiment(self, experiment: QiskitSimExperiment):
         pass

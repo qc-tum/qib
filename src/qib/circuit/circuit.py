@@ -106,4 +106,10 @@ class Circuit:
             assert net.is_consistent()
         return net
 
-    # TODO: as_qobj()
+    def as_qobj_openQASM(self):
+        """
+        Generate a list of Qobj OpenQASM instructions representation of the circuit.
+        """
+        instructions = []
+        for gate in self.gates:
+            instructions.append()

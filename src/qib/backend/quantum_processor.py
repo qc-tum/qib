@@ -23,7 +23,7 @@ class QuantumProcessor(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _validate_circuit(self, circ: Circuit, fields: Sequence[Field]):
+    def _validate_experiment(self, circ: Circuit, fields: Sequence[Field]):
         pass
 
     @abc.abstractmethod

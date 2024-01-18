@@ -63,6 +63,12 @@ class Gate(AbstractOperator):
         Generate a tensor network representation of the gate,
         using an individual tensor axis for each wire.
         """
+        
+    @abc.abstractmethod
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
 
     @abc.abstractmethod
     def __copy__(self):
@@ -154,6 +160,16 @@ class PauliXGate(Gate):
         Generate a tensor network representation of the gate.
         """
         return TensorNetwork.wrap(self.as_matrix(), "PauliX")
+    
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "x",
+            "params": [],
+            "qubits": [self.qubit.index]
+        }
 
     def __copy__(self):
         """
@@ -247,6 +263,16 @@ class PauliYGate(Gate):
         Generate a tensor network representation of the gate.
         """
         return TensorNetwork.wrap(self.as_matrix(), "PauliY")
+    
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "y",
+            "params": [],
+            "qubits": [self.qubit.index]
+        }
 
     def __copy__(self):
         """
@@ -339,6 +365,16 @@ class PauliZGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "PauliZ")
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "z",
+            "params": [],
+            "qubits": [self.qubit.index]
+        }
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -429,6 +465,16 @@ class HadamardGate(Gate):
         Generate a tensor network representation of the gate.
         """
         return TensorNetwork.wrap(self.as_matrix(), "Hadamard")
+
+    def as_qobj_openQASM(self):
+            """
+            Generate a Qobj OpenQASM representation of the gate.
+            """
+            return {
+                "name": "h",
+                "params": [],
+                "qubits": [self.qubit.index]
+            }
 
     def __copy__(self):
         """
@@ -532,6 +578,16 @@ class RxGate(Gate):
         # require a unique name for each rotation angle
         return TensorNetwork.wrap(self.as_matrix(), f"Rx({self.theta})")
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "rx",
+            "params": [self.theta],
+            "qubits": [self.qubit.index]
+        }
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -634,6 +690,16 @@ class RyGate(Gate):
         # require a unique name for each rotation angle
         return TensorNetwork.wrap(self.as_matrix(), f"Ry({self.theta})")
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "ry",
+            "params": [self.theta],
+            "qubits": [self.qubit.index]
+        }
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -734,6 +800,16 @@ class RzGate(Gate):
         """
         # require a unique name for each rotation angle
         return TensorNetwork.wrap(self.as_matrix(), f"Rz({self.theta})")
+
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "rz",
+            "params": [self.theta],
+            "qubits": [self.qubit.index]
+        }
 
     def __copy__(self):
         """
@@ -836,6 +912,16 @@ class RotationGate(Gate):
         # require a unique name for each rotation angle
         return TensorNetwork.wrap(self.as_matrix(), f"Rn({self.ntheta})")
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "r",
+            "params": [self.ntheta[0], self.ntheta[1], self.ntheta[2]],
+            "qubits": [self.qubit.index]
+        }
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -926,6 +1012,16 @@ class SGate(Gate):
         Generate a tensor network representation of the gate.
         """
         return TensorNetwork.wrap(self.as_matrix(), "S")
+
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "s",
+            "params": [],
+            "qubits": [self.qubit.index]
+        }
 
     def __copy__(self):
         """
@@ -1018,6 +1114,16 @@ class SAdjGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "Sadj")
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "sdg",
+            "params": [],
+            "qubits": [self.qubit.index]
+        }
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -1109,6 +1215,16 @@ class TGate(Gate):
         """
         return TensorNetwork.wrap(self.as_matrix(), "T")
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "t",
+            "params": [],
+            "qubits": [self.qubit.index]
+        }
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -1199,6 +1315,16 @@ class TAdjGate(Gate):
         Generate a tensor network representation of the gate.
         """
         return TensorNetwork.wrap(self.as_matrix(), "Tadj")
+
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": "tdg",
+            "params": [],
+            "qubits": [self.qubit.index]
+        }
 
     def __copy__(self):
         """
@@ -1311,6 +1437,12 @@ class PhaseFactorGate(Gate):
             stn.add_bond(SymbolicBond(2*i + 1, (-1, i)))
         assert stn.is_consistent()
         return TensorNetwork(stn, { dataref: np.exp(1j*self.phi / self.nwires) * np.identity(2) })
+
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
 
     def __copy__(self):
         """
@@ -1454,6 +1586,12 @@ class PrepareGate(Gate):
             stn.add_bond(SymbolicBond(self.nqubits + i, (-1, 1 + i)))
         assert stn.is_consistent()
         return TensorNetwork(stn, { xten.dataref: x, "|0>_2": np.array([ 1., 0.]) })
+
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
 
     def __copy__(self):
         """
@@ -1714,6 +1852,12 @@ class ControlledGate(Gate):
             bid_next += 1
         assert stn.is_consistent()
         return TensorNetwork(stn, data)
+
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
 
     def __copy__(self):
         """
@@ -2211,6 +2355,12 @@ class MultiplexedGate(Gate):
         assert stn.is_consistent()
         return TensorNetwork(stn, { ctgten.dataref: mtgmat })
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -2309,6 +2459,12 @@ class TimeEvolutionGate(Gate):
         umat = self.as_matrix()
         return TensorNetwork.wrap(np.reshape(umat, dims + dims), str(hash(umat.data.tobytes())))
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+    
     def __copy__(self):
         """
         Create a copy of the gate.
@@ -2480,6 +2636,12 @@ class BlockEncodingGate(Gate):
         """
         raise NotImplementedError("as_tensornet not yet implemented for this gate")
 
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
+
     def __copy__(self):
         """
         Copy of the gate
@@ -2590,6 +2752,12 @@ class GeneralGate(Gate):
         Generate a tensor network representation of the gate.
         """
         return TensorNetwork.wrap(np.reshape(self.as_matrix(), 2*self.nwires * (2,)), str(hash(self.mat.data.tobytes())))
+
+    def as_qobj_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        raise NotImplementedError("Qobj OpenQASM representation not currently supported")
 
     def __copy__(self):
         """
