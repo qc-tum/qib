@@ -48,4 +48,6 @@ class QiskitSimProcessor(QuantumProcessor):
         pass
 
     def _send_experiment(self, experiment: QiskitSimExperiment):
+        # TODO: build HTTP request
+        # TODO: send HTTP request via the HTTP PUT endpoint
         pass

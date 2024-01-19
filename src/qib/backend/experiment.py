@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 from enum import Enum
+from qib.backend import Options
 
 
 class ExperimentStatus(str, Enum):
@@ -23,9 +24,12 @@ class Experiment(abc.ABC):
     @abc.abstractmethod
     def __init__(
             self,
+            options: Options
     ) -> None:
         self.id: int = 0
         self.status: ExperimentStatus = ExperimentStatus.INITIALIZING
+        self.instructions: list = []
+        self.options: Options = options
 
     @abc.abstractmethod
     def query_results(self) -> ExperimentResults:
@@ -42,9 +46,9 @@ class Experiment(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def json(self) -> dict:
+    def as_openQASM(self) -> dict:
         """
-        Get a JSON representation of the experiment (in Qobj syntax).
+        Get the Qobj OpenQASM representation of the experiment.
         """
         pass
 

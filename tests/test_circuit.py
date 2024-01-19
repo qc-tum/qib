@@ -9,8 +9,10 @@ class TestCircuit(unittest.TestCase):
         """
         Test basic quantum circuit functionality.
         """
-        field1 = qib.field.Field(qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((2,)))
-        field2 = qib.field.Field(qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((3,)))
+        field1 = qib.field.Field(
+            qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((2,)))
+        field2 = qib.field.Field(
+            qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((3,)))
         qa = qib.field.Qubit(field1, 1)
         qb = qib.field.Qubit(field2, 2)
         # Hadamard gate
@@ -26,13 +28,20 @@ class TestCircuit(unittest.TestCase):
         self.assertTrue(np.array_equal(circuit.as_matrix([field1, field2]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(h_cnot, np.identity(8)), [2, 0, 3, 4, 1])))
         self.assertTrue(np.allclose(circuit.as_matrix([field1, field2]).toarray()
-            @ circuit.inverse().as_matrix([field1, field2]).toarray(),
-            np.identity(2**5)))
-        circtens, axes_map = circuit.as_tensornet([field1, field2]).contract_einsum()
+                                    @ circuit.inverse().as_matrix([field1, field2]).toarray(),
+                                    np.identity(2**5)))
+        circtens, axes_map = circuit.as_tensornet(
+            [field1, field2]).contract_einsum()
         # some control axes are identical; form full matrix for comparison
-        circtens = qib.tensor_network.tensor_network.to_full_tensor(circtens, axes_map)
+        circtens = qib.tensor_network.tensor_network.to_full_tensor(
+            circtens, axes_map)
         self.assertTrue(np.allclose(np.reshape(circtens, (2**5, 2**5)),
                                     circuit.as_matrix([field1, field2]).toarray()))
+        self.assertEqual(len(circuit.as_openQASM()), 2)
+        self.assertEqual(circuit.as_openQASM()[0]['name'], 'h')
+        self.assertEqual(circuit.as_openQASM()[0]['qubits'], [1])
+        self.assertEqual(circuit.as_openQASM()[1]['name'], 'cx')
+        self.assertEqual(circuit.as_openQASM()[1]['qubits'], [1, 2])
 
 
 if __name__ == "__main__":
