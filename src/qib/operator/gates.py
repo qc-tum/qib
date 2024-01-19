@@ -1734,6 +1734,333 @@ class ControlledGate(Gate):
                 and other.control_qubits == self.control_qubits)
 
 
+class RxxGate(Gate):
+    """
+    Rxx gate.
+    """
+    def __init__(self, theta: float, q1: Gate, q2 : Gate):
+        self.theta = theta
+        self.q1 = q1
+        self.q2 = q2
+        
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        # in general not Hermitian unless theta = 0
+        return False
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        invgate = RxxGate(-self.theta, self.q1, self.q2)
+        return invgate
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the gate.
+        """
+        x = np.cos(self.theta/2)
+        y = -1j*np.sin(self.theta/2)
+        return np.array([
+            [x, 0, 0, y],
+            [0, x, y, 0],
+            [0, y, x, 0],
+            [y, 0, 0, x]
+        ])
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 2
+
+    @property
+    def rotation_angle(self):
+        """
+        The rotation angle
+        """
+        return self.theta
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return [self.q2, self.q1]
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        flist = []
+        if self.q1.field not in flist:
+            flist.append(self.q1.field)
+        if self.q2.field not in flist:
+            flist.append(self.q2.field)
+        return flist
+
+    def as_circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.q2:
+            raise RuntimeError("unspecified control qubit")
+        if not self.q1:
+            raise RuntimeError("unspecified target qubit")
+        prtcl = self.particles()
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
+        if any(iw < 0 for iw in iwire):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum(f.lattice.nsites for f in fields)
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), f"Rxx({self.theta})")
+
+    def __copy__(self):
+        """
+        Create a copy of the gate.
+        """
+        gate = RxxGate(self.theta, copy(self.q1), copy(self.q2))
+        return gate
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent.
+        """
+        return (type(other) == type(self)
+                and other.theta == self.theta
+                and other.q1 == self.q1
+                and other.q2 == self.q2)
+
+
+class RyyGate(Gate):
+    """
+    Ryy gate.
+    """
+    def __init__(self, theta: float, q1: Gate, q2 : Gate):
+        self.theta = theta
+        self.q1 = q1
+        self.q2 = q2
+        
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        # in general not Hermitian unless theta = 0
+        return False
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        invgate = RyyGate(-self.theta, self.q1, self.q2)
+        return invgate
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the gate.
+        """
+        x = np.cos(self.theta/2)
+        y = 1j*np.sin(self.theta/2)
+        return np.array([
+            [x,  0,  0,  y],
+            [0,  x, -y,  0],
+            [0, -y,  x,  0],
+            [y,  0,  0,  x]
+        ])
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 2
+
+    @property
+    def rotation_angle(self):
+        """
+        The rotation angle
+        """
+        return self.theta
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return [self.q2, self.q1]
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        flist = []
+        if self.q1.field not in flist:
+            flist.append(self.q1.field)
+        if self.q2.field not in flist:
+            flist.append(self.q2.field)
+        return flist
+
+    def as_circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.q2:
+            raise RuntimeError("unspecified control qubit")
+        if not self.q1:
+            raise RuntimeError("unspecified target qubit")
+        prtcl = self.particles()
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
+        if any(iw < 0 for iw in iwire):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum(f.lattice.nsites for f in fields)
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), f"Ryy({self.theta})")
+
+    def __copy__(self):
+        """
+        Create a copy of the gate.
+        """
+        gate = RyyGate(self.theta, copy(self.q1), copy(self.q2))
+        return gate
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent.
+        """
+        return (type(other) == type(self)
+                and other.theta == self.theta
+                and other.q1 == self.q1
+                and other.q2 == self.q2)
+
+
+class RzzGate(Gate):
+    """
+    Rzz gate.
+    """
+    def __init__(self, theta: float, q1: Gate, q2 : Gate):
+        self.theta = theta
+        self.q1 = q1
+        self.q2 = q2
+        
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        # in general not Hermitian unless theta = 0
+        return False
+
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        invgate = RzzGate(-self.theta, self.q1, self.q2)
+        return invgate
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the gate.
+        """
+        x = np.exp(-1j*self.theta/2)
+        y = x.conj()
+        return np.array([
+            [x, 0, 0, 0],
+            [0, y, 0, 0],
+            [0, 0, y, 0],
+            [0, 0, 0, x]
+        ])
+
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 2
+
+    @property
+    def rotation_angle(self):
+        """
+        The rotation angle
+        """
+        return self.theta
+
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        return [self.q2, self.q1]
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        flist = []
+        if self.q1.field not in flist:
+            flist.append(self.q1.field)
+        if self.q2.field not in flist:
+            flist.append(self.q2.field)
+        return flist
+
+    def as_circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError("quantum wire indexing assumes local dimension 2")
+        if not self.q2:
+            raise RuntimeError("unspecified control qubit")
+        if not self.q1:
+            raise RuntimeError("unspecified target qubit")
+        prtcl = self.particles()
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
+        if any(iw < 0 for iw in iwire):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum(f.lattice.nsites for f in fields)
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), f"Rzz({self.theta})")
+
+    def __copy__(self):
+        """
+        Create a copy of the gate.
+        """
+        gate = RzzGate(self.theta, copy(self.q1), copy(self.q2))
+        return gate
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent.
+        """
+        return (type(other) == type(self)
+                and other.theta == self.theta
+                and other.q1 == self.q1
+                and other.q2 == self.q2)
+
+
 class MultiplexedGate(Gate):
     """
     Multiplexed gate (control qubits select a unitary), generalizing a controlled gate.
