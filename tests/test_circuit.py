@@ -37,11 +37,35 @@ class TestCircuit(unittest.TestCase):
             circtens, axes_map)
         self.assertTrue(np.allclose(np.reshape(circtens, (2**5, 2**5)),
                                     circuit.as_matrix([field1, field2]).toarray()))
-        self.assertEqual(len(circuit.as_openQASM()), 2)
+
+    def test_circuit_openQASM_serialization(self):
+        """
+        Test serialization of a basic quantum circuit to a OpenQASM Qobj.
+        """
+        field = qib.field.Field(
+            qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((2,)))
+        q1 = qib.field.Qubit(field, 1)
+        q2 = qib.field.Qubit(field, 2)
+        # Hadamard gate
+        hadamard = qib.HadamardGate(q1)
+        # CNOT gate
+        cnot = qib.ControlledGate(qib.PauliXGate(q2), 1).set_control(q1)
+        # Measurement operator
+        measurement = qib.Measurement()
+        measurement.on([q1, q2])
+        # construct a simple quantum circuit
+        circuit = qib.Circuit()
+        circuit.append_gate(hadamard)
+        circuit.append_gate(cnot)
+        circuit.append_gate(measurement)
+        self.assertEqual(len(circuit.as_openQASM()), 3)
         self.assertEqual(circuit.as_openQASM()[0]['name'], 'h')
         self.assertEqual(circuit.as_openQASM()[0]['qubits'], [1])
         self.assertEqual(circuit.as_openQASM()[1]['name'], 'cx')
         self.assertEqual(circuit.as_openQASM()[1]['qubits'], [1, 2])
+        self.assertEqual(circuit.as_openQASM()[2]['name'], 'measure')
+        self.assertEqual(circuit.as_openQASM()[2]['qubits'], [1, 2])
+        self.assertEqual(circuit.as_openQASM()[2]['memory'], [1, 2])
 
 
 if __name__ == "__main__":
