@@ -43,20 +43,23 @@ class TestBackend(unittest.TestCase):
         hadamard = qib.HadamardGate(qa)
         cnot = qib.ControlledGate(qib.PauliXGate(qb), 1).set_control(qa)
 
+        # Operations
+        measurement = qib.Measurement([qa, qb])
+
         # Circuit
         circuit = qib.Circuit()
         circuit.append_gate(hadamard)
         circuit.append_gate(cnot)
-        # Measurement gate ???
+        circuit.append_gate(measurement)
 
         # Processor & Experiment
         processor = qib.backend.QiskitSimProcessor()
         options = qib.backend.QiskitSimOptions(
             shots=1024, memory=False, do_emulation=True)
-        experiment = processor.submit_experiment(circuit, [field], options)
+        experiment = processor.submit_experiment(circuit, options)
 
         # Experiment Results
-        results = await experiment.wait_for_results()
+        # results = await experiment.wait_for_results()
         # TEST: test results
 
 

@@ -9,34 +9,47 @@ from qib.backend.options import Options
 
 
 class QuantumProcessor(abc.ABC):
+    """
+    Parent class for quantum processor (a.k.a. backend).
 
-    @property
-    @abc.abstractmethod
-    def configuration(self) -> ProcessorConfiguration:
-        pass
+    A quantum processor is a device that can execute quantum circuits,
+    be it a quantum computer, a simulator, or a different type of quantum backend.
+    """
 
+    @staticmethod
     @abc.abstractmethod
-    def submit_experiment(self, circ: Circuit, fields: Sequence[Field], options: Options) -> Experiment:
+    def configuration() -> ProcessorConfiguration:
         """
-        Submit a quantum circuit, fields, and options to a backend provider,
-        returning an "experiment" object to query the results.
+        The configuration of the quantum processor.
         """
-        pass
 
     @abc.abstractmethod
-    def _validate_experiment(self, circ: Circuit, fields: Sequence[Field]):
-        pass
+    def submit_experiment(self, name: str, circ: Circuit, options: Options) -> Experiment:
+        """
+        Submit a quantum circuit and experiment execution options to a quantum processor backend,
+        returning a validated "experiment" object to query the results.
+        """
 
     @abc.abstractmethod
-    def _serialize_experiment(self, circ: Circuit, fields: Sequence[Field]):
-        pass
+    def _validate_experiment(self, circ: Circuit, options: Options):
+        """
+        Validate resulting experiment in the context of this quantum processor.
+        """
 
     @abc.abstractmethod
     def _send_experiment(self, experiment: Experiment):
-        pass
+        """
+        Send resulted experiment to the quantum processor backend.
+        """
 
 
 class ProcessorConfiguration:
+    """
+    Generic class for quantum processor configuration.
+
+    The configuration of a quantum processor includes information about the processor itself,
+    such as the number of qubits, the available gates, the coupling map, etc.
+    """
 
     def __init__(
             self,
@@ -44,6 +57,7 @@ class ProcessorConfiguration:
             backend_version: str,
             n_qubits: int,
             basis_gates: Sequence[str],
+            gates: Sequence[GateProperties],
             coupling_map: Sequence[Sequence[int]],
             local: bool,
             simulator: bool,
@@ -55,9 +69,48 @@ class ProcessorConfiguration:
         self.backend_version: str = backend_version
         self.n_qubits: int = n_qubits
         self.basis_gates: Sequence[str] = basis_gates
+        self.gates: Sequence[GateProperties] = gates
         self.coupling_map: Sequence[Sequence[int]] = coupling_map
         self.local: bool = local
         self.simulator: bool = simulator
         self.conditional: bool = conditional
         self.open_pulse: bool = open_pulse
         self.max_shots: int = max_shots
+
+    def get_gate_by_name(self, gate_name: str)-> GateProperties:
+        """
+        Get a gate properties by its name.
+        """
+        for gate in self.gates:
+            if gate.name == gate_name:
+                return gate
+        return None
+
+class GateProperties:
+    """
+    Generic class for gate properties.
+
+    The properties of a quantum processor's gate, including information about what
+    gates are configured for which qubits of the targeted quantum system.
+    """
+    def __init__(
+            self,
+            name: str,
+            qubits: Sequence[Sequence[int]],
+            parameters: Sequence[str] = []
+    ) -> None:
+        self.name: str = name
+        self.qubits: Sequence[int] = qubits
+        self.parameters: Sequence[str] = parameters
+
+    def check_qubits(self, qubits: Sequence[int]) -> bool:
+        """
+        Check if the gate is configured for the given qubits.
+        """
+        return qubits in self.qubits
+    
+    def check_params(self, params: Sequence) -> bool:
+        """
+        Check if the gate is configured for the given parameters.
+        """
+        return len(params) == len(self.parameters)

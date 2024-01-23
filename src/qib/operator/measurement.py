@@ -12,8 +12,8 @@ class Measurement(AbstractOperator):
     and can store the qubits (or in general quantum particles) it operates on.
     """
 
-    def __init__(self, qubits: Sequence[Qubit] = None, cbits: Sequence[int] = None):
-        self._assign_qubits_cbits(qubits, cbits)
+    def __init__(self, qubits: Sequence[Qubit] = None, clbits: Sequence[int] = None):
+        self._assign_qubits_clbits(qubits, clbits)
 
     def is_unitary(self):
         """
@@ -56,15 +56,15 @@ class Measurement(AbstractOperator):
         """
         Return the list of memory slots the operator will store the results in.
         """
-        if self.cbits:
-            return [c for c in self.cbits]
+        if self.clbits:
+            return [c for c in self.clbits]
         return []
 
-    def on(self, qubits: Sequence[Qubit], cbits: Sequence[int] = None):
+    def on(self, qubits: Sequence[Qubit], clbits: Sequence[int] = None):
         """
         Act on the specified qubits.
         """
-        self._assign_qubits_cbits(qubits, cbits)
+        self._assign_qubits_clbits(qubits, clbits)
 
         # enable chaining
         return self
@@ -82,21 +82,35 @@ class Measurement(AbstractOperator):
         return {
             "name": "measure",
             "qubits": [q.index for q in self.qubits],
-            "memory": [c for c in self.cbits]
+            "memory": [c for c in self.clbits]
         }
 
-    def _assign_qubits_cbits(self, qubits, cbits):
+    def _assign_qubits_clbits(self, qubits, clbits):
         """
         Assign qubits and classical bits
         """
         # check that the number of qubits and classical bits match
-        if qubits and cbits:
-            if len(qubits) != len(cbits):
+        if qubits and clbits:
+            if len(qubits) != len(clbits):
                 raise ValueError(
                     "Number of qubits and classical bits must match")
 
         if qubits:
             self.qubits = qubits
-            self.cbits = cbits if cbits else [q.index for q in self.qubits]
+            self.clbits = clbits if clbits else [q.index for q in self.qubits]
         else:
-            self.qubits = self.cbits = None
+            self.qubits = self.clbits = None
+
+    def __copy__(self):
+        """
+        Create a copy of the operator.
+        """
+        return Measurement(self.qubits, self.clbits)
+
+    def __eq__(self, other):
+        """
+        Check if measurement operators are equivalent.
+        """
+        if type(other) == type(self) and other.qubits == self.qubits and other.clbits == self.clbits:
+            return True
+        return False

@@ -5,6 +5,8 @@ from typing import Sequence
 import numpy as np
 from scipy.linalg import expm, sqrtm, block_diag
 from scipy.sparse import csr_matrix
+
+from qib.util import const
 from qib.field import Field, Particle, Qubit
 from qib.operator import AbstractOperator
 from qib.tensor_network import SymbolicTensor, SymbolicBond, SymbolicTensorNetwork, TensorNetwork
@@ -170,7 +172,7 @@ class PauliXGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "x",
+            "name": const.GATE_X,
             "qubits": [self.qubit.index]
         }
 
@@ -274,7 +276,7 @@ class PauliYGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "y",
+            "name": const.GATE_Y,
             "qubits": [self.qubit.index]
         }
 
@@ -376,7 +378,7 @@ class PauliZGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "z",
+            "name": const.GATE_Z,
             "qubits": [self.qubit.index]
         }
 
@@ -478,7 +480,7 @@ class HadamardGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "h",
+            "name": const.GATE_H,
             "qubits": [self.qubit.index]
         }
 
@@ -591,7 +593,7 @@ class RxGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "rx",
+            "name": const.GATE_RX,
             "params": [self.theta],
             "qubits": [self.qubit.index]
         }
@@ -705,7 +707,7 @@ class RyGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "ry",
+            "name": const.GATE_RY,
             "params": [self.theta],
             "qubits": [self.qubit.index]
         }
@@ -818,7 +820,7 @@ class RzGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "rz",
+            "name": const.GATE_RZ,
             "params": [self.theta],
             "qubits": [self.qubit.index]
         }
@@ -931,7 +933,7 @@ class RotationGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "u",
+            "name": const.GATE_R,
             "params": [self.ntheta[0], self.ntheta[1], self.ntheta[2]],
             "qubits": [self.qubit.index]
         }
@@ -1034,7 +1036,7 @@ class SGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "s",
+            "name": const.GATE_S,
             "qubits": [self.qubit.index]
         }
 
@@ -1136,7 +1138,7 @@ class SAdjGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "sdg",
+            "name": const.GATE_SDG,
             "qubits": [self.qubit.index]
         }
 
@@ -1238,7 +1240,7 @@ class TGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "t",
+            "name": const.GATE_T,
             "qubits": [self.qubit.index]
         }
 
@@ -1340,7 +1342,7 @@ class TAdjGate(Gate):
         Generate a Qobj OpenQASM representation of the gate.
         """
         return {
-            "name": "tdg",
+            "name": const.GATE_TDG,
             "qubits": [self.qubit.index]
         }
 
@@ -1900,62 +1902,62 @@ class ControlledGate(Gate):
         if self.ncontrols == 1:
             if type(self.tgate) is PauliXGate:  # CX Gate (CNOT Gate)
                 return {
-                    "name": "cx",
+                    "name": const.GATE_CX,
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is PauliYGate:  # CY Gate
                 return {
-                    "name": "cy",
+                    "name": const.GATE_CY,
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is PauliZGate:  # CZ Gate
                 return {
-                    "name": "cz",
+                    "name": const.GATE_CZ,
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is HadamardGate:  # CH Gate
                 return {
-                    "name": "ch",
+                    "name": const.GATE_CH,
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is RxGate:  # CRX Gate
                 return {
-                    "name": "crx",
+                    "name": const.GATE_CRX,
                     "params": [self.tgate.theta],
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is RyGate:  # CRY Gate
                 return {
-                    "name": "cry",
+                    "name": const.GATE_CRY,
                     "params": [self.tgate.theta],
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is RzGate:  # CRZ Gate
                 return {
-                    "name": "crz",
+                    "name": const.GATE_CRZ,
                     "params": [self.tgate.theta],
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is RotationGate:  # CU3 Gate
                 return {
-                    "name": "cu3",
+                    "name": const.GATE_CR,
                     "params": [self.tgate.theta, self.tgate.phi, self.tgate.lam],
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is SGate:  # CS Gate
                 return {
-                    "name": "cs",
+                    "name": const.GATE_CS,
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
             elif type(self.tgate) is SAdjGate:  # CSdg Gate
                 return {
-                    "name": "csdg",
+                    "name": const.GATE_CSDG,
                     "qubits": [self.control_qubits[0].index, self.tgate.qubit.index]
                 }
         elif self.ncontrols == 2:
             if type(self.tgate) is PauliXGate:  # CCX Gate (Toffoli Gate)
                 return {
-                    "name": "ccx",
+                    "name": const.GATE_TOFFOLI,
                     "qubits": [self.control_qubits[0].index, self.control_qubits[1].index, self.tgate.qubit.index]
                 }
 
