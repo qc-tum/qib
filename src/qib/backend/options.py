@@ -24,5 +24,6 @@ class Options(abc.ABC):
     @abc.abstractmethod
     def default() -> Options:
         """
-        The default options of a given processor.
+        The default options used for an experiment on a given processor,
+        if no custom options have been specified.
         """

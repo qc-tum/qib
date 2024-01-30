@@ -55,27 +55,31 @@ class ProcessorConfiguration:
             self,
             backend_name: str,
             backend_version: str,
-            n_qubits: int,
             basis_gates: Sequence[str],
-            gates: Sequence[GateProperties],
-            coupling_map: Sequence[Sequence[int]],
-            local: bool,
-            simulator: bool,
             conditional: bool,
+            coupling_map: Sequence[Sequence[int]],
+            gates: Sequence[GateProperties],
+            local: bool,
+            max_shots: int,
+            meas_level: int,
+            memory: bool,
+            n_qubits: int,
             open_pulse: bool,
-            max_shots: int
+            simulator: bool,
     ) -> None:
         self.backend_name: str = backend_name
         self.backend_version: str = backend_version
-        self.n_qubits: int = n_qubits
         self.basis_gates: Sequence[str] = basis_gates
-        self.gates: Sequence[GateProperties] = gates
-        self.coupling_map: Sequence[Sequence[int]] = coupling_map
-        self.local: bool = local
-        self.simulator: bool = simulator
         self.conditional: bool = conditional
-        self.open_pulse: bool = open_pulse
+        self.coupling_map: Sequence[Sequence[int]] = coupling_map
+        self.gates: Sequence[GateProperties] = gates
+        self.local: bool = local
         self.max_shots: int = max_shots
+        self.meas_level: int = meas_level
+        self.memory: bool = memory 
+        self.n_qubits: int = n_qubits
+        self.open_pulse: bool = open_pulse
+        self.simulator: bool = simulator
 
     def get_gate_by_name(self, gate_name: str)-> GateProperties:
         """

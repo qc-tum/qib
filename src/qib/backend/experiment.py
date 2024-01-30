@@ -4,7 +4,7 @@ import abc
 from enum import Enum
 
 from qib.circuit import Circuit
-from qib.backend import Options
+from qib.backend import Options, ProcessorConfiguration
 
 
 class ExperimentStatus(str, Enum):
@@ -34,12 +34,14 @@ class Experiment(abc.ABC):
             name: str,
             circuit: Circuit,
             options: Options,
+            configuration: ProcessorConfiguration,
             type: ExperimentType,
     ) -> None:
         self.name: str = name
         self.circuit = circuit
         self.options: Options = options
         self.type: ExperimentType = type
+        self.configuration: ProcessorConfiguration = configuration
         self._initialize()
 
     @abc.abstractmethod
@@ -64,6 +66,12 @@ class Experiment(abc.ABC):
     def as_openQASM(self) -> dict:
         """
         Get the Qobj OpenQASM representation of the experiment.
+        """
+        
+    @abc.abstractmethod
+    def _validate(self):
+        """
+        Validate the experiment.
         """
         
     def _initialize(self):
