@@ -1,10 +1,7 @@
-
-
 from qib.util import const
 from qib.circuit import Circuit
-from qib.field import Particle
 from qib.backend import QuantumProcessor, ProcessorConfiguration, GateProperties
-from qib.backend.qiskit import QiskitSimExperiment, QiskitSimOptions
+from qib.backend.qiskit import QiskitSimOptions, QiskitSimExperiment
 
 
 class QiskitSimProcessor(QuantumProcessor):

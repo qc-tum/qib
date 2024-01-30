@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 from itertools import combinations
 
@@ -5,7 +7,7 @@ from qib.util import const
 from qib.field import Particle
 from qib.circuit import Circuit
 from qib.backend import Experiment, ExperimentResults, ExperimentType, Options, ProcessorConfiguration
-from qib.backend.qiskit import QiskitSimOptions, QiskitSimExperiment, QiskitSimExperimentResults
+from qib.backend.qiskit import QiskitSimOptions
 
 
 class QiskitSimExperiment(Experiment):

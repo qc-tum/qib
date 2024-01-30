@@ -73,7 +73,8 @@ class Measurement(AbstractOperator):
         """
         Generate the (sparse) matrix representation of the operator.
         """
-        raise NotImplementedError()  # TODO: Decide if this is needed
+        # TODO: To be decided, if needed
+        raise NotImplementedError() 
 
     def as_openQASM(self):
         """

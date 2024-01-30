@@ -36,7 +36,7 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.array_equal(
                 gate.as_tensornet().contract_einsum()[0], gate.as_matrix()))
             self.assertIn(gate.as_openQASM()[
-                          'name'], ['x', 'y', 'z', 'h'])
+                          'name'], [qib.util.GATE_X, qib.util.GATE_Y, qib.util.GATE_Z, qib.util.GATE_H])
             self.assertEqual(gate.as_openQASM()['qubits'], [3])
             g_copy = copy(gate)
             self.assertTrue(g_copy == gate)
@@ -76,7 +76,7 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.array_equal(
                 gate.as_tensornet().contract_einsum()[0], gate.as_matrix()))
             self.assertIn(gate.as_openQASM()[
-                'name'], ['rx', 'ry', 'rz', 'u'])
+                'name'], [qib.util.GATE_RX, qib.util.GATE_RY, qib.util.GATE_RZ, qib.util.GATE_R])
             self.assertEqual(gate.as_openQASM()['params'], [
                 θ] if i < 3 else list(nθ))
             self.assertEqual(gate.as_openQASM()['qubits'], [3])
@@ -120,7 +120,7 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.array_equal(
                 gate.as_tensornet().contract_einsum()[0], gate.as_matrix()))
             self.assertIn(gate.as_openQASM()[
-                'name'], ['s', 't', 'sdg', 'tdg'])
+                'name'], [qib.util.GATE_S, qib.util.GATE_T, qib.util.GATE_SDG, qib.util.GATE_TDG])
             self.assertEqual(gate.as_openQASM()['qubits'], [3])
             g_copy = copy(gate)
             self.assertTrue(g_copy == gate)
@@ -231,7 +231,7 @@ class TestGates(unittest.TestCase):
             self.assertTrue(np.array_equal(cnot.as_circuit_matrix([field2, field1]).toarray(),
                                            qib.util.permute_gate_wires(np.kron(cnot.as_matrix(), np.identity(8)), [2, 1, 0, 3, 4])))
             cnot_tensor, axes_map = cnot.as_tensornet().contract_einsum()
-            self.assertEqual(cnot.as_openQASM()['name'], 'cx')
+            self.assertEqual(cnot.as_openQASM()['name'], qib.util.GATE_CX)
             self.assertEqual(cnot.as_openQASM()['qubits'], [0, 1])
             # control axes are identical; form full matrix for comparison
             cnot_tensor = qib.tensor_network.tensor_network.to_full_tensor(
@@ -256,7 +256,7 @@ class TestGates(unittest.TestCase):
         self.assertTrue(np.array_equal(toffoli.as_circuit_matrix([field2, field1]).toarray(),
                                        qib.util.permute_gate_wires(np.kron(toffoli.as_matrix(), np.identity(4)), [3, 0, 2, 4, 1])))
         toffoli_tensor, axes_map = toffoli.as_tensornet().contract_einsum()
-        self.assertEqual(toffoli.as_openQASM()['name'], 'ccx')
+        self.assertEqual(toffoli.as_openQASM()['name'], qib.util.GATE_TOFFOLI)
         self.assertEqual(toffoli.as_openQASM()['qubits'], [1, 2, 0])
         # some control axes are identical; form full matrix for comparison
         toffoli_tensor = qib.tensor_network.tensor_network.to_full_tensor(
