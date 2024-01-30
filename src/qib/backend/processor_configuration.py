@@ -49,6 +49,7 @@ class ProcessorConfiguration:
                 return gate
         return None
 
+
 class GateProperties:
     """
     Generic class for gate properties.

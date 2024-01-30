@@ -8,10 +8,12 @@ from qib.operator.molecular_hamiltonian import MolecularHamiltonianSymmetry, Mol
 from qib.operator.measurement import Measurement
 from qib.operator.gates import (
     Gate,
+    IdentityGate,
     PauliXGate,
     PauliYGate,
     PauliZGate,
     HadamardGate,
+    SxGate,
     RxGate,
     RyGate,
     RzGate,
@@ -26,6 +28,7 @@ from qib.operator.gates import (
     RxxGate,
     RyyGate,
     RzzGate,
+    ISwapGate,
     MultiplexedGate,
     TimeEvolutionGate,
     BlockEncodingMethod,

@@ -6,7 +6,7 @@ from itertools import combinations
 from qib.util import const
 from qib.field import Particle
 from qib.circuit import Circuit
-from qib.backend import Experiment, ExperimentResults, ExperimentType, Options, ProcessorConfiguration
+from qib.backend import Experiment, ExperimentResults, ExperimentType, ProcessorConfiguration
 from qib.backend.qiskit import QiskitSimOptions
 
 

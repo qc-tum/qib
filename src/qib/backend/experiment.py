@@ -71,7 +71,7 @@ class Experiment(abc.ABC):
     @abc.abstractmethod
     def _validate(self):
         """
-        Validate the experiment.
+        Validate the experiment in the context of its quantum processor.
         """
         
     def _initialize(self):

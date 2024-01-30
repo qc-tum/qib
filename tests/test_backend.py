@@ -31,7 +31,7 @@ class TestBackend(unittest.TestCase):
 
     async def test_qiskit_sim(self):
         """
-        Test Qiskit Simulator processor functionality.
+        Test WMI Qiskit Simulator processor functionality.
         """
         # Qubits
         field = qib.field.Field(
@@ -60,7 +60,7 @@ class TestBackend(unittest.TestCase):
 
         # Experiment Results
         # results = await experiment.wait_for_results()
-        # TEST: test results
+        # TEST: mock results and test serialization
 
 
 if __name__ == "__main__":

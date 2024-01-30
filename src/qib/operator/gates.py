@@ -71,7 +71,7 @@ class Gate(AbstractOperator):
         Generate a Qobj OpenQASM representation of the gate.
         """
         raise NotImplementedError(
-            "Qobj OpenQASM representation not currently supported")
+            "Qobj OpenQASM representation not currently supported for this type of gate")
 
     @abc.abstractmethod
     def __copy__(self):
@@ -84,6 +84,111 @@ class Gate(AbstractOperator):
         """
         Check if gates are equivalent.
         """
+
+
+class IdentityGate(Gate):
+    """
+    Identity gate.
+    """
+
+    def __init__(self, qubit: Qubit = None):
+        self.qubit = qubit
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return True
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the identity gate.
+        """
+        return np.array([[1.,  0.],
+                         [0.,  1.]])
+    
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 1
+    
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit]
+        return []
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit.field]
+        return []
+    
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return self
+    
+    def on(self, qubit: Qubit):
+        """
+        Act on the specified qubit.
+        """
+        self.qubit = qubit
+        # enable chaining
+        return self
+    
+    def as_circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
+        if not self.qubit:
+            raise RuntimeError("unspecified target qubit")
+        iwire = map_particle_to_wire(fields, self.qubit)
+        if iwire < 0:
+            raise RuntimeError("qubit not found among fields")
+        nwires = sum(f.lattice.nsites for f in fields)
+        return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+    
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "Identity")
+
+    def as_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": const.GATE_ID,
+            "qubits": [self.qubit.index]
+        }
+    
+    def __copy__(self):
+        """
+        Create a copy of the gate.
+        """
+        return IdentityGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent.
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
 
 
 class PauliXGate(Gate):
@@ -494,6 +599,111 @@ class HadamardGate(Gate):
         Check if gates are equivalent.
         """
         return type(other) == type(self) and other.qubit == self.qubit
+
+
+class SxGate(Gate):
+    """
+    The square root of X gate.
+    """
+
+    def __init__(self, qubit: Qubit = None):
+        self.qubit = qubit
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return False
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the identity gate.
+        """
+        return 1/np.sqrt(2) * np.array([[1, -1j],
+                                        [-1j, 1]])
+    
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 1
+    
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit]
+        return []
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        if self.qubit:
+            return [self.qubit.field]
+        return []
+    
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return self
+    
+    def on(self, qubit: Qubit):
+        """
+        Act on the specified qubit.
+        """
+        self.qubit = qubit
+        # enable chaining
+        return self
+    
+    def as_circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
+        if not self.qubit:
+            raise RuntimeError("unspecified target qubit")
+        iwire = map_particle_to_wire(fields, self.qubit)
+        if iwire < 0:
+            raise RuntimeError("qubit not found among fields")
+        nwires = sum(f.lattice.nsites for f in fields)
+        return _distribute_to_wires(nwires, [iwire], csr_matrix(self.as_matrix()))
+    
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "Sx")
+
+    def as_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": const.GATE_SX,
+            "qubits": [self.qubit.index]
+        }
+    
+    def __copy__(self):
+        """
+        Create a copy of the gate.
+        """
+        return SxGate(self.qubit)
+
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent.
+        """
+        if type(other) == type(self) and other.qubit == self.qubit:
+            return True
+        return False
 
 
 class RxGate(Gate):
@@ -2295,6 +2505,123 @@ class RzzGate(Gate):
                 and other.theta == self.theta
                 and other.q1 == self.q1
                 and other.q2 == self.q2)
+
+
+class ISwapGate(Gate):
+    """
+    A Clifford and symmteric 2-qubit iSWAP gate.
+    It exchanges the states of two qubits and applies a phase of i to the |01> and |10> states.
+    """
+
+    def __init__(self, q1: Qubit = None, q2: Qubit = None):
+        if (q1 and not q2) or (not q1 and q2):
+            raise ValueError("both or no qubits must be specified")
+        
+        self.q1 = q1
+        self.q2 = q2
+
+    def is_hermitian(self):
+        """
+        Whether the gate is Hermitian.
+        """
+        return False
+
+    def as_matrix(self):
+        """
+        Generate the matrix representation of the identity gate.
+        """
+        return np.array([[1, 0, 0, 0],
+                         [0, 0, 1j, 0],
+                         [0, 1j, 0, 0],
+                         [0, 0, 0, 1]])
+    
+    @property
+    def num_wires(self):
+        """
+        The number of "wires" (or quantum particles) this gate acts on.
+        """
+        return 2
+    
+    def particles(self):
+        """
+        Return the list of quantum particles the gate acts on.
+        """
+        if self.q1 and self.q2:
+            return [self.q1, self.q2]
+        return []
+
+    def fields(self):
+        """
+        Return the list of fields hosting the quantum particles which the gate acts on.
+        """
+        if self.q1 and self.q2:
+            return [self.q1.field, self.q2.field]
+        return []
+    
+    def inverse(self):
+        """
+        Return the inverse operator.
+        """
+        return self
+    
+    def on(self, q1: Qubit, q2: Qubit):
+        """
+        Act on the specified qubit.
+        """
+        self.q1 = q1
+        self.q2 = q2
+        # enable chaining
+        return self
+    
+    def as_circuit_matrix(self, fields: Sequence[Field]):
+        """
+        Generate the sparse matrix representation of the gate
+        as element of a quantum circuit.
+        """
+        for f in fields:
+            if f.local_dim != 2:
+                raise NotImplementedError(
+                    "quantum wire indexing assumes local dimension 2")
+        if not self.q1 or not self.q2:
+            raise RuntimeError("unspecified qubit(s)")
+        prtcl = self.particles()
+        iwire = [map_particle_to_wire(fields, p) for p in prtcl]
+        if any(iw < 0 for iw in iwire):
+            raise RuntimeError("particle not found among fields")
+        nwires = sum(f.lattice.nsites for f in fields)
+        return _distribute_to_wires(nwires, iwire, csr_matrix(self.as_matrix()))
+    
+    def as_tensornet(self):
+        """
+        Generate a tensor network representation of the gate.
+        """
+        return TensorNetwork.wrap(self.as_matrix(), "iSwap")
+
+    def as_openQASM(self):
+        """
+        Generate a Qobj OpenQASM representation of the gate.
+        """
+        return {
+            "name": const.GATE_ISWAP,
+            "qubits": [self.q1.index, self.q2.index]
+        }
+    
+    def __copy__(self):
+        """
+        Create a copy of the gate.
+        """
+        gate = ISwapGate(self.q1, self.q2)
+        return gate
+    
+    def __eq__(self, other):
+        """
+        Check if gates are equivalent.
+        """
+        if (type(other) == type(self) and
+            other.q1 == self.q1 and
+            other.q2 == self.q2):
+            return True
+        return False
 
 
 class MultiplexedGate(Gate):

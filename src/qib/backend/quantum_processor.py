@@ -27,12 +27,6 @@ class QuantumProcessor(abc.ABC):
         """
 
     @abc.abstractmethod
-    def _validate_experiment(self, circ: Circuit, options: Options):
-        """
-        Validate resulting experiment in the context of this quantum processor.
-        """
-
-    @abc.abstractmethod
     def _send_experiment(self, experiment: Experiment):
         """
         Send resulted experiment to the quantum processor backend.
