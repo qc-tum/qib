@@ -7,10 +7,10 @@ from qib.util import const
 from qib.field import Particle
 from qib.circuit import Circuit
 from qib.backend import Experiment, ExperimentResults, ExperimentType, ProcessorConfiguration
-from qib.backend.qiskit import QiskitSimOptions
+from qib.backend.wmi import WMIQSimOptions
 
 
-class QiskitSimExperiment(Experiment):
+class WMIQSimExperiment(Experiment):
     """
     The WMI Qiskit Simulator quantum experiment implementation.
     """
@@ -18,7 +18,7 @@ class QiskitSimExperiment(Experiment):
     def __init__(self,
                  name: str, 
                  circuit: Circuit,
-                 options: QiskitSimOptions,
+                 options: WMIQSimOptions,
                  configuration: ProcessorConfiguration,
                  type: ExperimentType = ExperimentType.QASM):
         super().__init__(name, circuit, options, configuration, type)
@@ -26,15 +26,15 @@ class QiskitSimExperiment(Experiment):
         self.schema_version = const.QOBJ_SCHEMA_VERSION
         self._validate()
         
-    def query_status(self) -> QiskitSimExperimentResults:
+    def query_status(self) -> WMIQSimExperimentResults:
         # TODO: Ensure that experiment was submitted (status != INITIALIZING)
         pass
     
-    async def wait_for_results(self) -> QiskitSimExperimentResults:
+    async def wait_for_results(self) -> WMIQSimExperimentResults:
         # TODO: Ensure that experiment was submitted (status != INITIALIZING)
         pass
     
-    def cancel(self) -> QiskitSimExperimentResults:
+    def cancel(self) -> WMIQSimExperimentResults:
         pass
     
     def as_openQASM(self) -> dict:
@@ -120,5 +120,5 @@ class QiskitSimExperiment(Experiment):
             raise ValueError("Number of qubits exceeds maximum allowed number of qubits, or indexes are incorrect.")
 
 
-class QiskitSimExperimentResults(ExperimentResults):
+class WMIQSimExperimentResults(ExperimentResults):
     pass

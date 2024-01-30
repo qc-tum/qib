@@ -44,7 +44,9 @@ from qib.operator import (
     TimeEvolutionGate,
     BlockEncodingGate,
     GeneralGate,
-    Measurement
+    MeasureInstruction,
+    BarrierInstruction,
+    DelayInstruction
 )
 
 from qib.circuit import Circuit

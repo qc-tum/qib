@@ -3,7 +3,7 @@ from __future__ import annotations
 from qib.backend.options import Options
 
 
-class WMIOptions(Options):
+class WMIQCOptions(Options):
 
     def __init__(self,
                  shots,
@@ -48,8 +48,8 @@ class WMIOptions(Options):
         self.fridge = fridge
 
     @staticmethod
-    def default() -> WMIOptions:
-        return WMIOptions(
+    def default() -> WMIQCOptions:
+        return WMIQCOptions(
             shots=1024,
             init_qubits=True,
             do_emulation=True,

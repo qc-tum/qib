@@ -2,7 +2,7 @@ from qib.util import const
 from qib.backend import QuantumProcessor, ProcessorConfiguration
 
 
-class WMIProcessor(QuantumProcessor):
+class WMIQCProcessor(QuantumProcessor):
     """
     The actual WMI Quantum Computer quantum processor implementation.
     """

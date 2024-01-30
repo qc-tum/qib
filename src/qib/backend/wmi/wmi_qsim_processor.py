@@ -1,10 +1,10 @@
 from qib.util import const
 from qib.circuit import Circuit
 from qib.backend import QuantumProcessor, ProcessorConfiguration, GateProperties
-from qib.backend.qiskit import QiskitSimOptions, QiskitSimExperiment
+from qib.backend.wmi import WMIQSimOptions, WMIQSimExperiment
 
 
-class QiskitSimProcessor(QuantumProcessor):
+class WMIQSimProcessor(QuantumProcessor):
     """
     The WMI Qiskit Simulator quantum processor implementation.
     """
@@ -36,12 +36,12 @@ class QiskitSimProcessor(QuantumProcessor):
             simulator=True,
         )
 
-    def submit_experiment(self, name: str, circ: Circuit, options: QiskitSimOptions = QiskitSimOptions.default()) -> QiskitSimExperiment:
-        experiment = QiskitSimExperiment(name, circ, options, self.configuration())
+    def submit_experiment(self, name: str, circ: Circuit, options: WMIQSimOptions = WMIQSimOptions.default()) -> WMIQSimExperiment:
+        experiment = WMIQSimExperiment(name, circ, options, self.configuration())
         self._send_experiment(experiment)
         return experiment
 
-    def _send_experiment(self, experiment: QiskitSimExperiment):
+    def _send_experiment(self, experiment: WMIQSimExperiment):
         # TODO: build HTTP request
         # TODO: send HTTP request via the HTTP PUT endpoint
         pass

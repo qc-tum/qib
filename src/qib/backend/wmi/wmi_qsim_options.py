@@ -3,7 +3,7 @@ from __future__ import annotations
 from qib.backend.options import Options
 
 
-class QiskitSimOptions(Options):
+class WMIQSimOptions(Options):
     """
     The WMI Qiskit Simulator quantum experiment options.
     """
@@ -17,8 +17,8 @@ class QiskitSimOptions(Options):
         self.do_emulation = do_emulation
 
     @staticmethod
-    def default() -> QiskitSimOptions:
-        return QiskitSimOptions(
+    def default() -> WMIQSimOptions:
+        return WMIQSimOptions(
             shots=1024,
             init_qubits=True,
             do_emulation=False

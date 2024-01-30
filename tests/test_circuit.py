@@ -50,8 +50,8 @@ class TestCircuit(unittest.TestCase):
         hadamard = qib.HadamardGate(q1)
         # CNOT gate
         cnot = qib.ControlledGate(qib.PauliXGate(q2), 1).set_control(q1)
-        # Measurement operator
-        measurement = qib.Measurement()
+        # Measurement instruction
+        measurement = qib.MeasureInstruction()
         measurement.on([q1, q2])
         # construct a simple quantum circuit
         circuit = qib.Circuit()

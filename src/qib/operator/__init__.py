@@ -5,7 +5,12 @@ from qib.operator.ising_hamiltonian import IsingConvention, IsingHamiltonian
 from qib.operator.heisenberg_hamiltonian import HeisenbergHamiltonian
 from qib.operator.fermi_hubbard_hamiltonian import FermiHubbardHamiltonian
 from qib.operator.molecular_hamiltonian import MolecularHamiltonianSymmetry, MolecularHamiltonian
-from qib.operator.measurement import Measurement
+from qib.operator.control_instructions import (
+    ControlInstruction,
+    MeasureInstruction,
+    BarrierInstruction,
+    DelayInstruction
+)
 from qib.operator.gates import (
     Gate,
     IdentityGate,

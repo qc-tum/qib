@@ -1,7 +1,7 @@
 from copy import copy
 from typing import Sequence
 import numpy as np
-from qib.operator import Gate, Measurement
+from qib.operator import Gate, ControlInstruction, MeasureInstruction
 from qib.field import Field
 from qib.tensor_network import SymbolicTensor, SymbolicTensorNetwork, TensorNetwork
 from qib.util import map_particle_to_wire
@@ -11,7 +11,7 @@ from typing import Union
 class Circuit:
     """
     A quantum circuit consists of a list of quantum gates
-    and control operators (e.g. Measurement).
+    and control instructions (e.g. measure, barrier, delay, etc.).
 
     We follow the convention that the first gate in the list is applied first.
     """
@@ -22,9 +22,9 @@ class Circuit:
         else:
             self.gates = list(gates)
 
-    def append_gate(self, gate: Union[Gate, Measurement]):
+    def append_gate(self, gate: Union[Gate, ControlInstruction]):
         """
-        Append a quantum gate or a measurement operator.
+        Append a quantum gate or a control instruction.
         """
         self.gates.append(copy(gate))
 
@@ -35,9 +35,9 @@ class Circuit:
         for g in other.gates:
             self.gates += copy(g)
 
-    def prepend_gate(self, gate: Union[Gate, Measurement]):
+    def prepend_gate(self, gate: Union[Gate, ControlInstruction]):
         """
-        Prepend a quantum gate or a measurement operator.
+        Prepend a quantum gate or a control instruction.
         """
         self.gates.insert(0, copy(gate))
 
@@ -73,7 +73,7 @@ class Circuit:
         """
         bits_set = set()
         for gate in self.gates:
-            if type(gate) is Measurement:
+            if type(gate) is MeasureInstruction:
                 bits_set.update(gate.memory())
         return bits_set
 

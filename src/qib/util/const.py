@@ -1,4 +1,4 @@
-# Gate and operator OpenQASM standard names
+# Gates, operators, and instructions OpenQASM standard names
 GATE_CH: str = 'ch'
 GATE_CR: str = 'cu3'
 GATE_CRX: str = 'crx'
@@ -26,6 +26,9 @@ GATE_TOFFOLI: str = 'ccx'
 GATE_X: str = 'x'
 GATE_Y: str = 'y'
 GATE_Z: str = 'z'
+INSTR_MEASURE: str = 'measure'
+INSTR_BARRIER: str = 'barrier'
+INSTR_DELAY: str = 'delay'
 
 # Backend quantum processor's parameters and constants
 BACK_WMIQSIM_NAME = 'QiskitSimulator'
