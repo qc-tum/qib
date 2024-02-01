@@ -390,8 +390,8 @@ class TestGates(unittest.TestCase):
         # create qubits the gate can act on
         field = qib.field.Field(qib.field.ParticleType.QUBIT,
                                 qib.lattice.IntegerLattice((5,), pbc=False))
-        q1 = qib.field.Qubit(field, 1)
-        q2 = qib.field.Qubit(field, 2)
+        q1 = qib.field.Qubit(field, 2)
+        q2 = qib.field.Qubit(field, 3)
         # initialization tests
         qib.ISwapGate(q1, q2)
         with self.assertRaises(ValueError):
@@ -404,13 +404,12 @@ class TestGates(unittest.TestCase):
         self.assertEqual(gate.num_wires, 2)
         gate.on(q1, q2)
         self.assertEqual(gate.fields(), [field, field])
-        # TODO: fix this part of the test
-        # self.assertTrue(np.array_equal(gate.as_circuit_matrix([field, field]).toarray(),
-        #                                 np.kron(np.kron(np.identity(4), gate.as_matrix()), np.identity(2))))
+        self.assertTrue(np.array_equal(gate.as_circuit_matrix([field]).toarray(),
+                                        np.kron(np.kron(np.identity(4), gate.as_matrix()), np.identity(2))))
         self.assertTrue(np.array_equal(
             gate.as_tensornet().contract_einsum()[0], gate.as_matrix()))
         self.assertIn(gate.as_openQASM()['name'], qib.util.const.GATE_ISWAP)
-        self.assertEqual(gate.as_openQASM()['qubits'], [1, 2])
+        self.assertEqual(gate.as_openQASM()['qubits'], [2, 3])
         g_copy = copy(gate)
         self.assertTrue(g_copy == gate)
         self.assertTrue(np.allclose(g_copy.as_matrix(), gate.as_matrix()))

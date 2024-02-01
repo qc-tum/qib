@@ -254,7 +254,7 @@ class DelayInstruction(ControlInstruction):
     pausing execution for a defined duration to control the timing of quantum operations.
     """
     
-    def __init__(self, duration: float, qubits: Sequence[Qubit] = []):
+    def __init__(self, duration: int, qubits: Sequence[Qubit] = []):
         self._duration = duration
         self.qubits = qubits
     
@@ -276,7 +276,7 @@ class DelayInstruction(ControlInstruction):
         return self._duration
     
     @duration.setter
-    def duration(self, value: float):
+    def duration(self, value: int):
         """
         Set the duration of the delay instruction,
         in dt (differential element of time).
@@ -322,7 +322,7 @@ class DelayInstruction(ControlInstruction):
         """
         Create a copy of the instruction.
         """
-        return DelayInstruction(self.qubits)
+        return DelayInstruction(self.duration, self.qubits)
     
     def __eq__(self, other: object) -> bool:
         if (type(other) == type(self) and

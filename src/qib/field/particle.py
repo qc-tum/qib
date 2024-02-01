@@ -16,6 +16,10 @@ class Particle:
         Particle type.
         """
         return self.field.particle_type
+    
+    def __hash__(self) -> int:
+        combined = (self.field, self.index)
+        return hash(combined)
 
     def __eq__(self, other):
         """

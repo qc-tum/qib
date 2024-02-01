@@ -1,5 +1,6 @@
 import unittest
 import qib
+from copy import copy
 
 
 class TestControlInstructions(unittest.TestCase):
@@ -39,6 +40,9 @@ class TestControlInstructions(unittest.TestCase):
         # length mismatch
         with self.assertRaises(ValueError):
             MEASURE.on([q1, q2], [1, 2, 3])
+        # copy & equal
+        MEASURE_COPY = copy(MEASURE)
+        self.assertEqual(MEASURE_COPY, MEASURE)
 
     def test_barrier(self):
         BARRIER = qib.BarrierInstruction()
@@ -59,9 +63,15 @@ class TestControlInstructions(unittest.TestCase):
             BARRIER.as_matrix()
         self.assertEqual(BARRIER.as_openQASM()['name'], 'barrier')
         self.assertEqual(BARRIER.as_openQASM()['qubits'], [1, 2, 3])
+        # copy & equal
+        BARRIER_COPY = copy(BARRIER)
+        self.assertEqual(BARRIER_COPY, BARRIER)
+        # empty qubits list
+        BARRIER.on([])
+        self.assertEqual(BARRIER.as_openQASM()['qubits'], [])
         
     def test_delay(self):
-        DELAY = qib.DelayInstruction(10.0)
+        DELAY = qib.DelayInstruction(10)
         # create some qubits the instruction can be applied on
         field = qib.field.Field(
             qib.field.ParticleType.QUBIT, qib.lattice.IntegerLattice((3,), pbc=False))
@@ -79,7 +89,17 @@ class TestControlInstructions(unittest.TestCase):
             DELAY.as_matrix()
         self.assertEqual(DELAY.as_openQASM()['name'], 'delay')
         self.assertEqual(DELAY.as_openQASM()['qubits'], [1, 2, 3])
-        self.assertEqual(DELAY.as_openQASM()['duration'], 10.0)
+        self.assertEqual(DELAY.as_openQASM()['duration'], 10)
+        # copy & equal
+        DELAY_COPY = copy(DELAY)
+        self.assertEqual(DELAY_COPY, DELAY)
+        # duration
+        DELAY_COPY.duration = 20.0
+        self.assertEqual(DELAY_COPY.as_openQASM()['duration'], 20)
+        self.assertNotEqual(DELAY_COPY, DELAY)
+        # empty qubits list
+        DELAY.on([])
+        self.assertEqual(DELAY.as_openQASM()['qubits'], [])
 
 if __name__ == "__main__":
     unittest.main()
