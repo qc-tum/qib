@@ -19,7 +19,6 @@ GATE_RZ: str = 'rz'
 GATE_S: str = 's'
 GATE_SDG: str = 'sdg'
 GATE_SX: str = 'sx'
-GATE_SX: str = 'sx'
 GATE_T: str = 't'
 GATE_TDG: str = 'tdg'
 GATE_TOFFOLI: str = 'ccx'
@@ -31,12 +30,19 @@ INSTR_BARRIER: str = 'barrier'
 INSTR_DELAY: str = 'delay'
 
 # Backend quantum processor's parameters and constants
-BACK_WMIQSIM_NAME = 'QiskitSimulator'
-BACK_WMIQSIM_VERSION = '1.0.0'
 BACK_WMIQSIM_URL = 'https://wmiqc-api.wmi.badw.de/1/qiskitSimulator'
-BACK_WMIQC_NAME = 'WMIQC'
+BACK_WMIQSIM_NAME = 'dedicatedSimulator'
+BACK_WMIQSIM_VERSION = '1.0.0'
+BACK_WMIQC_URL = 'https://wmiqc-api.wmi.badw.de/1/wmiqc'
+BACK_WMIQC_NAME = 'dedicated'
 BACK_WMIQC_VERSION = '1.0.0'
 
 # Qobj parameters and constants
-QOBJ_ID_QISM_EXPERIMENT = 'WMI_QiskitSim_Experiment'
-QOBJ_SCHEMA_VERSION = '1.0'
+QOBJ_SCHEMA_VERSION = '1.3.0'
+
+# Networking parameters and constants
+NW_TIMEOUT: int = 10 # seconds
+NW_MAX_RETRIES: int = 5
+NW_MSG_SEND: str = 'SUBMIT EXPERIMENT'
+NW_MSG_QUERY: str = 'QUERY EXPERIMENT'
+NW_QUERY_FRQ: float = 0.2 # seconds

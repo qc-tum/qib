@@ -11,10 +11,11 @@ class StatevectorSimulator(Simulator):
     Statevector simulator.
     """
 
-    def run(self, circ: Circuit, fields: Sequence[Field], description):
+    def run(self, circ: Circuit, description = None):
         """
         Run a quantum circuit simulation.
         """
+        fields = circ.fields()
         # assuming initial states is |0,...,0>
         psi = np.zeros(math.prod([f.dof() for f in fields]))
         psi[0] = 1

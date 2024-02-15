@@ -95,7 +95,7 @@ class Circuit:
             mat = g.as_circuit_matrix(fields) @ mat
         return mat
 
-    def as_tensornet(self, fields: Sequence[Field]):
+    def as_tensornet(self):
         """
         Generate a tensor network representation of the circuit.
         """
@@ -103,6 +103,7 @@ class Circuit:
         stn = SymbolicTensorNetwork()
         # virtual tensor for open axes
         wiredims = []
+        fields = self.fields()
         for f in fields:
             wiredims += f.lattice.nsites * [f.local_dim]
         # total number of wires

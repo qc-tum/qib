@@ -12,7 +12,7 @@ class TensorNetworkSimulator(Simulator):
     Tensor network simulator, contracting a circuit interpreted as tensor network.
     """
 
-    def run(self, circ: Circuit, fields: Sequence[Field], description):
+    def run(self, circ: Circuit, description = None):
         """
         Run a quantum circuit simulation.
         """
@@ -20,6 +20,7 @@ class TensorNetworkSimulator(Simulator):
         init_stn = SymbolicTensorNetwork()
         init_data = {}
         local_dims = []
+        fields = circ.fields()
         for field in fields:
             for j in range(field.lattice.nsites):
                 dataref = "|0>_" + str(field.local_dim)
@@ -39,7 +40,7 @@ class TensorNetworkSimulator(Simulator):
         assert init_net.is_consistent()
         assert init_net.num_open_axes == len(local_dims)
 
-        net = circ.as_tensornet(fields)
+        net = circ.as_tensornet()
         net.num_open_axes == 2*len(local_dims)
         # merge with init_net for initial |0> states
         net.merge(init_net, [(len(local_dims) + i, i) for i in range(len(local_dims))])

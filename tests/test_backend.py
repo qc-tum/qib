@@ -4,7 +4,6 @@ import qib
 
 
 class TestBackend(unittest.TestCase):
-
     def test_tensor_network(self):
         """
         Test tensor network processor functionality.
@@ -26,8 +25,9 @@ class TestBackend(unittest.TestCase):
         self.assertTrue(np.array_equal(
             circuit.as_matrix([field]).toarray(), h_cnot))
         processor = qib.backend.TensorNetworkProcessor()
-        processor.submit(circuit, [field], {
-            "filename": "bell_circuit_tensornet.hdf5"})
+        processor.submit(circuit, {
+            "filename": "bell_circuit_tensornet.hdf5"
+            })
 
     async def test_qiskit_sim(self):
         """
@@ -54,13 +54,12 @@ class TestBackend(unittest.TestCase):
 
         # Processor & Experiment
         processor = qib.backend.wmi.WMIQSimProcessor()
-        options = qib.backend.wmi.WMIQSimOptions(
+        options = qib.backend.wmi.WMIOptions(
             shots=1024, memory=False, do_emulation=True)
         experiment = processor.submit_experiment(circuit, options)
 
         # Experiment Results
-        # results = await experiment.wait_for_results()
-        # TEST: mock results and test serialization
+        
 
 
 if __name__ == "__main__":

@@ -5,18 +5,18 @@ from qib.circuit import Circuit
 from qib.field import Field
 
 
-class TensorNetworkProcessor(QuantumProcessor):
+class TensorNetworkProcessor():
 
     @property
     def configuration(self):
         return None
 
-    def submit(self, circ: Circuit, fields: Sequence[Field], description):
+    def submit(self, circ: Circuit, description):
         """
         Submit a quantum circuit to a backend provider,
         returning a "job" object to query the results.
         """
-        net = circ.as_tensornet(fields)
+        net = circ.as_tensornet()
         # store network in a HDF5 file
         with h5py.File(description["filename"], "w") as f:
             tgrp = f.create_group("tensors")

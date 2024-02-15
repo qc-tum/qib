@@ -27,7 +27,13 @@ class QuantumProcessor(abc.ABC):
         """
 
     @abc.abstractmethod
-    def _send_experiment(self, experiment: Experiment):
+    def _send_request(self, experiment: Experiment):
         """
-        Send resulted experiment to the quantum processor backend.
+        Send already validated experiment to the quantum processor backend.
+        """
+    
+    @abc.abstractmethod
+    def _process_response(self, experiment: Experiment, response: dict):
+        """
+        Process the response received from the backend.
         """
