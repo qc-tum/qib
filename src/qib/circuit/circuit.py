@@ -5,8 +5,6 @@ from qib.operator import Gate, ControlInstruction, MeasureInstruction
 from qib.field import Field
 from qib.tensor_network import SymbolicTensor, SymbolicTensorNetwork, TensorNetwork
 from qib.util import map_particle_to_wire
-from typing import Union
-
 
 class Circuit:
     """
@@ -22,7 +20,7 @@ class Circuit:
         else:
             self.gates = list(gates)
 
-    def append_gate(self, gate: Union[Gate, ControlInstruction]):
+    def append_gate(self, gate: Gate | ControlInstruction):
         """
         Append a quantum gate or a control instruction.
         """
@@ -35,7 +33,7 @@ class Circuit:
         for g in other.gates:
             self.gates += copy(g)
 
-    def prepend_gate(self, gate: Union[Gate, ControlInstruction]):
+    def prepend_gate(self, gate: Gate | ControlInstruction):
         """
         Prepend a quantum gate or a control instruction.
         """

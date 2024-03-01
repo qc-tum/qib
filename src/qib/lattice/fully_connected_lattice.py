@@ -1,5 +1,5 @@
 import math
-from typing import Sequence, Union
+from typing import Sequence
 import numpy as np
 from qib.lattice import AbstractLattice
 
@@ -9,7 +9,7 @@ class FullyConnectedLattice(AbstractLattice):
     Fully connected lattice of n elements.
     Can be used to represent orbitals in a molecule
     """
-    def __init__(self, shape: Union[int, Sequence[int]]):
+    def __init__(self, shape: int | Sequence[int]):
         if isinstance(shape, int):
             self.shape = (shape,)
         else:

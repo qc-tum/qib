@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 from enum import Enum
-from typing import Union
 
 from qib.circuit import Circuit
 from qib.backend import Options, ProcessorConfiguration, ProcessorCredentials
@@ -63,7 +62,7 @@ class Experiment(abc.ABC):
         """
         
     @abc.abstractmethod
-    def results(self) -> Union[ExperimentResults, None]:
+    def results(self) -> ExperimentResults | None:
         """
         Get the results of a previously submitted experiment (BLOCKING).
         
@@ -71,7 +70,7 @@ class Experiment(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def wait_for_results(self) -> Union[ExperimentResults, None]:
+    async def wait_for_results(self) -> ExperimentResults | None:
         """
         Wait for the results of a previously submitted experiment (NON-BLOCKING).
         

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import expm
-from typing import Sequence, Union
+from typing import Sequence
 from qib.field import Qubit
 from qib.operator import ControlledGate, PauliXGate, RzGate, PhaseFactorGate
 from qib.circuit import Circuit
@@ -15,8 +15,8 @@ class ProjectorControlledPhaseShift:
     """
     def __init__(self, theta: float=0,
                  projection_state: Sequence[int]=[0],
-                 encoding_qubits:  Union[Qubit, Sequence[Qubit]]=None,
-                 auxiliary_qubits: Union[Qubit, Sequence[Qubit]]=None,
+                 encoding_qubits:  Qubit | Sequence[Qubit]=None,
+                 auxiliary_qubits: Qubit | Sequence[Qubit]=None,
                  method = "auxiliary"):
         self.theta = theta
         if not set(projection_state).issubset({0,1}):

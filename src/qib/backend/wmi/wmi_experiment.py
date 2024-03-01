@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
 from itertools import combinations
 import time, sched, asyncio
 import uuid
@@ -53,7 +52,7 @@ class WMIExperiment(Experiment):
 
         return self.status
 
-    def results(self) -> Union[WMIExperimentResults, None]:
+    def results(self) -> WMIExperimentResults | None:
         if self._results is not None and self.status is ExperimentStatus.DONE: return self._results
         
         scheduler = sched.scheduler(time.time, time.sleep)
@@ -66,7 +65,7 @@ class WMIExperiment(Experiment):
         if self.status is ExperimentStatus.DONE: return self._results
         return None
 
-    async def wait_for_results(self) -> Union[WMIExperimentResults, None]:
+    async def wait_for_results(self) -> WMIExperimentResults | None:
         if self._results is not None and self.status is ExperimentStatus.DONE: return self._results
         
         while not self.query_status().is_terminal():
