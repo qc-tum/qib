@@ -63,7 +63,7 @@ class Circuit:
         wires_set = set()
         for gate in self.gates:
             wires_set.update(gate.particles())
-        return wires_set
+        return sorted(wires_set, key=lambda p: p.index)
             
     def clbits(self):
         """
@@ -73,7 +73,7 @@ class Circuit:
         for gate in self.gates:
             if type(gate) is MeasureInstruction:
                 bits_set.update(gate.memory())
-        return bits_set
+        return sorted(bits_set)
 
     def inverse(self):
         """
@@ -130,11 +130,11 @@ class Circuit:
             assert net.is_consistent()
         return net
 
-    def as_openQASM(self):
+    def as_qasm(self):
         """
         Generate a list of Qobj OpenQASM instructions representation of the circuit.
         """
         instructions = []
         for gate in self.gates:
-            instructions.append(gate.as_openQASM())
+            instructions.append(gate.as_qasm())
         return instructions

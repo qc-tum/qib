@@ -68,7 +68,7 @@ class WMIQSimProcessor(QuantumProcessor):
         http_headers = {'access-token': self.credentials.access_token, 'Content-Type': 'application/json'}
         return networking.http_put(url = f'{self.credentials.url}/qobj', 
                             headers = http_headers,
-                            body = {'qobj': experiment.as_openQASM()},
+                            body = {'qobj': experiment.as_qasm()},
                             title = const.NW_MSG_SEND)
     
     def _process_response(self, experiment: WMIExperiment, response: dict):

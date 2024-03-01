@@ -25,18 +25,18 @@ class TestControlInstructions(unittest.TestCase):
         self.assertEqual(MEASURE.memory(), [2, 1, 3])
         with self.assertRaises(NotImplementedError):
             MEASURE.as_matrix()
-        self.assertEqual(MEASURE.as_openQASM()['name'], 'measure')
-        self.assertEqual(MEASURE.as_openQASM()['qubits'], [1, 2, 3])
-        self.assertEqual(MEASURE.as_openQASM()['memory'], [2, 1, 3])
+        self.assertEqual(MEASURE.as_qasm()['name'], 'measure')
+        self.assertEqual(MEASURE.as_qasm()['qubits'], [1, 2, 3])
+        self.assertEqual(MEASURE.as_qasm()['memory'], [2, 1, 3])
         # qubits only
         MEASURE.on([q1, q2])
         self.assertEqual(MEASURE.num_wires, 2)
         self.assertEqual(MEASURE.particles(), [q1, q2])
         self.assertEqual(MEASURE.fields(), [field, field])
         self.assertEqual(MEASURE.memory(), [1, 2])
-        self.assertEqual(MEASURE.as_openQASM()['name'], 'measure')
-        self.assertEqual(MEASURE.as_openQASM()['qubits'], [1, 2])
-        self.assertEqual(MEASURE.as_openQASM()['memory'], [1, 2])
+        self.assertEqual(MEASURE.as_qasm()['name'], 'measure')
+        self.assertEqual(MEASURE.as_qasm()['qubits'], [1, 2])
+        self.assertEqual(MEASURE.as_qasm()['memory'], [1, 2])
         # length mismatch
         with self.assertRaises(ValueError):
             MEASURE.on([q1, q2], [1, 2, 3])
@@ -61,14 +61,14 @@ class TestControlInstructions(unittest.TestCase):
         self.assertEqual(BARRIER.fields(), [field, field, field])
         with self.assertRaises(NotImplementedError):
             BARRIER.as_matrix()
-        self.assertEqual(BARRIER.as_openQASM()['name'], 'barrier')
-        self.assertEqual(BARRIER.as_openQASM()['qubits'], [1, 2, 3])
+        self.assertEqual(BARRIER.as_qasm()['name'], 'barrier')
+        self.assertEqual(BARRIER.as_qasm()['qubits'], [1, 2, 3])
         # copy & equal
         BARRIER_COPY = copy(BARRIER)
         self.assertEqual(BARRIER_COPY, BARRIER)
         # empty qubits list
         BARRIER.on([])
-        self.assertEqual(BARRIER.as_openQASM()['qubits'], [])
+        self.assertEqual(BARRIER.as_qasm()['qubits'], [])
         
     def test_delay(self):
         DELAY = qib.DelayInstruction(10)
@@ -87,19 +87,19 @@ class TestControlInstructions(unittest.TestCase):
         self.assertEqual(DELAY.fields(), [field, field, field])
         with self.assertRaises(NotImplementedError):
             DELAY.as_matrix()
-        self.assertEqual(DELAY.as_openQASM()['name'], 'delay')
-        self.assertEqual(DELAY.as_openQASM()['qubits'], [1, 2, 3])
-        self.assertEqual(DELAY.as_openQASM()['duration'], 10)
+        self.assertEqual(DELAY.as_qasm()['name'], 'delay')
+        self.assertEqual(DELAY.as_qasm()['qubits'], [1, 2, 3])
+        self.assertEqual(DELAY.as_qasm()['duration'], 10)
         # copy & equal
         DELAY_COPY = copy(DELAY)
         self.assertEqual(DELAY_COPY, DELAY)
         # duration
         DELAY_COPY.duration = 20.0
-        self.assertEqual(DELAY_COPY.as_openQASM()['duration'], 20)
+        self.assertEqual(DELAY_COPY.as_qasm()['duration'], 20)
         self.assertNotEqual(DELAY_COPY, DELAY)
         # empty qubits list
         DELAY.on([])
-        self.assertEqual(DELAY.as_openQASM()['qubits'], [])
+        self.assertEqual(DELAY.as_qasm()['qubits'], [])
 
 if __name__ == "__main__":
     unittest.main()

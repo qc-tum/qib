@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from itertools import combinations
 import time, sched, asyncio
+from typing import Sequence
 import uuid
 
 from qib.util import const, networking
@@ -83,9 +84,9 @@ class WMIExperiment(Experiment):
         # TODO: cancel running experiment
         raise NotImplementedError("Cancelling experiments is not yet supported for WMI backends.")
     
-    def as_openQASM(self) -> dict:
-        qubits: set[Particle] = self.circuit.particles()
-        clbits: set[int] = self.circuit.clbits()
+    def as_qasm(self) -> dict:
+        qubits: Sequence[Particle] = self.circuit.particles()
+        clbits: Sequence[int] = self.circuit.clbits()
         qobj = {
             'qobj_id': str(self.qobj_id),
             'type': self.type.value,
@@ -98,7 +99,7 @@ class WMIExperiment(Experiment):
                             'qreg_sizes': {'q': len(qubits)},
                             'clbit_labels': {'clbits': [['c', clbit] for clbit in clbits]},
                             'memory_slots': len(clbits),
-                            'creg_sizes': {'q': len(clbits)},
+                            'creg_sizes': {'c': len(clbits)},
                             'name': self.name,
                             'global_phase': 0.0,
                             'metadata': {}
@@ -139,7 +140,7 @@ class WMIExperiment(Experiment):
         
     def _initialize(self):
         self.error: str = None
-        self.instructions: list = self.circuit.as_openQASM()
+        self.instructions: list = self.circuit.as_qasm()
         self.status: ExperimentStatus = ExperimentStatus.INITIALIZING
         
         self.qobj_id: uuid.UUID = uuid.uuid4()
@@ -152,10 +153,11 @@ class WMIExperiment(Experiment):
     def _validate(self):
         # check that the number of shots is not exceeded
         if self.options.shots > self.configuration.max_shots:
+            self.status = ExperimentStatus.ERROR
             raise ValueError("Number of shots exceeds maximum allowed number of shots.")
 
         for gate in self.circuit.gates:
-            gate_openQASM = gate.as_openQASM()
+            gate_openQASM = gate.as_qasm()
             gate_name = gate_openQASM['name']
             gate_qubits = gate_openQASM['qubits']
             gate_params = gate_openQASM['params'] if 'params' in gate_openQASM else []
@@ -163,15 +165,19 @@ class WMIExperiment(Experiment):
             if gate_name != 'measure':
                 # check that the gate is supported by the processor
                 if gate_name not in self.configuration.basis_gates:
+                    self.status = ExperimentStatus.ERROR
                     raise ValueError(f"Gate {gate_name.upper()} ({type(gate)}) is not supported by the processor.")
                 
                 # check that the used qubits are configured for the gate
                 gate_properties = self.configuration.get_gate_by_name(gate_name)
                 if gate_properties is None:
+                    self.status = ExperimentStatus.ERROR
                     raise ValueError(f"Gate {gate_name.upper()} {type(gate)} is not configured by the processor.")
                 if not gate_properties.check_qubits(gate_qubits):
+                    self.status = ExperimentStatus.ERROR
                     raise ValueError(f"Gate {gate_name.upper()} {type(gate)} is not configured for the used qubits.")
                 if not gate_properties.check_params(gate_params):
+                    self.status = ExperimentStatus.ERROR
                     raise ValueError(f"Gate {gate_name.upper()} {type(gate)} is not configured for the used parameters.")
 
                 # check that gates are performed only on coupled qubits
@@ -179,14 +185,16 @@ class WMIExperiment(Experiment):
                     qubit_pairs = list(combinations(gate_qubits, 2))
                     for qubit_pair in qubit_pairs:
                         if list(qubit_pair) not in self.configuration.coupling_map:
+                            self.status = ExperimentStatus.ERROR
                             raise ValueError(f"Gate {gate_name.upper()} {type(gate)} is not performed on coupled qubits.")
             
         # check that the number of qubits is adequate
-        qubits: set[Particle] = gate.particles()
+        qubits: Sequence[Particle] = gate.particles()
         qubits_index = [q.index for q in qubits]
         if len(qubits) > self.configuration.n_qubits \
         or min(qubits_index) < 0 \
         or max(qubits_index) >= self.configuration.n_qubits:
+            self.status = ExperimentStatus.ERROR
             raise ValueError("Number of qubits exceeds maximum allowed number of qubits, or indexes are incorrect.")
 
     def _from_wmi_status(self, status: str):
@@ -231,8 +239,3 @@ class WMIExperimentResults(ExperimentResults):
             return {str(bin(int(key, 16))).split('b')[1].zfill(n_qubits): 
                 value for key, value in self._counts.items()}
         return self._counts
-    
-    def plot_histogram(self):
-        # TODO: matplotlib histogram plotting of counts. 
-        # Do we want to have matplotlib as a dependency? (Qiskit: matplotlib and latex)
-        raise NotImplementedError("Plotting histograms is not yet supported.")

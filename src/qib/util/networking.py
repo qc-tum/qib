@@ -13,7 +13,7 @@ def _http_request(request, url: str, headers: dict, body: dict, title: str) -> r
     retries = 0
     while retries <= const.NW_MAX_RETRIES:
         try: # perform request
-            response = request(url,
+            response: requests.Response = request(url,
                                headers = headers,
                                json = body,
                                timeout = const.NW_TIMEOUT)

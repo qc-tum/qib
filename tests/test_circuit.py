@@ -58,17 +58,17 @@ class TestCircuit(unittest.TestCase):
         circuit.append_gate(cnot)
         circuit.append_gate(measure)
         # particles & clbits
-        self.assertEqual(circuit.particles(), {q1, q2})
-        self.assertEqual(circuit.clbits(), {1, 2})
+        self.assertEqual(circuit.particles(), [q1, q2])
+        self.assertEqual(circuit.clbits(), [1, 2])
         # OpenQASM serialization
-        self.assertEqual(len(circuit.as_openQASM()), 3)
-        self.assertEqual(circuit.as_openQASM()[0]['name'], 'h')
-        self.assertEqual(circuit.as_openQASM()[0]['qubits'], [1])
-        self.assertEqual(circuit.as_openQASM()[1]['name'], 'cx')
-        self.assertEqual(circuit.as_openQASM()[1]['qubits'], [1, 2])
-        self.assertEqual(circuit.as_openQASM()[2]['name'], 'measure')
-        self.assertEqual(circuit.as_openQASM()[2]['qubits'], [1, 2])
-        self.assertEqual(circuit.as_openQASM()[2]['memory'], [1, 2])
+        self.assertEqual(len(circuit.as_qasm()), 3)
+        self.assertEqual(circuit.as_qasm()[0]['name'], 'h')
+        self.assertEqual(circuit.as_qasm()[0]['qubits'], [1])
+        self.assertEqual(circuit.as_qasm()[1]['name'], 'cx')
+        self.assertEqual(circuit.as_qasm()[1]['qubits'], [1, 2])
+        self.assertEqual(circuit.as_qasm()[2]['name'], 'measure')
+        self.assertEqual(circuit.as_qasm()[2]['qubits'], [1, 2])
+        self.assertEqual(circuit.as_qasm()[2]['memory'], [1, 2])
 
 
 if __name__ == "__main__":

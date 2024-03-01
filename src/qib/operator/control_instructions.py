@@ -58,7 +58,7 @@ class ControlInstruction(AbstractOperator):
         """
         raise NotImplementedError("Instructions don't have a matrix representation") 
 
-    def as_openQASM(self):
+    def as_qasm(self):
         """
         Generate a Qobj OpenQASM representation of the instruction.
         """
@@ -132,7 +132,7 @@ class MeasureInstruction(ControlInstruction):
         # enable chaining
         return self
 
-    def as_openQASM(self):
+    def as_qasm(self):
         """
         Generate a Qobj OpenQASM representation of the instruction.
         """
@@ -222,7 +222,7 @@ class BarrierInstruction(ControlInstruction):
         # enable chaining
         return self
     
-    def as_openQASM(self):
+    def as_qasm(self):
         """
         Generate a Qobj OpenQASM representation of the instruction.
         """
@@ -308,7 +308,7 @@ class DelayInstruction(ControlInstruction):
         # enable chaining
         return self
     
-    def as_openQASM(self):
+    def as_qasm(self):
         """
         Generate a Qobj OpenQASM representation of the instruction.
         """

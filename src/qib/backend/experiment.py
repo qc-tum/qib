@@ -67,7 +67,7 @@ class Experiment(abc.ABC):
         """
 
     @abc.abstractmethod
-    def as_openQASM(self) -> dict:
+    def as_qasm(self) -> dict:
         """
         Get the Qobj OpenQASM representation of the experiment.
         """
@@ -123,11 +123,5 @@ class ExperimentResults(abc.ABC):
 
         Returns:
             dict: A dictionary of states and their respective counts
-        """
-
-    @abc.abstractmethod
-    def plot_histogram(self):
-        """
-        Plots a matplotlib histogram of the experiment results (i.e. measured counts distribution)
         """
 
