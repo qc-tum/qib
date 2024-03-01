@@ -20,10 +20,8 @@ class Options(abc.ABC):
         self.shots: int = shots
         self.init_qubits: bool = init_qubits
 
-    @staticmethod
     @abc.abstractmethod
-    def default() -> Options:
+    def optional(self) -> dict:
         """
-        The default options used for an experiment on a given processor,
-        if no custom options have been specified.
+        Return a dictionary with the optional parameters and their values (if set).
         """

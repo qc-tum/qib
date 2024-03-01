@@ -36,23 +36,6 @@ class Experiment(abc.ABC):
     """
 
     @abc.abstractmethod
-    def __init__(
-            self,
-            name: str,
-            circuit: Circuit,
-            options: Options,
-            configuration: ProcessorConfiguration,
-            credentials: ProcessorCredentials,
-            type: ExperimentType,
-    ):
-        self.name: str = name
-        self.circuit: Circuit = circuit
-        self.options: Options = options
-        self.type: ExperimentType = type
-        self.configuration: ProcessorConfiguration = configuration
-        self.credentials: ProcessorCredentials = credentials
-
-    @abc.abstractmethod
     def query_status(self) -> ExperimentStatus:
         """
         Query the current status of a previously submitted experiment.

@@ -50,7 +50,7 @@ class ProcessorConfiguration:
         return None
     
     @staticmethod
-    def coupling_map(n_qubits: int) -> Sequence[Sequence[int]]:
+    def generate_map(n_qubits: int) -> Sequence[Sequence[int]]:
         """
         Generate a fully-coupled coupling map for a given number of qubits.
         """

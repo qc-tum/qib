@@ -23,7 +23,12 @@ class WMIExperiment(Experiment):
                  configuration: ProcessorConfiguration,
                  credentials: ProcessorCredentials,
                  type: ExperimentType = ExperimentType.QASM):
-        super().__init__(name, circuit, options, configuration, credentials, type)
+        self.name: str = name
+        self.circuit: Circuit = circuit
+        self.options: WMIOptions = options
+        self.type: ExperimentType = type
+        self.configuration: ProcessorConfiguration = configuration
+        self.credentials: ProcessorCredentials = credentials
         self._initialize()
         self._validate()
     
@@ -81,7 +86,7 @@ class WMIExperiment(Experiment):
     def as_openQASM(self) -> dict:
         qubits: set[Particle] = self.circuit.particles()
         clbits: set[int] = self.circuit.clbits()
-        return {
+        qobj = {
             'qobj_id': str(self.qobj_id),
             'type': self.type.value,
             'schema_version': self.schema_version,
@@ -115,29 +120,16 @@ class WMIExperiment(Experiment):
                 'memory': self.configuration.memory,
                 'meas_level': self.configuration.meas_level,
                 'init_qubits': self.options.init_qubits,
-                'do_emulation': False,
+                'do_emulation': self.options.do_emulation,
                 'memory_slots': len(clbits),
                 'n_qubits': len(qubits),
-                
-                # Optional properties
-                # 'acquisition_mode': 'integration_trigger',
-                # 'averaging_mode': 'single_shot',
-                # 'chip': 'dedicatedSimulator',
-                # 'log_file_level': 'debug',
-                # 'log_level_std': 'info',
-                # 'log_level': 'debug',
-                # 'loops': {},
-                # 'name_suffix': '',
-                # 'parameter_binds': [],
-                # 'parametric_pulses': [],
-                # 'reference_measurement': {'function': 'nothing'},
-                # 'relax': True,
-                # 'sequence_settings': {},
-                # 'store_nt_result': True,
-                # 'trigger_time': 0.001,
-                # 'weighting_amp': 1.0,
             },
         }
+        
+        # Optional properties
+        qobj['config'].update(self.options.optional())
+        
+        return qobj
         
     def from_json(self, json: dict) -> WMIExperiment:
         self._job_id = json['job_id']
