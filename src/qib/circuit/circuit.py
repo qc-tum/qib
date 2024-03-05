@@ -85,18 +85,29 @@ class Circuit:
         """
         Generate the sparse matrix representation of the circuit.
         """
+        # if circuit contains control instructions, raise a warning
+        self._control_instructions_warning()
         if not self.gates:
             raise RuntimeError(
                 "missing gates, hence cannot compute matrix representation of circuit")
-        mat = self.gates[0].as_circuit_matrix(fields)
-        for g in self.gates[1:]:
-            mat = g.as_circuit_matrix(fields) @ mat
+        
+        isFirst = True
+        for gate in self.gates:
+            if isinstance(gate, ControlInstruction): continue
+            if isFirst:
+                mat = gate.as_circuit_matrix(fields)
+                isFirst = False
+            else:
+                mat = gate.as_circuit_matrix(fields) @ mat
+        
         return mat
 
     def as_tensornet(self):
         """
         Generate a tensor network representation of the circuit.
         """
+        # if circuit contains control instructions, raise a warning
+        self._control_instructions_warning()
         # create a tensor network consisting of identity wires
         stn = SymbolicTensorNetwork()
         # virtual tensor for open axes
@@ -113,6 +124,7 @@ class Circuit:
         net = TensorNetwork(stn, {})
         assert net.is_consistent()
         for gate in self.gates:
+            if isinstance(gate, ControlInstruction): continue
             prtcl = gate.particles()
             iwire = [map_particle_to_wire(fields, p) for p in prtcl]
             if any(iw < 0 for iw in iwire):
@@ -138,3 +150,15 @@ class Circuit:
         for gate in self.gates:
             instructions.append(gate.as_qasm())
         return instructions
+    
+    def _control_instructions_warning(self):
+        """
+        Check if the circuit contains control instructions.
+        If it does, raise a warning.
+        """
+        for gate in self.gates:
+            if isinstance(gate, ControlInstruction):
+                print("WARNING: Circuit contains control instructions.\
+                      They will be omitted in the conversion.")
+                return True
+        return False

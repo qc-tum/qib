@@ -168,6 +168,7 @@ class TestBackend(unittest.TestCase):
                     qib.MeasureInstruction([qa])
                     ]))
         # Invalid Experiment: Gate parameters not configured
+        unmocked_as_qasm = qib.RyGate.as_qasm
         qib.RyGate.as_qasm = Mock(return_value = {
             "name": "ry",
             "qubits": [0],
@@ -180,6 +181,7 @@ class TestBackend(unittest.TestCase):
                     qib.RyGate(75, qa),
                     qib.MeasureInstruction([qa])
                     ]))
+        qib.RyGate.as_qasm = unmocked_as_qasm
         # Invalid Experiment: Number of qubits exceeded
         with self.assertRaises(ValueError) as err:
             processor.submit_experiment(
