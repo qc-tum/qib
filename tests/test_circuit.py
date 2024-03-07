@@ -36,6 +36,13 @@ class TestCircuit(unittest.TestCase):
             circtens, axes_map)
         self.assertTrue(np.allclose(np.reshape(circtens, (2**5, 2**5)),
                                     circuit.as_matrix([field1, field2]).toarray()))
+        # append a circuit to the current circuit
+        rx = qib.RxGate(np.pi/2, qa)
+        sx = qib.SxGate(qb)
+        measure = qib.MeasureInstruction([qa, qb])
+        circuit2 = qib.Circuit([rx, sx, measure])
+        circuit.append_circuit(circuit2)
+        self.assertTrue(circuit.gates == [hadamard, cnot, rx, sx, measure])
 
     def test_circuit_openQASM_serialization(self):
         """

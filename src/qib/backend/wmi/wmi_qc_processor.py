@@ -45,7 +45,6 @@ class WMIQCProcessor(QuantumProcessor):
 
     def submit_experiment(self, name: str, circ: Circuit, options: WMIOptions = WMIOptions()) -> WMIExperiment:
         # experiment
-        options.chip = const.BACK_WMIQC_NAME
         experiment = WMIExperiment(name, circ, options, self.configuration(), self.credentials)
         
         # request

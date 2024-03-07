@@ -62,7 +62,7 @@ class WMIExperiment(Experiment):
         if self._results is not None and self.status is ExperimentStatus.DONE: return self._results
         
         scheduler = sched.scheduler(time.time, time.sleep)
-        def check_and_reschedule(scheduler):
+        def check_and_reschedule(scheduler: sched.scheduler):
             if not self.query_status().is_terminal():
                 scheduler.enter(const.NW_QUERY_FRQ, 1, check_and_reschedule, (scheduler,))
         scheduler.enter(0, 1, check_and_reschedule, (scheduler,))

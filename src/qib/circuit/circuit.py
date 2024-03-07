@@ -14,7 +14,7 @@ class Circuit:
     We follow the convention that the first gate in the list is applied first.
     """
 
-    def __init__(self, gates: Sequence[Gate] = None):
+    def __init__(self, gates: Sequence[Gate | ControlInstruction] = None):
         if gates is None:
             self.gates = []
         else:
@@ -31,7 +31,7 @@ class Circuit:
         Append the gates from another quantum circuit to the current circuit.
         """
         for g in other.gates:
-            self.gates += copy(g)
+            self.gates.append(copy(g))
 
     def prepend_gate(self, gate: Gate | ControlInstruction):
         """
