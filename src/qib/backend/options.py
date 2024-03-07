@@ -12,15 +12,6 @@ class Options(abc.ABC):
     """
 
     @abc.abstractmethod
-    def __init__(
-            self,
-            shots: int,
-            init_qubits: bool,
-    ):
-        self.shots: int = shots
-        self.init_qubits: bool = init_qubits
-
-    @abc.abstractmethod
     def optional(self) -> dict:
         """
         Return a dictionary with the optional parameters and their values (if set).

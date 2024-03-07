@@ -7,13 +7,14 @@ Welcome to *qib*'s documentation!
 
 Tutorials
 ---------
-The following tutorials provide an introduction to the main concepts and features of *qib*:
+The following tutorials provide insights to the main concepts and features of *qib*:
 
 .. toctree::
     :numbered:
     :maxdepth: 1
 
-    basics
+    tutorials/basics
+    tutorials/extending_backend
 
 
 API documentation

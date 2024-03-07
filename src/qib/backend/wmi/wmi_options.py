@@ -41,7 +41,8 @@ class WMIOptions(Options):
                  weighting_amp: float = None
                  ):
         # required
-        super().__init__(shots, init_qubits)
+        self.shots: int = shots
+        self.init_qubits: bool = init_qubits
         self.do_emulation: bool = do_emulation
         
         # optional
