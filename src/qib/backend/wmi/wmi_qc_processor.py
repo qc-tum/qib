@@ -8,10 +8,11 @@ class WMIQCProcessor(QuantumProcessor):
     """
     The actual WMI Quantum Computer quantum processor implementation.
     """
+
     def __init__(self, access_token: str):
         self.credentials: ProcessorCredentials = ProcessorCredentials(
-            url = const.BACK_WMIQC_URL,
-            access_token = access_token)
+            url=const.BACK_WMIQC_URL,
+            access_token=access_token)
 
     @staticmethod
     def configuration() -> ProcessorConfiguration:
@@ -40,26 +41,30 @@ class WMIQCProcessor(QuantumProcessor):
             memory=True,
             n_qubits=3,
             open_pulse=False,
+            query_frequency=const.NW_QUERY_FRQ_SLOW,
             simulator=False,
         )
 
     def submit_experiment(self, name: str, circ: Circuit, options: WMIOptions = WMIOptions()) -> WMIExperiment:
         # experiment
-        experiment = WMIExperiment(name, circ, options, self.configuration(), self.credentials)
-        
+        experiment = WMIExperiment(
+            name, circ, options, self.configuration(), self.credentials)
+
         # request
         response = self._send_request(experiment)
         self._process_response(experiment, response.json())
         return experiment
 
     def _send_request(self, experiment: WMIExperiment):
-        http_headers = {'access-token': self.credentials.access_token, 'Content-Type': 'application/json'}
-        return networking.http_put(url = f'{self.credentials.url}/qobj', 
-                            headers = http_headers,
-                            body = {'qobj': experiment.as_qasm()},
-                            title = const.NW_MSG_SEND)
-    
+        http_headers = {'access-token': self.credentials.access_token,
+                        'Content-Type': 'application/json'}
+        return networking.http_put(url=f'{self.credentials.url}/qobj',
+                                   headers=http_headers,
+                                   body={'qobj': experiment.as_qasm()},
+                                   title=const.NW_MSG_SEND)
+
     def _process_response(self, experiment: WMIExperiment, response: dict):
         experiment.from_json(response)
         if experiment.status == ExperimentStatus.ERROR:
-            raise RuntimeError(f'Experiment could not be submitted: {experiment.error}')
+            raise RuntimeError(
+                f'Experiment could not be submitted: {experiment.error}')

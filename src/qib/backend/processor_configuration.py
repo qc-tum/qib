@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
+
 class ProcessorConfiguration:
     """
     Generic class for quantum processor configuration.
@@ -24,6 +25,7 @@ class ProcessorConfiguration:
             memory: bool,
             n_qubits: int,
             open_pulse: bool,
+            query_frequency: float,
             simulator: bool,
     ):
         self.backend_name: str = backend_name
@@ -35,12 +37,13 @@ class ProcessorConfiguration:
         self.local: bool = local
         self.max_shots: int = max_shots
         self.meas_level: int = meas_level
-        self.memory: bool = memory 
+        self.memory: bool = memory
         self.n_qubits: int = n_qubits
         self.open_pulse: bool = open_pulse
+        self.query_frequency: float = query_frequency
         self.simulator: bool = simulator
 
-    def get_gate_by_name(self, gate_name: str)-> GateProperties:
+    def get_gate_by_name(self, gate_name: str) -> GateProperties:
         """
         Get a gate properties by its name.
         """
@@ -48,7 +51,7 @@ class ProcessorConfiguration:
             if gate.name == gate_name:
                 return gate
         return None
-    
+
     @staticmethod
     def generate_map(n_qubits: int) -> Sequence[Sequence[int]]:
         """
@@ -64,6 +67,7 @@ class GateProperties:
     The properties of a quantum processor's gate, including information about what
     gates are configured for which qubits of the targeted quantum system.
     """
+
     def __init__(
             self,
             name: str,
@@ -79,7 +83,7 @@ class GateProperties:
         Check if the gate is configured for the given qubits.
         """
         return qubits in self.qubits
-    
+
     def check_params(self, params: Sequence) -> bool:
         """
         Check if the gate is configured for the given parameters.
@@ -90,7 +94,7 @@ class GateProperties:
 class ProcessorCredentials:
     """
     Generic class for quantum processor credentials.
-    
+
     Includes parameters on how to access a quantum processor backend.
     """
 

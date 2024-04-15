@@ -51,6 +51,7 @@ class WMIQSimProcessor(QuantumProcessor):
             memory=True,
             n_qubits=3,
             open_pulse=False,
+            query_frequency=const.NW_QUERY_FRQ_FAST,
             simulator=True,
         )
 

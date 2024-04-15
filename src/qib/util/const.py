@@ -41,8 +41,9 @@ BACK_WMIQC_VERSION = '1.0.0'
 QOBJ_SCHEMA_VERSION = '1.3.0'
 
 # Networking parameters and constants
-NW_TIMEOUT: int = 10 # seconds
+NW_TIMEOUT: int = 10  # seconds
 NW_MAX_RETRIES: int = 5
 NW_MSG_SEND: str = 'SUBMIT EXPERIMENT'
 NW_MSG_QUERY: str = 'QUERY EXPERIMENT'
-NW_QUERY_FRQ: float = 0.2 # seconds
+NW_QUERY_FRQ_SLOW: float = 2  # seconds
+NW_QUERY_FRQ_FAST: float = 0.2  # seconds
