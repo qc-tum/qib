@@ -1,0 +1,222 @@
+{
+  "submitExperimentRequest": {
+    "qobj": {
+      "qobj_id": "QobjID",
+      "type": "QASM",
+      "schema_version": "1.3.0",
+      "experiments": [
+        {
+          "header": {
+            "qubit_labels": {
+              "qubits": [
+                ["q", 0],
+                ["q", 1],
+                ["q", 2]
+              ]
+            },
+            "n_qubits": 3,
+            "qreg_sizes": { "q": 3 },
+            "clbit_labels": {
+              "clbits": [
+                ["c", 0],
+                ["c", 1],
+                ["c", 2]
+              ]
+            },
+            "memory_slots": 3,
+            "creg_sizes": { "c": 3 },
+            "name": "UnitTest",
+            "global_phase": 0.0,
+            "metadata": {}
+          },
+          "config": { "n_qubits": 3, "memory_slots": 3 },
+          "instructions": [
+            { "name": "h", "qubits": [0] },
+            { "name": "h", "qubits": [1] },
+            { "name": "cz", "qubits": [0, 1] },
+            { "name": "measure", "qubits": [0, 1, 2], "memory": [0, 1, 2] }
+          ]
+        }
+      ],
+      "header": { "backend_name": "dedicatedSimulator", "backend_version": "1.0.0" },
+      "config": {
+        "shots": 1024,
+        "memory": true,
+        "meas_level": 2,
+        "init_qubits": true,
+        "do_emulation": false,
+        "memory_slots": 3,
+        "n_qubits": 3,
+        "chip": "dedicatedSimulator"
+      }
+    }
+  },
+  "submitExperimentResponse": {
+    "qobj": {
+      "qobj_id": "QobjID",
+      "header": {
+        "backend_name": "dedicatedSimulator",
+        "backend_version": "1.0.0"
+      },
+      "config": {
+        "memory": true,
+        "meas_level": 2,
+        "init_qubits": true,
+        "do_emulation": false,
+        "memory_slots": 3,
+        "n_qubits": 3,
+        "shots": 1024,
+        "chip": "dedicatedSimulator"
+      },
+      "schema_version": "1.3.0",
+      "type": "QASM",
+      "experiments": [
+        {
+          "config": {
+            "n_qubits": 3,
+            "memory_slots": 3
+          },
+          "header": {
+            "qubit_labels": {
+              "qubits": [
+                ["q", 0],
+                ["q", 1],
+                ["q", 2]
+              ]
+            },
+            "n_qubits": 3,
+            "qreg_sizes": {
+              "q": 3
+            },
+            "clbit_labels": {
+              "clbits": [
+                ["c", 0],
+                ["c", 1],
+                ["c", 2]
+              ]
+            },
+            "memory_slots": 3,
+            "creg_sizes": {
+              "c": 3
+            },
+            "name": "UnitTest",
+            "global_phase": 0.0
+          },
+          "instructions": [
+            {
+              "name": "h",
+              "qubits": [0]
+            },
+            {
+              "name": "h",
+              "qubits": [1]
+            },
+            {
+              "name": "cz",
+              "qubits": [0, 1]
+            },
+            {
+              "name": "measure",
+              "qubits": [0, 1, 2],
+              "memory": [0, 1, 2]
+            }
+          ]
+        }
+      ]
+    },
+    "status": "pending",
+    "job_id": "1454ef78dae611ee923e842b2badd5e4",
+    "execution_datetime": "2024-03-05T11:47:01.350846",
+    "mode": "qccs"
+  },
+  "queryResultsRequest": {
+    "job_id": "1454ef78dae611ee923e842b2badd5e4"
+  },
+  "queryResultsResponse": {
+    "qobj": {
+      "qobj_id": "QobjID",
+      "header": {
+        "backend_name": "dedicatedSimulator",
+        "backend_version": "1.0.0"
+      },
+      "config": {
+        "memory": true,
+        "meas_level": 2,
+        "init_qubits": true,
+        "do_emulation": false,
+        "memory_slots": 3,
+        "n_qubits": 3,
+        "shots": 1024,
+        "chip": "dedicatedSimulator"
+      },
+      "schema_version": "1.3.0",
+      "type": "QASM",
+      "experiments": [
+        {
+          "config": {
+            "n_qubits": 3,
+            "memory_slots": 3
+          },
+          "header": {
+            "qubit_labels": {
+              "qubits": [
+                ["q", 0],
+                ["q", 1],
+                ["q", 2]
+              ]
+            },
+            "n_qubits": 3,
+            "qreg_sizes": {
+              "q": 3
+            },
+            "clbit_labels": {
+              "clbits": [
+                ["c", 0],
+                ["c", 1],
+                ["c", 2]
+              ]
+            },
+            "memory_slots": 3,
+            "creg_sizes": {
+              "q": 3
+            },
+            "name": "BellState",
+            "global_phase": 0.0
+          },
+          "instructions": [
+            {
+              "name": "h",
+              "qubits": [0]
+            },
+            {
+              "name": "h",
+              "qubits": [1]
+            },
+            {
+              "name": "cz",
+              "qubits": [0, 1]
+            },
+            {
+              "name": "measure",
+              "qubits": [0, 1, 2],
+              "memory": [0, 1, 2]
+            }
+          ]
+        }
+      ]
+    },
+    "status": "finished",
+    "counts": [
+      {
+        "0x2": 257,
+        "0x0": 247,
+        "0x1": 243,
+        "0x3": 277
+      }
+    ],
+    "runtime": 9458820.0,
+    "job_id": "1454ef78dae611ee923e842b2badd5e4",
+    "execution_datetime": "2024-03-05T11:47:01.350000",
+    "mode": "qccs"
+  }
+}

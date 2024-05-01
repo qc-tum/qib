@@ -7,7 +7,7 @@ from qib.field import Field
 class Simulator(abc.ABC):
 
     @abc.abstractmethod
-    def run(self, circ: Circuit, fields: Sequence[Field], description):
+    def run(self, circ: Circuit, description):
         """
         Run a quantum circuit simulation.
         """

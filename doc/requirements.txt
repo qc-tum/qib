@@ -2,3 +2,4 @@ sphinx>=5.0.0
 ipython
 nbsphinx
 h5py
+requests

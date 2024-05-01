@@ -28,10 +28,10 @@ class TestSimulator(unittest.TestCase):
                     [1, 0, 0, 0, 0, 0, 0, 0]).reshape(5 * (2,)),
                                (2, 0, 3, 1, 4)).reshape(2**5)
         # statevector simulator
-        psi_out = qib.simulator.StatevectorSimulator().run(circuit, [field1, field2], None)
+        psi_out = qib.simulator.StatevectorSimulator().run(circuit)
         self.assertTrue(np.allclose(psi_out, psi_ref))
         # tensor network simulator
-        tens_out = qib.simulator.TensorNetworkSimulator().run(circuit, [field1, field2], None)
+        tens_out = qib.simulator.TensorNetworkSimulator().run(circuit)
         self.assertTrue(np.allclose(tens_out.reshape(-1), psi_ref))
 
 

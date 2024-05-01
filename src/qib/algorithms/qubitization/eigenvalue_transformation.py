@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Sequence, Union
+from typing import Sequence
 from qib.field import Qubit
 from qib.operator import Gate
 from qib.algorithms.qubitization.projector_controlled_phase_shift import ProjectorControlledPhaseShift
@@ -36,7 +36,7 @@ class EigenvalueTransformation:
         """
         return self.block_encoding.num_wires + len(self.processing.auxiliary_qubits)
 
-    def set_auxiliary_qubits(self, q_anc: Union[Qubit, Sequence[Qubit]]):
+    def set_auxiliary_qubits(self, q_anc: Qubit | Sequence[Qubit]):
         """
         Set the auxiliary qubits.
         """
@@ -54,7 +54,7 @@ class EigenvalueTransformation:
         """
         self.processing.set_method(method)
 
-    def set_encoding_qubits(self, q_enc: Union[Qubit, Sequence[Qubit]]):
+    def set_encoding_qubits(self, q_enc: Qubit | Sequence[Qubit]):
         """
         Set the encoding extra qubits.
         """

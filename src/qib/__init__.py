@@ -23,10 +23,12 @@ from qib.operator import (
     HeisenbergHamiltonian,
     FermiHubbardHamiltonian,
     Gate,
+    IdentityGate,
     PauliXGate,
     PauliYGate,
     PauliZGate,
     HadamardGate,
+    SxGate,
     RxGate,
     RyGate,
     RzGate,
@@ -37,10 +39,14 @@ from qib.operator import (
     RxxGate,
     RyyGate,
     RzzGate,
+    ISwapGate,
     MultiplexedGate,
     TimeEvolutionGate,
     BlockEncodingGate,
-    GeneralGate
+    GeneralGate,
+    MeasureInstruction,
+    BarrierInstruction,
+    DelayInstruction
 )
 
 from qib.circuit import Circuit

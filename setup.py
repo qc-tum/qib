@@ -7,6 +7,7 @@ setup(
     install_requires=[
         "numpy",
         "scipy",
-        "h5py"
+        "h5py",
+        "requests"
     ],
 )
