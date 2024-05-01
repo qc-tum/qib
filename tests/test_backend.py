@@ -86,7 +86,8 @@ class TestBackend(unittest.TestCase):
         options = qib.backend.wmi.WMIOptions(
             shots = 1024,
             init_qubits = True,
-            do_emulation = False)
+            do_emulation = False,
+            chip = "dedicatedSimulator")
         # Submit Experiment
         experiment = processor.submit_experiment(name = "UnitTest", circ = circuit, options = options)            
         self.assertEqual(experiment.as_qasm(), self.qsim_mock_experiment_request["qobj"])
@@ -114,7 +115,8 @@ class TestBackend(unittest.TestCase):
         options = qib.backend.wmi.WMIOptions(
             shots = 1024,
             init_qubits = True,
-            do_emulation = False)
+            do_emulation = False,
+            chip = "dedicated")
         # Mock Networking
         qib.util.networking.http_put = Mock(return_value = self.qc_mock_experiment_response)
         qib.util.networking.http_post = Mock(return_value = self.qc_mock_results_response)
