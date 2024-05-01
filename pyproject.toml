@@ -9,7 +9,7 @@ description = "Python package for quantum circuits and algorithms"
 readme = "README.rst"
 authors = [{ name = "TUM Quantum Computing Group" }]
 license = { text = "Apache-2.0" }
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 dependencies = [
     "numpy",
     "scipy",
