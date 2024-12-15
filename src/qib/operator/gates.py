@@ -1054,7 +1054,7 @@ class RotationGate(Gate):
     """
 
     def __init__(self, ntheta: Sequence[float], qubit: Qubit = None):
-        self.ntheta = np.array(ntheta, copy=False)
+        self.ntheta = np.asarray(ntheta)
         if self.ntheta.shape != (3,):
             raise ValueError("'ntheta' must be a vector of length 3")
         self.qubit = qubit
@@ -3089,7 +3089,7 @@ class GeneralGate(Gate):
     """
 
     def __init__(self, mat, nwires: int):
-        mat = np.array(mat, copy=False)
+        mat = np.asarray(mat)
         if mat.shape != (2**nwires, 2**nwires):
             raise ValueError(
                 f"`mat` must be a {2**nwires} x {2**nwires} matrix")

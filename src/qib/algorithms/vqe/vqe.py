@@ -10,7 +10,7 @@ def measure_expectation_statevector(pauli_op: PauliOperator, state: Sequence[flo
     """
     Given a Pauli operator and a quantum state, it calculates the expectation value.
     """
-    state = np.array(state, copy=False)
+    state = np.asarray(state)
     return (state.T@pauli_op.as_matrix().toarray())@state
 
 

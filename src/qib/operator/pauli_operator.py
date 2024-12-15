@@ -18,8 +18,8 @@ class PauliString(AbstractOperator):
     Using convention that Pauli matrix at site 0 corresponds to slowest varying index.
     """
     def __init__(self, z, x, q):
-        self.z = np.array(z, copy=False, dtype=int)
-        self.x = np.array(x, copy=False, dtype=int)
+        self.z = np.asarray(z, dtype=int)
+        self.x = np.asarray(x, dtype=int)
         if self.z.ndim != 1 or self.x.ndim != 1:
             raise ValueError("'z' and 'x' parameters must be one-dimensional arrays")
         if self.z.shape != self.x.shape:
